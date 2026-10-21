@@ -1,0 +1,37 @@
+[Unit]
+Description=AyahOS dedicated sandbox worker (gVisor, one job at a time)
+After=network-online.target docker.service
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ayahos-sandbox
+Group=ayahos-sandbox
+# Docker socket access. This VM is dedicated to sandbox jobs and holds no other
+# secrets, model weights, or developer files; the socket is root-equivalent.
+SupplementaryGroups=docker
+WorkingDirectory=/opt/ayahos-sandbox/apps/sandbox_worker
+EnvironmentFile=/etc/ayahos/sandbox-worker.env
+Environment=DOCKER_CONFIG=/run/ayahos-sandbox
+RuntimeDirectory=ayahos-sandbox
+# -s: no user site-packages. The worker is stdlib-only; -m resolves from WorkingDirectory.
+ExecStart=/usr/bin/python3.12 -s -m sandbox_worker.server
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

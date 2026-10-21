@@ -1,0 +1,24 @@
+[Unit]
+Description=AyahOS MiniLM operational-learning worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/goblinos-dual-lineage
+EnvironmentFile=/etc/goblin/learning-worker.env
+Environment=PYTHONPATH=/opt/goblinos-dual-lineage/apps/api/src
+ExecStart=/opt/goblin/venv/bin/uvicorn dual_lineage.learning.shadow_worker:app --host 127.0.0.1 --port 8120
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadOnlyPaths=/opt/goblinos-dual-lineage/models
+StateDirectory=goblin
+
+[Install]
+WantedBy=multi-user.target

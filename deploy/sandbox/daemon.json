@@ -1,0 +1,13 @@
+{
+  "runtimes": {
+    "runsc": {
+      "path": "/usr/local/bin/runsc",
+      "runtimeArgs": ["--network=none"]
+    }
+  },
+  "default-runtime": "runsc",
+  "no-new-privileges": true,
+  "icc": false,
+  "log-driver": "none",
+  "userland-proxy": false
+}

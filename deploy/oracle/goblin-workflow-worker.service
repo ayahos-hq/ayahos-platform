@@ -1,0 +1,25 @@
+[Unit]
+Description=AyahOS Ruby durable workflow worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/goblinos-dual-lineage/apps/ruby_worker
+EnvironmentFile=/etc/goblin/workflow.env
+Environment=BUNDLE_GEMFILE=/opt/goblinos-dual-lineage/apps/ruby_worker/Gemfile
+Environment=PGSSLMODE=require
+ExecStart=/usr/local/bin/bundle exec ruby /opt/goblinos-dual-lineage/apps/ruby_worker/bin/goblin-workflow work
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/opt/goblinos-dual-lineage/apps/ruby_worker/vendor/bundle
+ReadWritePaths=/opt/goblinos-dual-lineage/artifacts/workflow
+
+[Install]
+WantedBy=multi-user.target
