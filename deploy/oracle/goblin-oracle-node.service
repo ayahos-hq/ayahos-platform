@@ -1,0 +1,24 @@
+[Unit]
+Description=AyahOS Oracle cognitive compute node
+After=network-online.target goblin-llama.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/goblinos-dual-lineage
+EnvironmentFile=/etc/goblin/oracle-node.env
+Environment=PYTHONPATH=/opt/goblinos-dual-lineage/apps/api/src
+ExecStart=/opt/goblin/venv/bin/uvicorn dual_lineage.compute.node_agent:app --host 127.0.0.1 --port 8112
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+StateDirectory=goblin
+ReadWritePaths=/var/lib/goblin
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,14 @@
+# TLS front for the sandbox worker. Only /healthz and /v1/jobs are forwarded.
+# Requests are additionally HMAC-signed end to end; TLS protects confidentiality.
+sandbox.example.com {
+	request_body {
+		max_size 160KB
+	}
+	@worker path /healthz /v1/jobs
+	handle @worker {
+		reverse_proxy 127.0.0.1:8130
+	}
+	handle {
+		respond 404
+	}
+}

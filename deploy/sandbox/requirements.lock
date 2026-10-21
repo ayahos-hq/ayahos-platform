@@ -1,0 +1,4 @@
+# Approved third-party packages baked into the sandbox image.
+# Every line must be pinned with hashes (pip --require-hashes). Jobs cannot install
+# packages at runtime: the container has no network and pip is removed from the image.
+# Adding a package is a reviewed change that produces a new image digest.

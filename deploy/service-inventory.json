@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "repository": "https://github.com/fuaadabdullah/AyahOS_Dual_Lineage",
+  "canonical_branch": "main",
+  "release_contract": {
+    "local_gate": "make release-check",
+    "live_smoke": "ruby scripts/live_release_smoke.rb",
+    "rate_limit_smoke": "ruby scripts/live_rate_limit_smoke.rb",
+    "evidence_template": "docs/release-evidence-template.md",
+    "required_local_checks": [
+      "auth",
+      "timeout",
+      "rate_limiting",
+      "grounding",
+      "postgres_persistence",
+      "incident_recovery"
+    ],
+    "required_live_checks": [
+      "public_chat",
+      "authenticated_cognition",
+      "streaming",
+      "trace_retrieval",
+      "provider_failure",
+      "cancellation",
+      "database_persistence",
+      "incident_recovery"
+    ]
+  },
+  "render_services": [
+    {
+      "name": "goblin-dual-lineage-api",
+      "status": "active",
+      "render_blueprint": true,
+      "type": "web",
+      "branch": "main",
+      "endpoint": "https://goblin-dual-lineage-api.onrender.com",
+      "health_path": "/health",
+      "runtime_identity_path": "/v1/runtime/status",
+      "environment_contract": [
+        "DATABASE_URL",
+        "DUAL_LINEAGE_DATABASE_MODE",
+        "DUAL_LINEAGE_RUNTIME_API_KEY",
+        "DUAL_LINEAGE_SITE_API_KEY",
+        "DUAL_LINEAGE_RAG_URL",
+        "DUAL_LINEAGE_RAG_SERVICE_TOKEN",
+        "DUAL_LINEAGE_INCIDENT_RETENTION_DAYS",
+        "DUAL_LINEAGE_OPERATIONAL_LEARNING_ENABLED"
+      ]
+    },
+    {
+      "name": "goblin-dual-lineage-web-live",
+      "status": "active",
+      "render_blueprint": true,
+      "type": "web",
+      "branch": "main",
+      "endpoint": "https://goblin-dual-lineage-web-live.onrender.com",
+      "health_path": "/api/build",
+      "runtime_identity_path": "/api/runtime",
+      "environment_contract": [
+        "GOBLIN_DEPLOYMENT_ROLE",
+        "NEXT_PUBLIC_GOBLIN_DEPLOYMENT_ROLE",
+        "GOBLIN_API_BASE_URL",
+        "GOBLIN_API_KEY",
+        "GOBLIN_REVIEW_ACCESS_TOKEN",
+        "GOBLIN_OPERATOR_SECRET",
+        "GOBLIN_CONTROL_MUTATIONS_ENABLED"
+      ]
+    },
+    {
+      "name": "oracle-cloud-control-mcp",
+      "status": "active-bridge",
+      "render_blueprint": false,
+      "branch": "main",
+      "endpoint": "https://oracle-cloud-control-mcp.onrender.com",
+      "health_path": "/health",
+      "environment_contract": [
+        "OCI_CONFIG_B64",
+        "OCI_PRIVATE_KEY_B64",
+        "ORACLE_MCP_BEARER_TOKEN"
+      ],
+      "managed_by": "oracle-mcp-requirements.txt"
+    },
+    {
+      "name": "siliconflow-chatgpt-mcp",
+      "status": "active-bridge",
+      "render_blueprint": false,
+      "branch": "main",
+      "endpoint": "https://siliconflow-chatgpt-mcp.onrender.com",
+      "health_path": "/health",
+      "environment_contract": [
+        "SILICONFLOW_API_KEY",
+        "SILICONFLOW_MCP_BEARER_TOKEN"
+      ],
+      "managed_by": "integrations/siliconflow-mcp/requirements.txt"
+    }
+  ],
+  "public_services": [
+    {
+      "name": "ayahos-public-site",
+      "platform": "cloudflare-pages",
+      "project": "ayahos",
+      "branch": "main",
+      "role": "primary",
+      "endpoint": "https://ayahos.pages.dev",
+      "health_path": "/api/build",
+      "runtime_identity_path": "/api/build",
+      "source_path": "apps/site",
+      "backup_redirect_path": "/backup"
+    },
+    {
+      "name": "ayahos-public-site-rollback",
+      "platform": "vercel",
+      "project": "goblinos-dual-lineage",
+      "branch": "main",
+      "endpoint": "https://ayahos.vercel.app",
+      "health_path": "/api/build",
+      "runtime_identity_path": "/api/build",
+      "source_path": "apps/site",
+      "role": "rollback",
+      "deployment_policy": "frozen; production main builds intentionally skipped",
+      "redirect_from": "https://ayahos.pages.dev/backup"
+    }
+  ],
+  "retired_render_services": [
+    "goblin-dual-heritage-undermind",
+    "goblin-dual-lineage-overmind-stable",
+    "goblin-dual-lineage-overmind-tiny",
+    "goblin-dual-lineage-overmind-fast",
+    "goblin-dual-lineage-overmind-portable",
+    "goblin-dual-lineage-overmind-live",
+    "goblin-dual-lineage-overmind",
+    "goblin-dual-lineage-overmind-cpu",
+    "goblin-dual-lineage-web"
+  ]
+}

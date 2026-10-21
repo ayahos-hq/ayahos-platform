@@ -1,0 +1,284 @@
+// Octopus <-> GitHub bridge (Cloudflare Worker).
+//
+// Octopus cannot create releases for pull-request branches on its own (Git triggers only follow
+// the default branch) and it reports nothing to GitHub. This worker closes both gaps:
+//
+//   1. A signed GitHub `push` webhook creates an Octopus release for that exact branch and commit
+//      and deploys it to the verification environment, which runs the seven required gates in
+//      .octopus/deployment_process.ocl. The commit gets a `pending` status linking the task.
+//   2. A cron trigger polls each task it started and posts `success`, `failure` or `error`.
+//
+// The GitHub token and Octopus API key live only here, never in the Octopus process, so code on a
+// branch under test cannot read them. Pushes from other repositories, tag pushes and branch
+// deletions are ignored.
+
+const GITHUB_API = "https://api.github.com";
+const TASK_PREFIX = "task:";
+const TASK_TTL_SECONDS = 7 * 24 * 60 * 60;
+// Two subrequests per task (Octopus read + GitHub write) stay under the Workers free-plan cap.
+const MAX_TASKS_PER_TICK = 20;
+const SHA = /^[0-9a-f]{40}$/;
+const ZERO_SHA = "0".repeat(40);
+const MAX_REF_LENGTH = 255;
+const DESCRIPTION_LIMIT = 140;
+
+const REQUIRED_ENV = [
+  "GITHUB_REPOSITORY",
+  "GITHUB_WEBHOOK_SECRET",
+  "GITHUB_STATUS_TOKEN",
+  "OCTOPUS_URL",
+  "OCTOPUS_API_KEY",
+  "OCTOPUS_SPACE_ID",
+  "OCTOPUS_PROJECT",
+  "OCTOPUS_ENVIRONMENT",
+];
+
+export function missingConfig(env) {
+  const missing = REQUIRED_ENV.filter((name) => !env[name]);
+  if (!env.TASKS) missing.push("TASKS (KV binding)");
+  return missing;
+}
+
+function statusContext(env) {
+  return env.STATUS_CONTEXT || "octopus/verify";
+}
+
+function octopusBase(env) {
+  return env.OCTOPUS_URL.replace(/\/+$/, "");
+}
+
+export function taskUrl(env, taskId) {
+  return `${octopusBase(env)}/app#/${env.OCTOPUS_SPACE_ID}/tasks/${encodeURIComponent(taskId)}`;
+}
+
+function truncate(text, limit = DESCRIPTION_LIMIT) {
+  const clean = String(text ?? "").replace(/\s+/g, " ").trim();
+  return clean.length <= limit ? clean : `${clean.slice(0, limit - 1)}…`;
+}
+
+function hex(buffer) {
+  return [...new Uint8Array(buffer)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function constantTimeEqual(a, b) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i += 1) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+export async function verifySignature(secret, body, header) {
+  if (!header || !header.startsWith("sha256=")) return false;
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(body));
+  return constantTimeEqual(`sha256=${hex(mac)}`, header);
+}
+
+// Returns {ref, sha} for a push this bridge should verify, or {skip: reason}.
+export function pushTarget(env, payload) {
+  const repository = payload?.repository?.full_name;
+  if (typeof repository !== "string" || repository.toLowerCase() !== env.GITHUB_REPOSITORY.toLowerCase()) {
+    return { skip: "push is not for the configured repository" };
+  }
+  const ref = payload.ref;
+  if (typeof ref !== "string" || !ref.startsWith("refs/heads/") || ref.length > MAX_REF_LENGTH) {
+    return { skip: "not a branch push" };
+  }
+  const sha = payload.after;
+  if (payload.deleted || typeof sha !== "string" || !SHA.test(sha) || sha === ZERO_SHA) {
+    return { skip: "branch deletion or missing commit" };
+  }
+  return { ref, sha };
+}
+
+// Octopus task state -> GitHub commit status.
+export function statusForTask(task) {
+  switch (task.State) {
+    case "Success":
+      return { state: "success", description: "All required Octopus gates passed" };
+    case "Failed":
+      return { state: "failure", description: truncate(`Octopus gates failed: ${task.ErrorMessage || "see task log"}`) };
+    case "TimedOut":
+      return { state: "failure", description: "Octopus task timed out" };
+    case "Canceled":
+      return { state: "error", description: "Octopus task was canceled" };
+    default:
+      if (task.HasPendingInterruptions) {
+        return { state: "pending", description: "Octopus task is waiting on a manual intervention" };
+      }
+      return { state: "pending", description: `Octopus task ${String(task.State || "queued").toLowerCase()}` };
+  }
+}
+
+async function octopus(env, method, path, body) {
+  const response = await fetch(`${octopusBase(env)}${path}`, {
+    method,
+    headers: {
+      "X-Octopus-ApiKey": env.OCTOPUS_API_KEY,
+      Accept: "application/json",
+      ...(body ? { "Content-Type": "application/json" } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`Octopus ${method} ${path.split("?")[0]} returned ${response.status}: ${truncate(text, 300)}`);
+  }
+  return text ? JSON.parse(text) : {};
+}
+
+export async function postStatus(env, sha, { state, description, targetUrl }) {
+  const response = await fetch(`${GITHUB_API}/repos/${env.GITHUB_REPOSITORY}/statuses/${sha}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.GITHUB_STATUS_TOKEN}`,
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+      "User-Agent": "ayahos-octopus-github-bridge",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      state,
+      description: truncate(description),
+      context: statusContext(env),
+      ...(targetUrl ? { target_url: targetUrl } : {}),
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(`GitHub status for ${sha} returned ${response.status}: ${truncate(await response.text(), 300)}`);
+  }
+}
+
+// Create the release on the pushed commit, deploy it to the verification environment, and
+// record the task so the cron trigger can report its outcome.
+export async function startVerification(env, { ref, sha }) {
+  const space = env.OCTOPUS_SPACE_ID;
+  try {
+    const release = await octopus(env, "POST", `/api/${space}/releases/create/v1`, {
+      spaceId: space,
+      spaceIdOrName: space,
+      projectName: env.OCTOPUS_PROJECT,
+      gitRef: ref,
+      gitCommit: sha,
+      ignoreIfAlreadyExists: false,
+      ignoreChannelRules: false,
+    });
+    const deployment = await octopus(env, "POST", `/api/${space}/deployments/create/untenanted/v1`, {
+      spaceId: space,
+      spaceIdOrName: space,
+      projectName: env.OCTOPUS_PROJECT,
+      releaseVersion: release.ReleaseVersion,
+      environmentNames: [env.OCTOPUS_ENVIRONMENT],
+      forcePackageDownload: false,
+      forcePackageRedeployment: false,
+      updateVariableSnapshot: false,
+      // A failed gate must fail the task, not park it waiting for someone to click retry.
+      useGuidedFailure: false,
+    });
+    const taskId = deployment.DeploymentServerTasks?.[0]?.ServerTaskId;
+    if (!taskId) throw new Error("Octopus deployment response had no server task");
+    await env.TASKS.put(
+      `${TASK_PREFIX}${taskId}`,
+      JSON.stringify({ sha, ref, releaseVersion: release.ReleaseVersion, state: "pending" }),
+      { expirationTtl: TASK_TTL_SECONDS },
+    );
+    await postStatus(env, sha, {
+      state: "pending",
+      description: `Octopus release ${release.ReleaseVersion} queued`,
+      targetUrl: taskUrl(env, taskId),
+    });
+    return { taskId, releaseVersion: release.ReleaseVersion };
+  } catch (error) {
+    // Best effort: if GitHub itself is the failure, the original error is the one to surface.
+    await postStatus(env, sha, {
+      state: "error",
+      description: truncate(`Could not start Octopus verification: ${error.message}`),
+    }).catch(() => {});
+    throw error;
+  }
+}
+
+// One cron tick: report every recorded task whose state changed; forget finished ones.
+export async function reconcile(env) {
+  const listing = await env.TASKS.list({ prefix: TASK_PREFIX, limit: MAX_TASKS_PER_TICK });
+  const results = [];
+  for (const { name } of listing.keys) {
+    const taskId = name.slice(TASK_PREFIX.length);
+    try {
+      const record = JSON.parse((await env.TASKS.get(name)) ?? "null");
+      if (!record) continue;
+      const task = await octopus(env, "GET", `/api/${env.OCTOPUS_SPACE_ID}/tasks/${encodeURIComponent(taskId)}`);
+      const status = statusForTask(task);
+      const key = `${status.state}:${status.description}`;
+      if (key !== record.reported) {
+        await postStatus(env, record.sha, { ...status, targetUrl: taskUrl(env, taskId) });
+      }
+      if (status.state === "pending") {
+        if (key !== record.reported) {
+          await env.TASKS.put(name, JSON.stringify({ ...record, reported: key }), { expirationTtl: TASK_TTL_SECONDS });
+        }
+      } else {
+        await env.TASKS.delete(name);
+      }
+      results.push({ taskId, state: status.state });
+    } catch (error) {
+      // Leave the record for the next tick; one bad task must not block the others.
+      console.error(`reconcile ${taskId}: ${error.message}`);
+      results.push({ taskId, error: error.message });
+    }
+  }
+  return results;
+}
+
+async function handleWebhook(request, env, ctx) {
+  const body = await request.text();
+  if (!(await verifySignature(env.GITHUB_WEBHOOK_SECRET, body, request.headers.get("X-Hub-Signature-256")))) {
+    return new Response("invalid signature\n", { status: 401 });
+  }
+  const event = request.headers.get("X-GitHub-Event");
+  if (event === "ping") return new Response("pong\n");
+  if (event !== "push") return new Response(`ignored event ${event}\n`, { status: 202 });
+
+  let payload;
+  try {
+    payload = JSON.parse(body);
+  } catch {
+    return new Response("invalid JSON\n", { status: 400 });
+  }
+  const target = pushTarget(env, payload);
+  if (target.skip) return new Response(`ignored: ${target.skip}\n`, { status: 202 });
+
+  // GitHub gives a webhook ten seconds; release creation can take longer, so finish after replying.
+  ctx.waitUntil(
+    startVerification(env, target).catch((error) => console.error(`start ${target.sha}: ${error.message}`)),
+  );
+  return new Response(`verifying ${target.sha}\n`, { status: 202 });
+}
+
+export default {
+  async fetch(request, env, ctx) {
+    const { pathname } = new URL(request.url);
+    const missing = missingConfig(env);
+    if (pathname === "/healthz") {
+      return missing.length
+        ? new Response(`missing configuration: ${missing.join(", ")}\n`, { status: 503 })
+        : new Response("ok\n");
+    }
+    if (pathname === "/github" && request.method === "POST") {
+      if (missing.length) return new Response("bridge is not configured\n", { status: 503 });
+      return handleWebhook(request, env, ctx);
+    }
+    return new Response("not found\n", { status: 404 });
+  },
+
+  async scheduled(_controller, env, ctx) {
+    if (missingConfig(env).length) return;
+    ctx.waitUntil(reconcile(env));
+  },
+};
