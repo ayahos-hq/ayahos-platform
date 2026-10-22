@@ -1,7 +1,7 @@
 # AyahOS sandbox job image (Python only). Build from the repository root:
 #   docker build -f deploy/sandbox/Dockerfile -t ayahos/sandbox-python:local .
 # Deploy it by digest (AYAHOS_SANDBOX_IMAGE=...@sha256:...); the worker refuses tags.
-FROM python:3.12-slim@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1
+FROM python:3.15-slim@sha256:490c3463f3766091067a01528e6be3208104eebcca11a306beab5de9672ee893
 
 COPY deploy/sandbox/requirements.lock /tmp/requirements.lock
 RUN set -eux; \

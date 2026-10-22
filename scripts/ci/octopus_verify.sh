@@ -20,7 +20,7 @@ octopus_var() {
 # commit through the environment so release-evidence jobs can still bind their output to the exact
 # package under test.
 LIVE_EXPECTED_SHA="${LIVE_EXPECTED_SHA:-$(octopus_var Octopus.Release.Git.CommitHash)}"
-if [[ "$LIVE_EXPECTED_SHA" =~ ^[0-9a-fA-F]{7,64}$ ]]; then
+if [[ "$LIVE_EXPECTED_SHA" =~ ^([0-9a-fA-F]{40}|[0-9a-fA-F]{64})$ ]]; then
     export LIVE_EXPECTED_SHA
 else
     unset LIVE_EXPECTED_SHA

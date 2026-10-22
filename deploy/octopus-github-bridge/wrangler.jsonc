@@ -1,7 +1,7 @@
 {
   // Octopus <-> GitHub bridge. Deploy with `npx wrangler@4 deploy` from this directory; see README.md.
-  // Secrets (GITHUB_WEBHOOK_SECRET, GITHUB_STATUS_TOKEN, OCTOPUS_API_KEY) are set with
-  // `wrangler secret put` and never committed.
+  // Secrets (GITHUB_WEBHOOK_SECRET, OCTOPUS_API_KEY, and the optional GITHUB_STATUS_TOKEN that
+  // enables the octopus/verify commit status) are set with `wrangler secret put` and never committed.
   "name": "ayahos-octopus-github-bridge",
   "main": "src/worker.js",
   "compatibility_date": "2026-10-01",

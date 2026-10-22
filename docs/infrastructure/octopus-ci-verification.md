@@ -89,8 +89,10 @@ posts nothing to GitHub, so neither pull requests nor `main` get a result on the
 [Octopus to GitHub bridge](../../deploy/octopus-github-bridge/README.md) closes that gap: a signed
 GitHub `push` webhook makes it create a release on the pushed branch and commit and deploy it to
 the verification environment, and a cron trigger reports the task outcome as the commit status
-`octopus/verify`. Require that status on `main`. Its setup steps (KV namespace, Octopus service
-account key, GitHub token, webhook, branch rule) need the owner's accounts.
+`octopus/verify` when `GITHUB_STATUS_TOKEN` is configured. Require that status on `main`. Without
+the token (it is optional) no commit status is posted; the outcome is only readable, read-only and
+unauthenticated, at `GET /status/<sha>` on the Worker. Its setup steps (KV namespace, Octopus
+service account key, GitHub token, webhook, branch rule) need the owner's accounts.
 
 ## Post-deploy live verification
 

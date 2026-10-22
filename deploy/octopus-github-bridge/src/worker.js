@@ -8,12 +8,18 @@
 //      .octopus/deployment_process.ocl. The commit gets a `pending` status linking the task.
 //   2. A cron trigger polls each task it started and posts `success`, `failure` or `error`.
 //
-// The GitHub token and Octopus API key live only here, never in the Octopus process, so code on a
-// branch under test cannot read them. Pushes from other repositories, tag pushes and branch
-// deletions are ignored.
+// The latest state per commit is also kept in KV and served read-only at GET /status/<sha>, so a
+// consumer (see README.md) can read the outcome without any GitHub token in the Worker.
+// GITHUB_STATUS_TOKEN is optional: when it is set the Worker also posts commit statuses itself,
+// and that post never depends on the KV write succeeding.
+//
+// The Octopus API key and the optional GitHub token live only here, never in the Octopus process,
+// so code on a branch under test cannot read them. Pushes from other repositories, tag pushes and
+// branch deletions are ignored.
 
 const GITHUB_API = "https://api.github.com";
 const TASK_PREFIX = "task:";
+const RESULT_PREFIX = "result:";
 const TASK_TTL_SECONDS = 7 * 24 * 60 * 60;
 // Two subrequests per task (Octopus read + GitHub write) stay under the Workers free-plan cap.
 const MAX_TASKS_PER_TICK = 20;
@@ -25,7 +31,6 @@ const DESCRIPTION_LIMIT = 140;
 const REQUIRED_ENV = [
   "GITHUB_REPOSITORY",
   "GITHUB_WEBHOOK_SECRET",
-  "GITHUB_STATUS_TOKEN",
   "OCTOPUS_URL",
   "OCTOPUS_API_KEY",
   "OCTOPUS_SPACE_ID",
@@ -155,6 +160,27 @@ export async function postStatus(env, sha, { state, description, targetUrl }) {
   }
 }
 
+// Keep the latest state per commit for GET /status/<sha>, and post it to GitHub when a token is set.
+// With a token the GitHub post is authoritative: a KV failure is logged but never blocks it, and a
+// post failure still propagates so reconcile keeps the task for the next tick. Without a token the
+// KV record is the only channel, so its failure propagates instead.
+async function reportStatus(env, sha, status) {
+  let recordError = null;
+  try {
+    await env.TASKS.put(`${RESULT_PREFIX}${sha}`, JSON.stringify({ state: status.state }), {
+      expirationTtl: TASK_TTL_SECONDS,
+    });
+  } catch (error) {
+    recordError = error;
+  }
+  if (env.GITHUB_STATUS_TOKEN) {
+    if (recordError) console.error(`result ${sha}: ${recordError.message}`);
+    await postStatus(env, sha, status);
+  } else if (recordError) {
+    throw recordError;
+  }
+}
+
 // Create the release on the pushed commit, deploy it to the verification environment, and
 // record the task so the cron trigger can report its outcome.
 export async function startVerification(env, { ref, sha }) {
@@ -188,7 +214,7 @@ export async function startVerification(env, { ref, sha }) {
       JSON.stringify({ sha, ref, releaseVersion: release.ReleaseVersion, state: "pending" }),
       { expirationTtl: TASK_TTL_SECONDS },
     );
-    await postStatus(env, sha, {
+    await reportStatus(env, sha, {
       state: "pending",
       description: `Octopus release ${release.ReleaseVersion} queued`,
       targetUrl: taskUrl(env, taskId),
@@ -196,7 +222,7 @@ export async function startVerification(env, { ref, sha }) {
     return { taskId, releaseVersion: release.ReleaseVersion };
   } catch (error) {
     // Best effort: if GitHub itself is the failure, the original error is the one to surface.
-    await postStatus(env, sha, {
+    await reportStatus(env, sha, {
       state: "error",
       description: truncate(`Could not start Octopus verification: ${error.message}`),
     }).catch(() => {});
@@ -217,7 +243,7 @@ export async function reconcile(env) {
       const status = statusForTask(task);
       const key = `${status.state}:${status.description}`;
       if (key !== record.reported) {
-        await postStatus(env, record.sha, { ...status, targetUrl: taskUrl(env, taskId) });
+        await reportStatus(env, record.sha, { ...status, targetUrl: taskUrl(env, taskId) });
       }
       if (status.state === "pending") {
         if (key !== record.reported) {
@@ -261,10 +287,34 @@ async function handleWebhook(request, env, ctx) {
   return new Response(`verifying ${target.sha}\n`, { status: 202 });
 }
 
+const RESULT_STATES = new Set(["pending", "success", "failure", "error"]);
+const NO_STORE = { "Cache-Control": "no-store" };
+
+// Only the state is exposed: Octopus error text and task links stay out of this unauthenticated route.
+// A missing, unparsable or unrecognised record is "unknown", never a guess.
+async function handleStatus(env, sha) {
+  if (!SHA.test(sha)) return new Response("invalid commit\n", { status: 400, headers: NO_STORE });
+  let record = null;
+  try {
+    record = JSON.parse((await env.TASKS.get(`${RESULT_PREFIX}${sha}`)) ?? "null");
+  } catch {
+    record = null;
+  }
+  if (!record || !RESULT_STATES.has(record.state)) {
+    return new Response("unknown commit\n", { status: 404, headers: NO_STORE });
+  }
+  return Response.json({ sha, state: record.state }, { headers: NO_STORE });
+}
+
 export default {
   async fetch(request, env, ctx) {
     const { pathname } = new URL(request.url);
     const missing = missingConfig(env);
+    const statusMatch = pathname.match(/^\/status\/([^/]+)$/);
+    if (statusMatch && request.method === "GET") {
+      if (missing.length) return new Response("bridge is not configured\n", { status: 503 });
+      return handleStatus(env, statusMatch[1]);
+    }
     if (pathname === "/healthz") {
       return missing.length
         ? new Response(`missing configuration: ${missing.join(", ")}\n`, { status: 503 })

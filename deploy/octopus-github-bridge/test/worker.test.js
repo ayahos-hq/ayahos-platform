@@ -17,12 +17,16 @@ const SECRET = "webhook-secret";
 class MemoryKV {
   constructor() {
     this.store = new Map();
+    this.options = new Map();
+    this.failPutFor = null;
   }
   async get(key) {
     return this.store.has(key) ? this.store.get(key) : null;
   }
-  async put(key, value) {
+  async put(key, value, options) {
+    if (this.failPutFor?.test(key)) throw new Error("KV PUT failed: 429");
     this.store.set(key, value);
+    this.options.set(key, options);
   }
   async delete(key) {
     this.store.delete(key);
@@ -46,6 +50,10 @@ function makeEnv(overrides = {}) {
     TASKS: new MemoryKV(),
     ...overrides,
   };
+}
+
+function taskKeys(env) {
+  return [...env.TASKS.store.keys()].filter((key) => key.startsWith("task:"));
 }
 
 function pushPayload(overrides = {}) {
@@ -172,7 +180,33 @@ describe("startVerification", () => {
     const status = calls.at(-1);
     assert.equal(status.pathname, STATUS_PATH);
     assert.equal(status.body.state, "error");
-    assert.equal(env.TASKS.store.size, 0);
+    assert.deepEqual(taskKeys(env), []);
+    assert.deepEqual(JSON.parse(await env.TASKS.get(`result:${SHA}`)), { state: "error" });
+  });
+
+  it("records the result without any GitHub call when no token is configured", async () => {
+    const env = makeEnv({ GITHUB_STATUS_TOKEN: undefined });
+    const calls = mockFetch(OCTOPUS_ROUTES);
+    await startVerification(env, { ref: "refs/heads/feature", sha: SHA });
+    assert.deepEqual(calls.map((call) => call.origin), ["https://ayahos.octopus.app", "https://ayahos.octopus.app"]);
+    assert.deepEqual(JSON.parse(await env.TASKS.get(`result:${SHA}`)), { state: "pending" });
+    assert.equal(env.TASKS.options.get(`result:${SHA}`).expirationTtl, 7 * 24 * 60 * 60);
+  });
+
+  it("still posts the GitHub status when the KV result write fails", async () => {
+    const env = makeEnv();
+    env.TASKS.failPutFor = /^result:/;
+    const calls = mockFetch(OCTOPUS_ROUTES);
+    await startVerification(env, { ref: "refs/heads/feature", sha: SHA });
+    assert.equal(calls.at(-1).pathname, STATUS_PATH);
+    assert.equal(calls.at(-1).body.state, "pending");
+  });
+
+  it("surfaces a KV result write failure when there is no token to fall back on", async () => {
+    const env = makeEnv({ GITHUB_STATUS_TOKEN: undefined });
+    env.TASKS.failPutFor = /^result:/;
+    mockFetch(OCTOPUS_ROUTES);
+    await assert.rejects(startVerification(env, { ref: "refs/heads/feature", sha: SHA }), /KV PUT failed/);
   });
 });
 
@@ -201,7 +235,18 @@ describe("reconcile", () => {
     });
     assert.deepEqual(await reconcile(env), [{ taskId: "ServerTasks-77", state: "failure" }]);
     assert.equal(calls.at(-1).body.state, "failure");
-    assert.equal(env.TASKS.store.size, 0);
+    assert.deepEqual(taskKeys(env), []);
+    assert.deepEqual(JSON.parse(await env.TASKS.get(`result:${SHA}`)), { state: "failure" });
+  });
+
+  it("finishes without GitHub when no token is configured", async () => {
+    const tokenless = makeEnv({ GITHUB_STATUS_TOKEN: undefined });
+    await tokenless.TASKS.put("task:ServerTasks-77", JSON.stringify({ sha: SHA, ref: "refs/heads/feature", state: "pending" }));
+    const calls = mockFetch({ "GET /api/Spaces-1/tasks/ServerTasks-77": { json: { State: "Success" } } });
+    assert.deepEqual(await reconcile(tokenless), [{ taskId: "ServerTasks-77", state: "success" }]);
+    assert.ok(calls.every((call) => call.origin === "https://ayahos.octopus.app"));
+    assert.deepEqual(taskKeys(tokenless), []);
+    assert.deepEqual(JSON.parse(await tokenless.TASKS.get(`result:${SHA}`)), { state: "success" });
   });
 
   it("keeps the task for the next tick when GitHub is unavailable", async () => {
@@ -212,6 +257,28 @@ describe("reconcile", () => {
     const [result] = await reconcile(env);
     assert.match(result.error, /502/);
     assert.ok(env.TASKS.store.has("task:ServerTasks-77"));
+    assert.deepEqual(JSON.parse(await env.TASKS.get(`result:${SHA}`)), { state: "success" });
+  });
+
+  it("posts the final GitHub status and forgets the task even when the KV result write fails", async () => {
+    env.TASKS.failPutFor = /^result:/;
+    const calls = mockFetch({
+      "GET /api/Spaces-1/tasks/ServerTasks-77": { json: { State: "Success" } },
+      [`POST ${STATUS_PATH}`]: { status: 201, json: {} },
+    });
+    assert.deepEqual(await reconcile(env), [{ taskId: "ServerTasks-77", state: "success" }]);
+    assert.equal(calls.at(-1).body.state, "success");
+    assert.deepEqual(taskKeys(env), []);
+  });
+
+  it("keeps the task for the next tick when the KV result write fails and there is no token", async () => {
+    const tokenless = makeEnv({ GITHUB_STATUS_TOKEN: undefined });
+    await tokenless.TASKS.put("task:ServerTasks-77", JSON.stringify({ sha: SHA, ref: "refs/heads/feature", state: "pending" }));
+    tokenless.TASKS.failPutFor = /^result:/;
+    mockFetch({ "GET /api/Spaces-1/tasks/ServerTasks-77": { json: { State: "Success" } } });
+    const [result] = await reconcile(tokenless);
+    assert.match(result.error, /KV PUT failed/);
+    assert.deepEqual(taskKeys(tokenless), ["task:ServerTasks-77"]);
   });
 });
 
@@ -262,5 +329,72 @@ describe("fetch handler", () => {
     assert.match(text, /OCTOPUS_API_KEY/);
     assert.doesNotMatch(text, /gh-token|webhook-secret/);
     assert.deepEqual(missingConfig(makeEnv()), []);
+  });
+
+  it("is healthy without a GitHub token", async () => {
+    const env = makeEnv({ GITHUB_STATUS_TOKEN: undefined });
+    assert.deepEqual(missingConfig(env), []);
+    const response = await worker.fetch(new Request("https://bridge.example/healthz"), env, ctx());
+    assert.equal(response.status, 200);
+  });
+
+  describe("GET /status/<sha>", () => {
+    const get = (env, path) => worker.fetch(new Request(`https://bridge.example${path}`), env, ctx());
+
+    it("returns only the recorded state", async () => {
+      const env = makeEnv();
+      await env.TASKS.put(`result:${SHA}`, JSON.stringify({ state: "failure", description: "secret detail" }));
+      const response = await get(env, `/status/${SHA}`);
+      assert.equal(response.status, 200);
+      assert.equal(response.headers.get("Cache-Control"), "no-store");
+      assert.deepEqual(await response.json(), { sha: SHA, state: "failure" });
+    });
+
+    it("404s for an unknown commit and 400s for a malformed one, never cacheable", async () => {
+      const env = makeEnv();
+      const unknown = await get(env, `/status/${"b".repeat(40)}`);
+      assert.equal(unknown.status, 404);
+      assert.equal(unknown.headers.get("Cache-Control"), "no-store");
+      const malformed = await get(env, "/status/HEAD");
+      assert.equal(malformed.status, 400);
+      assert.equal(malformed.headers.get("Cache-Control"), "no-store");
+      assert.equal((await get(env, `/status/${"A".repeat(40)}`)).status, 400);
+    });
+
+    it("treats a corrupt, empty or unrecognised record as unknown", async () => {
+      const env = makeEnv();
+      for (const value of ["{not json", "{}", JSON.stringify({ state: "weird" }), JSON.stringify({ state: 1 }), "null"]) {
+        await env.TASKS.put(`result:${SHA}`, value);
+        assert.equal((await get(env, `/status/${SHA}`)).status, 404, value);
+      }
+    });
+
+    it("only answers GET on the exact /status/<sha> path", async () => {
+      const env = makeEnv();
+      await env.TASKS.put(`result:${SHA}`, JSON.stringify({ state: "success" }));
+      assert.equal((await get(env, `/status/${SHA}`)).status, 200);
+      for (const method of ["POST", "PUT", "DELETE", "HEAD"]) {
+        const response = await worker.fetch(new Request(`https://bridge.example/status/${SHA}`, { method }), env, ctx());
+        assert.equal(response.status, 404, method);
+      }
+      assert.equal((await get(env, `/status/${SHA}/`)).status, 404);
+      assert.equal((await get(env, `/status/${SHA}/extra`)).status, 404);
+    });
+
+    it("reports an unconfigured bridge", async () => {
+      assert.equal((await get(makeEnv({ OCTOPUS_API_KEY: "" }), `/status/${SHA}`)).status, 503);
+    });
+
+    it("tracks a commit from pending to its final state end to end", async () => {
+      const env = makeEnv({ GITHUB_STATUS_TOKEN: undefined });
+      mockFetch({
+        ...OCTOPUS_ROUTES,
+        "GET /api/Spaces-1/tasks/ServerTasks-77": { json: { State: "Success" } },
+      });
+      await startVerification(env, { ref: "refs/heads/feature", sha: SHA });
+      assert.equal((await (await get(env, `/status/${SHA}`)).json()).state, "pending");
+      await reconcile(env);
+      assert.equal((await (await get(env, `/status/${SHA}`)).json()).state, "success");
+    });
   });
 });
