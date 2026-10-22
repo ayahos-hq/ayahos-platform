@@ -2,9 +2,9 @@
   "schema_version": 1,
   "state": "provisional-not-deployed",
   "source_repository": "fuaadabdullah/AyahOS_Dual_Lineage",
-  "source_commit": "4a85fece08d24299211a5c11fcae63e3f7fc6901",
+  "source_commit": "df20951d3ba7e8e58effb4c06b699322739e28a5",
   "target_repository": "ayahos-hq/ayahos-platform",
-  "source_file_count": 49,
+  "source_file_count": 50,
   "source_files": {
     ".octopus/deployment_process.ocl": {
       "sha": "10f95921f4199a69c09e40fe313fa46bcbd579cd",
@@ -22,12 +22,12 @@
       "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
       "mode": "100644"
     },
-    "deploy/octopus-github-bridge/package.json": {
-      "sha": "094aa89420109f49d3020f113aeee4b9a50221d4",
-      "mode": "100644"
-    },
     "deploy/octopus-github-bridge/README.md": {
       "sha": "a5404553ca9a6e954d566257f00a391a5bb48104",
+      "mode": "100644"
+    },
+    "deploy/octopus-github-bridge/package.json": {
+      "sha": "094aa89420109f49d3020f113aeee4b9a50221d4",
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/src/worker.js": {
@@ -70,20 +70,20 @@
       "sha": "fd0ac0c863d67e688a55927820b57b88e3badf61",
       "mode": "100644"
     },
-    "deploy/sandbox/ayahos-sandbox-worker.service": {
-      "sha": "3d9ba2a44a85aa781ffb722387f5f3eeb4cbfdc3",
-      "mode": "100644"
-    },
     "deploy/sandbox/Caddyfile.example": {
       "sha": "2ec06028ca62b43131d54d66c961b4e59f755ce9",
       "mode": "100644"
     },
-    "deploy/sandbox/daemon.json": {
-      "sha": "03b489803d506508a97054cecb1cb55f7fb995d3",
-      "mode": "100644"
-    },
     "deploy/sandbox/Dockerfile": {
       "sha": "f28d74a55fd7f658141a077d115ea2a548e9c025",
+      "mode": "100644"
+    },
+    "deploy/sandbox/ayahos-sandbox-worker.service": {
+      "sha": "3d9ba2a44a85aa781ffb722387f5f3eeb4cbfdc3",
+      "mode": "100644"
+    },
+    "deploy/sandbox/daemon.json": {
+      "sha": "03b489803d506508a97054cecb1cb55f7fb995d3",
       "mode": "100644"
     },
     "deploy/sandbox/requirements.lock": {
@@ -96,6 +96,10 @@
     },
     "deploy/service-inventory.json": {
       "sha": "54c0e31aa8bd5dcd70bd817e536f937cf0108141",
+      "mode": "100644"
+    },
+    "docs/infrastructure/cloudflare-agent-setup.md": {
+      "sha": "889ec140646f99cfd53ac61eb6d901390fbb433a",
       "mode": "100644"
     },
     "docs/infrastructure/cloudflare-pages.md": {
@@ -199,7 +203,7 @@
       "mode": "100644"
     },
     "scripts/ci/verify.sh": {
-      "sha": "37b548204b7d561b51ecca4ffb3b3c5e6bbd5876",
+      "sha": "89e107b54f541d3705a178e23dc4762e5a8ceb6c",
       "mode": "100644"
     }
   },
@@ -212,9 +216,9 @@
   ],
   "verification": {
     "source_tree_sha": "verified",
-    "bridge_tests": "pending CI",
-    "shell_syntax": "pending CI",
-    "octopus_structure": "pending CI",
+    "bridge_tests": "pending CI (Phase 5 sync to df20951)",
+    "shell_syntax": "pending CI (Phase 5 sync to df20951)",
+    "octopus_structure": "pending CI (Phase 5 sync to df20951)",
     "octopus_live": "not run",
     "release_cutover": "not authorized"
   }
