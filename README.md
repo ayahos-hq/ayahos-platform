@@ -4,8 +4,8 @@
 
 ## Pinned import
 
-- Original: `fuaadabdullah/AyahOS_Dual_Lineage` at `4a85fece08d24299211a5c11fcae63e3f7fc6901`.
-- **49 source blobs** copied exactly with original executable modes under `.octopus/`, `deploy/`, `scripts/ci/`, `docs/infrastructure/`; LICENSE and NOTICE carried over.
+- Original: `fuaadabdullah/AyahOS_Dual_Lineage` at `df20951d3ba7e8e58effb4c06b699322739e28a5`.
+- **50 source blobs** copied exactly with original executable modes under `.octopus/`, `deploy/`, `scripts/ci/`, `docs/infrastructure/`; LICENSE and NOTICE carried over.
 - Source file identities and Git modes are recorded in `SOURCE-PROVENANCE.json`.
 - This snapshot **retains legacy monorepo-relative script paths and service references**; it is not a deployable multi-repo pipeline.
 - Existing Cloudflare Pages and Vercel rollback remain unchanged; Overmind/Undermind/Spine authority stays in the source backend.

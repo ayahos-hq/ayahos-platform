@@ -80,6 +80,7 @@ PY
 run_consistency_checks() {
   ruby scripts/check_service_inventory.rb
   python scripts/verify_weight_inventory.py
+  python scripts/minilm_drift_check.py check
   python -m unittest discover -s scripts/migration -p 'test_*.py'
   python scripts/migration/repositories.py
 }
