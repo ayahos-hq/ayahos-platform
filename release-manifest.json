@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "release_status": "candidate",
+  "release_id": "hq-a7ef41f-20261023",
+  "source_authority": "fuaadabdullah/AyahOS_Dual_Lineage",
+  "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
+  "components": {
+    "ayahos-site": {
+      "repository": "ayahos-hq/ayahos-site",
+      "git_sha": "78c53df44aaf26514468ffcb4401a7af18401f22",
+      "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
+      "artifact_sha256": null
+    },
+    "ayahos-core": {
+      "repository": "ayahos-hq/ayahos-core",
+      "git_sha": "5b3a7e6ad2a553ceeaa3b10efc23e2a43c8c0ee8",
+      "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
+      "artifact_sha256": null
+    },
+    "ayahos-admin": {
+      "repository": "ayahos-hq/ayahos-admin",
+      "git_sha": "b67833f1f0b1994f96a4efcf707054b06f9e7e57",
+      "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
+      "artifact_sha256": null
+    },
+    "ayahos-platform": {
+      "repository": "ayahos-hq/ayahos-platform",
+      "git_sha": "7c13612732cfd5e70d0cb3df947f6d307d14f87c",
+      "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
+      "artifact_sha256": null
+    },
+    "ayahos-workloads": {
+      "repository": "ayahos-hq/ayahos-workloads",
+      "git_sha": "3f69d6eaee02e88d571c818b78d400ad595c57bc",
+      "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
+      "artifact_sha256": null
+    }
+  },
+  "compatibility": {
+    "api_contract": "python-authority-ruby-boundary-v1",
+    "database_schema": 22,
+    "artifact_contract_status": "pending-independent-build",
+    "cross_repository_acceptance": "pending"
+  },
+  "acceptance": {
+    "octopus_exact_sha": "pending",
+    "database_restore_rehearsal": "pending",
+    "authenticated_live_smoke": "pending",
+    "rollback_rehearsal": "pending"
+  }
+}
