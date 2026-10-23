@@ -26,6 +26,33 @@ function validSearchBody(body) {
   return true;
 }
 
+// Bound Google responses while streaming, not after buffering them into memory.
+async function parseBoundedJson(response) {
+  const limit = 1048576;
+  const length = Number(response.headers?.get?.('content-length'));
+  if (Number.isFinite(length) && length > limit) return null;
+  if (response.body?.getReader) {
+    const reader = response.body.getReader();
+    const chunks = [];
+    let bytes = 0;
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (!(value instanceof Uint8Array)) return null;
+        bytes += value.byteLength;
+        if (bytes > limit) { await reader.cancel(); return null; }
+        chunks.push(Buffer.from(value));
+      }
+    } finally { reader.releaseLock(); }
+    try { return JSON.parse(Buffer.concat(chunks, bytes).toString('utf8')); } catch { return null; }
+  }
+  // Compatibility with lightweight fetch stubs lacking a ReadableStream.
+  const raw = await response.text();
+  if (Buffer.byteLength(raw, 'utf8') > limit) return null;
+  try { return JSON.parse(raw); } catch { return null; }
+}
+
 async function postGoogleJson(url, headers, body) {
   const response = await fetch(url, {
     method: 'POST',
@@ -35,9 +62,7 @@ async function postGoogleJson(url, headers, body) {
     body,
   });
   if (!response.ok) return null;
-  const raw = await response.text();
-  if (raw.length > 1048576) return null;
-  try { return JSON.parse(raw); } catch { return null; }
+  return parseBoundedJson(response);
 }
 
 async function handler(req, res) {
