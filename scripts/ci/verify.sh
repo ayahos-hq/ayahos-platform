@@ -159,6 +159,8 @@ case "${1:-}" in
     (cd apps/ruby_worker && bundle exec ruby -Itest -e 'Dir["test/**/*_test.rb"].sort.each { |file| require_relative file }')
     ruby scripts/test/live_release_smoke_test.rb
     ruby scripts/test/smoke_support_test.rb
+    ruby scripts/test/datadog_dashboard_test.rb
+    ruby scripts/datadog_dashboard.rb validate
     ;;
   ml)
     python -m pip install 'torch>=2.5,<3' --index-url https://download.pytorch.org/whl/cpu

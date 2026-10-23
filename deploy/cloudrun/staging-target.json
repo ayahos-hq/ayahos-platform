@@ -1,0 +1,16 @@
+{
+  "project_id": "project-eec9b975-b6bd-4b41-bad",
+  "region": "us-central1",
+  "service": "ayahos-staging-api",
+  "image": "REPLACE_WITH_AYAHOS_IMAGE_AT_SHA256_DIGEST",
+  "ingress": "internal",
+  "allow_unauthenticated": false,
+  "min_instances": 0,
+  "max_instances": 1,
+  "cpu": "1",
+  "memory": "512Mi",
+  "concurrency": 2,
+  "timeout_seconds": 60,
+  "request_based_billing": true,
+  "no_traffic": true
+}

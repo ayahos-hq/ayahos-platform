@@ -1,0 +1,11 @@
+# Run explicitly with gcloud builds submit --config deploy/cloudrun/cloudbuild.yaml
+# --substitutions _IMAGE=<artifact-registry-image> .
+# No deploy step: building cannot change live traffic.
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ['build', '--file', 'Dockerfile.cloudrun', '--tag', '${_IMAGE}', '.']
+  - name: gcr.io/cloud-builders/docker
+    args: ['push', '${_IMAGE}']
+images: ['${_IMAGE}']
+options:
+  logging: CLOUD_LOGGING_ONLY

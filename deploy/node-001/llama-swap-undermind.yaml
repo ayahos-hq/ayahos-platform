@@ -1,0 +1,16 @@
+# Alternative to start-undermind.ps1 — only if Node 1's llama-swap is the
+# sole server on the desktop. Add this model entry to the existing
+# llama-swap config.yaml and point the undermind-001 node agent (or
+# DUAL_LINEAGE_UNDERMIND_URL) at the llama-swap port instead of 8082.
+#
+# Trade-off: llama-swap loads one model at a time per group by default, so
+# a cognitive request can evict the LFM and the next critic call pays a
+# cold load. The standalone server on :8082 avoids that. Prefer it.
+models:
+  lfm2.5-1.2b:
+    name: "LiquidAI LFM2.5-1.2B-Instruct (Undermind critic)"
+    cmd: >
+      llama-server --host 127.0.0.1 --port ${PORT}
+      -m C:\Users\Admin\models\lfm2.5-1.2b.gguf
+      -ngl 99 -c 8192 --jinja
+    ttl: 0

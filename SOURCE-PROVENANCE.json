@@ -2,9 +2,9 @@
   "schema_version": 1,
   "state": "provisional-not-deployed",
   "source_repository": "fuaadabdullah/AyahOS_Dual_Lineage",
-  "source_commit": "df20951d3ba7e8e58effb4c06b699322739e28a5",
+  "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
   "target_repository": "ayahos-hq/ayahos-platform",
-  "source_file_count": 50,
+  "source_file_count": 61,
   "source_files": {
     ".octopus/deployment_process.ocl": {
       "sha": "10f95921f4199a69c09e40fe313fa46bcbd579cd",
@@ -22,8 +22,48 @@
       "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
       "mode": "100644"
     },
+    "deploy/cloudrun/README.md": {
+      "sha": "a1f899373fe2ca20219cbbcca0fdf8c8f834e632",
+      "mode": "100644"
+    },
+    "deploy/cloudrun/cloudbuild.yaml": {
+      "sha": "3749d922013d9b7633fb49ccb6daeb58dc9ce98d",
+      "mode": "100644"
+    },
+    "deploy/cloudrun/staging-env.yaml": {
+      "sha": "d769b4420540a1eca8c7b9a6fffa3e3067d263a9",
+      "mode": "100644"
+    },
+    "deploy/cloudrun/staging-target.json": {
+      "sha": "1fe9ad96f799b5aa5e53a18f4f7f3222e5152263",
+      "mode": "100644"
+    },
+    "deploy/datadog/README.md": {
+      "sha": "a23b92cade94b6d59b0e6d7a806d823f18ad9b3d",
+      "mode": "100644"
+    },
+    "deploy/datadog/ayahos-dashboard.json": {
+      "sha": "4300ac78982d0fda011d5ee10c2521ebb78798d2",
+      "mode": "100644"
+    },
+    "deploy/node-001/llama-swap-undermind.yaml": {
+      "sha": "76dc2689ef3d3e4b195618b318b2a974599b045a",
+      "mode": "100644"
+    },
+    "deploy/node-001/run-liquid-undermind.ps1": {
+      "sha": "1e21b14e3c8b20d378912ef2bee4ddf9cc7cbb99",
+      "mode": "100644"
+    },
+    "deploy/node-001/start-undermind.ps1": {
+      "sha": "20612ff2107f511d553b682e3e96c1ad1a0cfeb3",
+      "mode": "100644"
+    },
+    "deploy/node-001/undermind-001.env.example": {
+      "sha": "3b7e04f17f397fd6fb17c2815911b3c9c9a0232a",
+      "mode": "100644"
+    },
     "deploy/octopus-github-bridge/README.md": {
-      "sha": "a5404553ca9a6e954d566257f00a391a5bb48104",
+      "sha": "0fc056fd3e9d6622abbdf070236004f37984aa76",
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/package.json": {
@@ -31,15 +71,15 @@
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/src/worker.js": {
-      "sha": "c88e2840985fd51fc783db76cf7e1256877b0d3f",
+      "sha": "da3265bc0d3d45a69022d4d31ca5d68ff29f6a35",
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/test/worker.test.js": {
-      "sha": "6e7756095287b7e3fcc1c1a3c40edbb80f359b10",
+      "sha": "c83bc96ad976f043e7479f79213b1bf9ff8f2db6",
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/wrangler.jsonc": {
-      "sha": "a479a5600935b589344abc912a6ff71223c409cf",
+      "sha": "00de8cd43b3a74f307286350a34b476505aebbbf",
       "mode": "100644"
     },
     "deploy/oracle/goblin-learning-worker.service": {
@@ -47,7 +87,7 @@
       "mode": "100644"
     },
     "deploy/oracle/goblin-oracle-node.service": {
-      "sha": "27cda919d08eb0f48cda8960f1dcdb136a844077",
+      "sha": "4c47ae617c7a7a507f3bb1ad03d9d258d6e028a4",
       "mode": "100644"
     },
     "deploy/oracle/goblin-workflow-scheduler.service": {
@@ -63,7 +103,7 @@
       "mode": "100644"
     },
     "deploy/oracle/oracle-node.env.example": {
-      "sha": "0a4ed6ea41a5d04a0ae4cf99a505b7f8e3c4cea1",
+      "sha": "93ca8b4d3308054e0f33e3cd80db586fc55fbf11",
       "mode": "100644"
     },
     "deploy/oracle/workflow.env.example": {
@@ -75,7 +115,7 @@
       "mode": "100644"
     },
     "deploy/sandbox/Dockerfile": {
-      "sha": "f28d74a55fd7f658141a077d115ea2a548e9c025",
+      "sha": "a04976cc4fb13f02692a2e219e56a3d7651898ea",
       "mode": "100644"
     },
     "deploy/sandbox/ayahos-sandbox-worker.service": {
@@ -95,7 +135,7 @@
       "mode": "100644"
     },
     "deploy/service-inventory.json": {
-      "sha": "54c0e31aa8bd5dcd70bd817e536f937cf0108141",
+      "sha": "0bdd280fca4064d5cb8d92311dead1dc7eff267c",
       "mode": "100644"
     },
     "docs/infrastructure/cloudflare-agent-setup.md": {
@@ -126,8 +166,12 @@
       "sha": "a364df095442c5d73f0d250d2f83f32037bf2461",
       "mode": "100644"
     },
+    "docs/infrastructure/google-agent-registry-bootstrap-2026-10-22.md": {
+      "sha": "c4558044b16878b1eb32a95ebd3eab3336db8877",
+      "mode": "100644"
+    },
     "docs/infrastructure/octopus-ci-verification.md": {
-      "sha": "73dc75feaffed0a21037e928305c5435c0b809b2",
+      "sha": "4c4904bf8925c65d6a2334c0b2aabed6657dbe40",
       "mode": "100644"
     },
     "docs/infrastructure/operational-collection.md": {
@@ -135,7 +179,7 @@
       "mode": "100644"
     },
     "docs/infrastructure/oracle-node-agent.md": {
-      "sha": "3502b273881531834aa454957524d825e9e7285b",
+      "sha": "927eb590efc99daf1100e8043c3e840760012879",
       "mode": "100644"
     },
     "docs/infrastructure/render-service-inventory.md": {
@@ -143,7 +187,7 @@
       "mode": "100644"
     },
     "docs/infrastructure/supabase-ayahos-project.md": {
-      "sha": "adf12fb0a86a4907738f1ad9dabae8e0f6520428",
+      "sha": "af138eaec537d41b5e0a1052f57bdd770c5d5d8d",
       "mode": "100644"
     },
     "docs/infrastructure/workflow-delivery-evidence-2026-10-15.md": {
@@ -171,7 +215,7 @@
       "mode": "100644"
     },
     "scripts/ci/octopus_verify.sh": {
-      "sha": "93eb878a2ca5495a5f5a0d7b6b2458c717b69c09",
+      "sha": "9ab6cd2719e661c69805f0b45c1b6ae75297c4b0",
       "mode": "100755"
     },
     "scripts/ci/post-deploy.sh": {
@@ -187,7 +231,7 @@
       "mode": "100644"
     },
     "scripts/ci/requirements-browser.txt": {
-      "sha": "9f4d14f4165b40a3ba346bdd488cfd9427c3e7d9",
+      "sha": "93c05219c7eee017dad6f9a346137d470e6a8be3",
       "mode": "100644"
     },
     "scripts/ci/resource_diagnostics.sh": {
@@ -203,7 +247,7 @@
       "mode": "100644"
     },
     "scripts/ci/verify.sh": {
-      "sha": "89e107b54f541d3705a178e23dc4762e5a8ceb6c",
+      "sha": "2a08e769c698d9e3fc91f92e507bec44f63d01b9",
       "mode": "100644"
     }
   },
@@ -216,9 +260,9 @@
   ],
   "verification": {
     "source_tree_sha": "verified",
-    "bridge_tests": "pending CI (Phase 5 sync to df20951)",
-    "shell_syntax": "pending CI (Phase 5 sync to df20951)",
-    "octopus_structure": "pending CI (Phase 5 sync to df20951)",
+    "bridge_tests": "pending CI (sync to a7ef41f)",
+    "shell_syntax": "pending CI (sync to a7ef41f)",
+    "octopus_structure": "pending CI (sync to a7ef41f)",
     "octopus_live": "not run",
     "release_cutover": "not authorized"
   }

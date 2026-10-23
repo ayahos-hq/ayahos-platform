@@ -11,30 +11,54 @@ GitHub push ──signed webhook──▶ /github ──▶ Octopus: create rele
 cron, every minute ──▶ Octopus GET /tasks/{id} ──▶ commit status success / failure / error
 ```
 
-The status context is `octopus/verify`. Only pushes to branches of `GITHUB_REPOSITORY` are
-verified; forks, tags and branch deletions are ignored. Secrets stay in the Worker and are never
+The status context is `octopus/verify` (posted only when a token is configured). Only pushes to
+branches of `GITHUB_REPOSITORY` are verified; forks, tags and branch deletions are ignored. Secrets stay in the Worker and are never
 passed into the Octopus process, so code on a branch under test cannot read them. A deployment
 started by hand in the Octopus UI is not reported; push again or redeliver the webhook instead.
 
-## Current state (2026-10-21)
+## Current state (2026-10-22)
 
 The Worker is **deployed** at `https://ayahos-octopus-github-bridge.fuaadabdullah.workers.dev`
 and the GitHub webhook (step 7) is **live**. KV, the Octopus values, `OCTOPUS_API_KEY`, and
 `GITHUB_WEBHOOK_SECRET` are all configured on the deployed Worker — production values live in
-the Worker configuration, not in the committed `wrangler.jsonc` (which still carries the
-template placeholders).
+the Worker configuration, not in the committed `wrangler.jsonc` (which carries the verified
+non-secret Octopus values plus placeholders for the KV id and environment name).
 
-**One step remains: step 4.** `GET /healthz` currently answers
-`missing configuration: GITHUB_STATUS_TOKEN`. Create the fine-grained token (this repository
-only, *Commit statuses: Read and write*, nothing else) and add it to the Worker as the secret
-`GITHUB_STATUS_TOKEN` — either `npx wrangler@4 secret put GITHUB_STATUS_TOKEN` or, in the
-Cloudflare dashboard: Workers & Pages, `ayahos-octopus-github-bridge`, Settings, Variables and
-Secrets, Add, type Secret. `/healthz` must then answer `ok`, and the next push should produce
-an `octopus/verify` commit status.
+**The optional-token code is now deployed** (status: *implemented*; *verified-live*
+2026-10-22): the code-only redeploy landed and `GET /healthz` answers `ok` (Worker version
+`af099a2e`), with all production config surviving untouched. `GET /status/<sha>` answers as
+documented below.
+
+**`GITHUB_STATUS_TOKEN` is not set yet** (provisioning in flight, parked on the owner's
+GitHub Mobile approval). Until it is set with `wrangler secret put GITHUB_STATUS_TOKEN`, no
+`octopus/verify` commit status is posted: verification outcomes are only readable at
+`GET /status/<sha>`. Once the token lands, prove the loop with a test push and confirm the
+`octopus/verify` status actually appears on the commit. A GitHub Actions job that turns
+`/status` into a check is *planned*, not present; `AGENTS.md` forbids new workflows without
+an architecture decision.
 
 Step 8 (requiring the status on `main`) is **not available on this repository's GitHub plan**
 (branch protection and rulesets return 403 for private repos on the free plan), so until the
 plan changes the status is advisory: merges are gated by convention, not by GitHub.
+
+## `GET /status/<sha>`
+
+Unauthenticated and read-only. It is safe to expose only because a 40-hex commit SHA is not
+guessable, and it returns nothing but the state: no Octopus error text, task link or branch name.
+A caller who already knows a SHA can learn whether it was verified and how it ended; nothing else.
+
+| Response | Meaning |
+| --- | --- |
+| `200 {"sha", "state"}` | `state` is `pending`, `success`, `failure` or `error` |
+| `404` | no usable record: the commit was never verified, the push has not been processed yet (the record appears only after Octopus accepts the release), or the 7-day record expired. Treat as "not yet" and poll for a bounded time |
+| `400` | not a lowercase 40-hex SHA |
+| `503` | the bridge is missing required configuration (see `/healthz`) |
+
+Every response is `Cache-Control: no-store`. Only `GET` on the exact path is answered. The latest
+state wins, so redelivering a push resets that commit to `pending`. Forks, tags and deletions are
+never verified. `success` means the commit's *own* process passed: Octopus resolves the process and
+its gate scripts from the pushed commit, so the verdict is only as trustworthy as whoever can push
+to this repository. CODEOWNERS cannot be enforced on this plan.
 
 ## Set up (once)
 
@@ -50,7 +74,8 @@ Run from `deploy/octopus-github-bridge/`.
    in a team whose role allows `ProjectView`, `ReleaseCreate`, `DeploymentCreate` and `TaskView`,
    scoped to this project and the verification environment. Create an API key for it, then
    `npx wrangler@4 secret put OCTOPUS_API_KEY`.
-4. **GitHub token.** Create a fine-grained personal access token for this repository only, with
+4. **GitHub token (optional; required for the `octopus/verify` commit status).** Create a
+   fine-grained personal access token for this repository only, with
    *Commit statuses: Read and write* and nothing else, then
    `npx wrangler@4 secret put GITHUB_STATUS_TOKEN`.
 5. **Webhook secret.** Generate one (`openssl rand -hex 32`), then
@@ -61,7 +86,8 @@ Run from `deploy/octopus-github-bridge/`.
    `https://<worker-host>/github`, content type `application/json`, the secret from step 5,
    *Just the push event*. GitHub's ping must get `pong`.
 8. **Merge gate.** Repository Settings, Rules (or Branches), the rule for `main`: require the
-   status check `octopus/verify`.
+   status check `octopus/verify`. This only works when step 4's token is set, since that is what
+   posts the check.
 
 Do not also add an Octopus Git trigger for this project: it would create untracked releases on
 `main` alongside the ones this bridge reports.
