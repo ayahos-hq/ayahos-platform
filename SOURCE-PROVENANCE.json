@@ -269,22 +269,6 @@
     "scripts/db/test_rehearse_recovery.py": {
       "sha": "ba7fca942f7f9e9cf1ad3106eef772ca11a5b6aa",
       "mode": "100644"
-    },
-    "scripts/db/postgres_env.py": {
-      "sha": "bf029531dbacfbb772590aa872c9ec8cef921950",
-      "mode": "100644"
-    },
-    "scripts/db/rehearse_recovery.py": {
-      "sha": "c144b18576213a257ee034eea9b90c2b88da1339",
-      "mode": "100644"
-    },
-    "scripts/db/restore_verify.py": {
-      "sha": "b60af17f38a9297f0683769d2c000ea38b494c13",
-      "mode": "100644"
-    },
-    "scripts/db/test_rehearse_recovery.py": {
-      "sha": "ba7fca942f7f9e9cf1ad3106eef772ca11a5b6aa",
-      "mode": "100644"
     }
   },
   "notes": [
