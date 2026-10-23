@@ -32,7 +32,7 @@
     },
     "ayahos-workloads": {
       "repository": "ayahos-hq/ayahos-workloads",
-      "git_sha": "3f69d6eaee02e88d571c818b78d400ad595c57bc",
+      "git_sha": "60f76203de45a1c340eb7bfea89a29b2abcfcbca",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     }
