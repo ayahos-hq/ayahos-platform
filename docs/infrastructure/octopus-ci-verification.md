@@ -67,7 +67,7 @@ on the first real run, then pin the digest for stronger immutability.
 ## Verify on the live Octopus project
 
 1. Confirm Octopus project Version Control points to
-   `fuaadabdullah/AyahOS_Dual_Lineage` with base path `.octopus`.
+   `ayahos-hq/ayahos-platform` with base path `.octopus`.
 2. Confirm the hosted Ubuntu worker pool can use Docker execution
    containers and the Docker Hub external feed exists.
 3. Select the exact merged SHA in the Octopus Git-backed release, create
@@ -88,11 +88,12 @@ Octopus Git triggers only follow a version-controlled project's default branch, 
 posts nothing to GitHub, so neither pull requests nor `main` get a result on their own. The
 [Octopus to GitHub bridge](../../deploy/octopus-github-bridge/README.md) closes that gap: a signed
 GitHub `push` webhook makes it create a release on the pushed branch and commit and deploy it to
-the verification environment, and a cron trigger reports the task outcome as the commit status
-`octopus/verify` when `GITHUB_STATUS_TOKEN` is configured. Require that status on `main`. Without
-the token (it is optional) no commit status is posted; the outcome is only readable, read-only and
-unauthenticated, at `GET /status/<sha>` on the Worker. Its setup steps (KV namespace, Octopus
-service account key, GitHub token, webhook, branch rule) need the owner's accounts.
+the verification environment, and a cron trigger records the task outcome at
+`GET /status/<sha>` on the Worker. The canonical `.github/workflows/octopus-status-relay.yml`
+polls that endpoint and publishes the required `octopus/verify` commit status using GitHub's
+ephemeral `GITHUB_TOKEN`; the Worker-side `GITHUB_STATUS_TOKEN` remains an optional direct-post
+path. Require that status on `main`. Its setup steps (KV namespace, Octopus service account key,
+webhook, relay workflow, and branch rule) need the owner's accounts.
 
 ## Post-deploy live verification
 

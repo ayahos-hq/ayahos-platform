@@ -1,0 +1,34 @@
+name: Octopus status relay
+
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, reopened, synchronize]
+
+# This workflow checks out only the base branch and never executes pull-request code.
+# The token is used only to publish the octopus/verify commit status.
+permissions:
+  contents: read
+  statuses: write
+
+concurrency:
+  group: octopus-status-${{ github.event.pull_request.head.sha }}
+  cancel-in-progress: true
+
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - name: Poll Octopus bridge and publish commit status
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.event.pull_request.head.sha }}
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+          OCTOPUS_STATUS_URL: https://ayahos-octopus-github-bridge.fuaadabdullah.workers.dev
+        run: node scripts/ci/octopus_status_relay.mjs

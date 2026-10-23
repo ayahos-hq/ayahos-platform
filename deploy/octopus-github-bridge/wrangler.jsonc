@@ -6,17 +6,17 @@
   "main": "src/worker.js",
   "compatibility_date": "2026-10-01",
   "vars": {
-    "GITHUB_REPOSITORY": "fuaadabdullah/AyahOS_Dual_Lineage",
+    "GITHUB_REPOSITORY": "ayahos-hq/ayahos-platform",
     // Fill in from the Octopus project before the first deploy (see README.md, step 2).
-    "OCTOPUS_URL": "",
-    "OCTOPUS_SPACE_ID": "",
-    "OCTOPUS_PROJECT": "",
-    "OCTOPUS_ENVIRONMENT": "",
+    "OCTOPUS_URL": "https://ayahos.octopus.app",
+    "OCTOPUS_SPACE_ID": "Spaces-1",
+    "OCTOPUS_PROJECT": "ayahos",
+    "OCTOPUS_ENVIRONMENT": "Verification",
     "STATUS_CONTEXT": "octopus/verify"
   },
   "kv_namespaces": [
     // Replace with the id printed by `npx wrangler@4 kv namespace create TASKS`.
-    { "binding": "TASKS", "id": "REPLACE_WITH_KV_NAMESPACE_ID" }
+    { "binding": "TASKS", "id": "4883e599d9f3439eb82d2e81a23f2557" }
   ],
   "triggers": { "crons": ["* * * * *"] }
 }
