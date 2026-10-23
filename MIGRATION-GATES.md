@@ -8,6 +8,9 @@ The original monorepo is canonical until all explicit gates pass. This snapshot 
    `release-manifest.json` is the candidate manifest. It binds four exact repository HEADs plus an immutable platform source parent (the manifest is stored in the platform repository, so its own commit is intentionally checked by ancestry); artifact digests and live acceptance remain explicitly pending until independently produced and verified.
 4. **Cost and operations:** Resource-cap CI lanes on GitHub Free and Octopus; verify an explicit zero-overage setting from the account billing UI rather than assuming hosted CI is cost-free. Heavy model/DB workloads must not run on undersized free-tier web instances.
 5. **Secret handling:** Scope a new bridge webhook/signing key and token if a new GitHub integration is intentionally created. Configure those only as managed secrets with least permissions. Preserve the current bridge and GitHub status context until new statuses prove authoritative.
+   The live bridge still routes the original monorepo to its Octopus project. A successful HQ
+   webhook ping does not authorize treating that bridge's status as HQ verification; use a
+   separate project and bridge after the exact-SHA cross-repository checks exist.
 6. **Real verification:** Run the exact approved Octopus revision end to end on an authorized worker, record all required step outcomes and container digests. Never silently replace pgvector with SQLite or skip critical gate failures after exit 137.
 7. **Cutover:** Separate pre-prod testing from protected production update. Require user-authorized destination and credentials steps, signed rollback plan, correct deployed SHAs, and post-deploy SSE/chat, trace, auth and failure probes. Keep Cloudflare primary, Vercel rollback and old monorepo CI until cutover is proven.
 
