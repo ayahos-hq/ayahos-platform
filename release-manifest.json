@@ -8,7 +8,7 @@
   "components": {
     "ayahos-site": {
       "repository": "ayahos-hq/ayahos-site",
-      "git_sha": "4af2cda6860ed15e73da4f1488157178040fd3e7",
+      "git_sha": "539c3bc609cfd8eaad34f7c97046fcbc6cb798bb",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     },
