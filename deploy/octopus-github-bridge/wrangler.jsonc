@@ -1,21 +1,26 @@
 {
   // Octopus <-> GitHub bridge. Deploy with `npx wrangler@4 deploy` from this directory; see README.md.
-  // Secrets (GITHUB_WEBHOOK_SECRET, GITHUB_STATUS_TOKEN, OCTOPUS_API_KEY) are set with
-  // `wrangler secret put` and never committed.
+  // Secrets (GITHUB_WEBHOOK_SECRET, OCTOPUS_API_KEY, and the optional GITHUB_STATUS_TOKEN that
+  // enables the octopus/verify commit status) are set with `wrangler secret put` and never committed.
   "name": "ayahos-octopus-github-bridge",
   "main": "src/worker.js",
   "compatibility_date": "2026-10-01",
   "vars": {
     "GITHUB_REPOSITORY": "fuaadabdullah/AyahOS_Dual_Lineage",
-    // Fill in from the Octopus project before the first deploy (see README.md, step 2).
-    "OCTOPUS_URL": "",
-    "OCTOPUS_SPACE_ID": "",
-    "OCTOPUS_PROJECT": "",
+    // Verified against the live Octopus instance 2026-10-22 (instance ayahos.octopus.app,
+    // space Default = Spaces-1, single project AyahOS). OCTOPUS_ENVIRONMENT stays empty here:
+    // the verification-environment name is set on the deployed Worker only — copy it from the
+    // Worker dashboard before any CLI deploy; do not guess it.
+    "OCTOPUS_URL": "https://ayahos.octopus.app",
+    "OCTOPUS_SPACE_ID": "Spaces-1",
+    "OCTOPUS_PROJECT": "AyahOS",
     "OCTOPUS_ENVIRONMENT": "",
     "STATUS_CONTEXT": "octopus/verify"
   },
   "kv_namespaces": [
-    // Replace with the id printed by `npx wrangler@4 kv namespace create TASKS`.
+    // PRODUCTION KV ID LIVES ONLY IN THE DEPLOYED WORKER CONFIG (verified 2026-10-21/22).
+    // Replace this placeholder with that id from the Cloudflare dashboard before any CLI
+    // deploy — deploying with the placeholder would break the live bridge.
     { "binding": "TASKS", "id": "REPLACE_WITH_KV_NAMESPACE_ID" }
   ],
   "triggers": { "crons": ["* * * * *"] }

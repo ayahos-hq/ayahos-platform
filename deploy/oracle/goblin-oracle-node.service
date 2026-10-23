@@ -1,5 +1,5 @@
 [Unit]
-Description=AyahOS Oracle cognitive compute node
+Description=AyahOS Oracle Servers: cognitive compute node
 After=network-online.target goblin-llama.service
 Wants=network-online.target
 

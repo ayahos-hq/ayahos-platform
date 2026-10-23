@@ -20,7 +20,7 @@ octopus_var() {
 # commit through the environment so release-evidence jobs can still bind their output to the exact
 # package under test.
 LIVE_EXPECTED_SHA="${LIVE_EXPECTED_SHA:-$(octopus_var Octopus.Release.Git.CommitHash)}"
-if [[ "$LIVE_EXPECTED_SHA" =~ ^[0-9a-fA-F]{7,64}$ ]]; then
+if [[ "$LIVE_EXPECTED_SHA" =~ ^([0-9a-fA-F]{40}|[0-9a-fA-F]{64})$ ]]; then
     export LIVE_EXPECTED_SHA
 else
     unset LIVE_EXPECTED_SHA
@@ -33,7 +33,7 @@ fi
 [ -f /.dockerenv ] || fail "refusing installs outside isolated container"
 [ -d apps/api/src/dual_lineage ] && [ -f pnpm-lock.yaml ] ||
     fail "incomplete Git repository checkout"
-case "$LANE" in api|web|ml|rag|worker|control|release|live) ;; *) fail "unsupported lane: $LANE";; esac
+case "$LANE" in api|web|ml|rag|worker|control|release|live|datadog) ;; *) fail "unsupported lane: $LANE";; esac
 ci_resource_snapshot "worker:startup:$LANE"
 
 if [ "$(id -u)" -eq 0 ]; then
@@ -153,6 +153,17 @@ case "$LANE" in
     control)
         setup_ruby
         bash scripts/ci/verify.sh control
+        ;;
+    datadog)
+        # Optional operator-run setup lane, never a required verification step.
+        setup_ruby
+        export DD_API_KEY="${DD_API_KEY:-$(octopus_var DD_API_KEY)}"
+        export DD_APP_KEY="${DD_APP_KEY:-$(octopus_var DD_APP_KEY)}"
+        export DD_SITE="${DD_SITE:-$(octopus_var DD_SITE)}"
+        export DD_SITE="${DD_SITE:-datadoghq.com}"
+        export DD_DASHBOARD_ID="${DD_DASHBOARD_ID:-$(octopus_var DD_DASHBOARD_ID)}"
+        datadog_mode="${DD_DASHBOARD_MODE:-$(octopus_var DD_DASHBOARD_MODE)}"
+        ruby scripts/datadog_dashboard.rb "${datadog_mode:-plan}"
         ;;
     live)
         # Post-deploy only: verifies the live stack at EXPECTED_SHA. This is not

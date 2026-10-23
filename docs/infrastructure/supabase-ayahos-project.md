@@ -52,12 +52,24 @@ Supabase security advisors reported two items, both caused by the repo's own mig
 Some suites drop the `public` schema, so test databases must be **disposable** and never the persistent
 project. The plan is one Supabase branch per CI or training run, deleted afterwards.
 
+Intended wiring, not in effect yet:
+
 - Octopus project variable `TEST_DATABASE_URL` (sensitive): the connection string of that run's branch.
 - Octopus project variable `CI_TEST_DATABASE_IS_DISPOSABLE` = `1`: set only together with a disposable
   branch URL.
-- `scripts/ci/verify.sh` refuses a remote database unless the second variable is `1`, and empties the
-  `public` schema of a database marked disposable before the `api` and `worker` gates migrate it.
-- Local hosts (`localhost`, `127.0.0.1`, `db`) are always allowed, so local runs are unchanged.
+
+Current behavior:
+
+- `scripts/ci/octopus_verify.sh` sets `TEST_DATABASE_URL` to its local `ayahos_ci` database in
+  `setup_pgvector()`. That overrides a project variable of the same name, so the Octopus lanes never
+  reach a Supabase branch. Wiring the branch path means changing that script; that is a decision,
+  not made here.
+- `scripts/ci/verify.sh` refuses a non-local database unless `CI_TEST_DATABASE_IS_DISPOSABLE` is `1`.
+  Its guard lives in `scripts/ci/test_database_guard.sh`. For a database marked disposable, the `api`
+  and `worker` gates empty the `public` schema before they migrate it.
+- Plain local URLs (`localhost`, `127.0.0.1`, `[::1]`, `db`, with no query string and no host list)
+  are always allowed. Anything else counts as remote, including a `host=` or `hostaddr=` query
+  parameter, which libpq would use to override the host.
 
 Unverified: branch creation bills hourly and may not be available on the free plan; no branch has been
 created. `verify.sh` reads Octopus variables with `get_octopusvariable`, and that helper has not been
