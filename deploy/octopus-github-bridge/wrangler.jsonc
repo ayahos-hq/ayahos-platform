@@ -1,7 +1,5 @@
 {
-  // Historical monorepo bridge template, NOT a deployable HQ configuration.
-  // Do not deploy it over the live Worker or change GITHUB_REPOSITORY alone: the Octopus
-  // project still sources the monorepo. See README.md for the separate HQ setup gates.
+  // Octopus <-> GitHub bridge. Deploy with `npx wrangler@4 deploy` from this directory; see README.md.
   // Secrets (GITHUB_WEBHOOK_SECRET, OCTOPUS_API_KEY, and the optional GITHUB_STATUS_TOKEN that
   // enables the octopus/verify commit status) are set with `wrangler secret put` and never committed.
   "name": "ayahos-octopus-github-bridge",
