@@ -43,4 +43,11 @@ those gates pass, the existing endpoint's `/status/<sha>` is not HQ release evid
 exact-SHA results manually before merge or cutover; no enforced HQ required-check gate has
 been demonstrated.
 
+The four sibling repositories are private, and this organization disables deploy keys.
+Until an organization-owned GitHub App can issue narrowly scoped short-lived read tokens,
+run `python scripts/verify-hq-live-heads.py` from an authenticated operator checkout.
+It compares the manifest to the five live GitHub `main` heads without storing or printing
+the CLI credential. The hosted workflow does **not** claim a cross-repository verdict.
+This command is a source-composition audit, not an Octopus run or production deployment.
+
 See `MIGRATION-GATES.md` and master [migration issue #243](https://github.com/fuaadabdullah/AyahOS_Dual_Lineage/issues/243).

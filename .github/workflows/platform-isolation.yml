@@ -10,6 +10,8 @@ on:
       - "scripts/ci/**"
       - "scripts/verify-platform.py"
       - "scripts/verify-release-manifest.py"
+      - "scripts/verify-hq-live-heads.py"
+      - "scripts/test_verify_hq_live_heads.py"
       - "release-manifest.json"
       - "MIGRATION-GATES.md"
       - "SOURCE-PROVENANCE.json"
@@ -36,6 +38,8 @@ jobs:
         run: python3 scripts/verify-platform.py
       - name: Verify five-repository candidate manifest
         run: python3 scripts/verify-release-manifest.py
+      - name: Test authenticated head audit without network access
+        run: python3 -m unittest scripts/test_verify_hq_live_heads.py
       - name: Check shell syntax without running release scripts
         run: find scripts/ci -type f -name '*.sh' -exec bash -n '{}' \;
       - name: Setup Node 22 for dependency-free bridge tests
@@ -44,36 +48,3 @@ jobs:
           node-version: "22"
       - name: Verify mocked GitHub/Octopus webhook integration
         run: node --test deploy/octopus-github-bridge/test/worker.test.js
-
-  verify-hq-heads:
-    name: Verify declared HQ main heads (manual)
-    # The default GITHUB_TOKEN is repository-scoped. This cross-repository
-    # audit is manual until the organization supplies HQ_READ_TOKEN as a
-    # repository secret; never silently downgrade it to one checkout.
-    if: ${{ github.event_name == 'workflow_dispatch' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 12
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout platform source
-        uses: actions/checkout@v4
-        with:
-          path: ayahos-platform
-          persist-credentials: false
-      - name: Checkout the four sibling HQ repositories
-        shell: bash
-        env:
-          HQ_READ_TOKEN: ${{ secrets.HQ_READ_TOKEN }}
-        run: |
-          set -euo pipefail
-          if [[ -z "${HQ_READ_TOKEN:-}" ]]; then
-            echo "::error::HQ_READ_TOKEN is required to compare private sibling repositories"
-            exit 1
-          fi
-          for repo in ayahos-site ayahos-core ayahos-admin ayahos-workloads; do
-            git -c http.extraheader="AUTHORIZATION: bearer ${HQ_READ_TOKEN}" clone --depth 1 --branch main \
-              "https://github.com/ayahos-hq/${repo}.git" "${repo}"
-          done
-      - name: Verify manifest against all five origin main refs
-        run: python3 ayahos-platform/scripts/verify-release-manifest.py --workspace-root "$GITHUB_WORKSPACE"
