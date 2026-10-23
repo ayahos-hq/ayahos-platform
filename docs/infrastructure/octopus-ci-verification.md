@@ -58,7 +58,7 @@ patched Git revision is still required to verify hosted-worker behavior.
 
 The process uses the current project Git source, worker-pool slug
 `hosted-ubuntu`, and Docker feed slug `docker-hub-public`. The actual
-Octopus project must have these resources configured. The seven execution-container steps pin `octopusdeploy/worker-tools:6.6.5-ubuntu.24.04` instead of
+Octopus project must have these resources configured. The seven steps pin `octopusdeploy/worker-tools:6.6.5-ubuntu.24.04` instead of
 tracking the mutable `ubuntu.24.04` tag. Docker Hub lists this published version
 for Ubuntu 24.04. The tagged image has **not** been exercised by AyahOS Octopus;
 verify the worker architecture, available Node tooling, and exact image digest
@@ -67,12 +67,12 @@ on the first real run, then pin the digest for stronger immutability.
 ## Verify on the live Octopus project
 
 1. Confirm Octopus project Version Control points to
-   `fuaadabdullah/AyahOS_Dual_Lineage` with base path `.octopus`.
+   `ayahos-hq/ayahos-platform` with base path `.octopus`.
 2. Confirm the hosted Ubuntu worker pool can use Docker execution
    containers and the Docker Hub external feed exists.
 3. Select the exact merged SHA in the Octopus Git-backed release, create
    the release, and execute it in the verification environment.
-4. Inspect the actual Octopus task log: all eight required steps, each on that
+4. Inspect the actual Octopus task log: seven required steps, each on that
    SHA, no failed, disabled, or skipped steps. Inspect test counts and
    PostgreSQL/pgvector evidence; do not accept a no-op release.
 5. Confirm a push or PR actually triggers Octopus, if intended, and
@@ -88,11 +88,12 @@ Octopus Git triggers only follow a version-controlled project's default branch, 
 posts nothing to GitHub, so neither pull requests nor `main` get a result on their own. The
 [Octopus to GitHub bridge](../../deploy/octopus-github-bridge/README.md) closes that gap: a signed
 GitHub `push` webhook makes it create a release on the pushed branch and commit and deploy it to
-the verification environment, and a cron trigger reports the task outcome as the commit status
-`octopus/verify` when `GITHUB_STATUS_TOKEN` is configured. On private GitHub Free, repository rulesets/branch protection may be unavailable, so an advisory status is not a GitHub-enforced merge gate. Without
-the token (it is optional) no commit status is posted; the outcome is only readable, read-only and
-unauthenticated, at `GET /status/<sha>` on the Worker. Its setup steps (KV namespace, Octopus
-service account key, GitHub token, webhook, branch rule) need the owner's accounts.
+the verification environment, and a cron trigger records the task outcome at
+`GET /status/<sha>` on the Worker. The canonical `.github/workflows/octopus-status-relay.yml`
+polls that endpoint and publishes the required `octopus/verify` commit status using GitHub's
+ephemeral `GITHUB_TOKEN`; the Worker-side `GITHUB_STATUS_TOKEN` remains an optional direct-post
+path. Require that status on `main`. Its setup steps (KV namespace, Octopus service account key,
+webhook, relay workflow, and branch rule) need the owner's accounts.
 
 ## Post-deploy live verification
 
@@ -109,9 +110,9 @@ steps and is not a merge gate.
 For a secrets-free timer check, `scripts/ci/canary.sh` exercises the public
 site and public chat path only.
 
-**Audit update (2026-10-23 00:13 UTC):** The connected Cloudflare API confirms the deployed bridge has `GITHUB_WEBHOOK_SECRET`, `OCTOPUS_API_KEY` and a `TASKS` KV binding, but **no `GITHUB_STATUS_TOKEN` secret**. A KV key listing returned zero task/result keys at inspection. That is absence of recorded tasks in that namespace, not proof that Octopus never ran. GitHub `main` reports `protected:false`; only Cloudflare Pages and Vercel checks were visible for commit `fe7586f` and neither is an Octopus acceptance result. Render reported both the API and admin deployments of `fe7586f` as live, but this does not verify authenticated chat, pgvector RAG or Octopus.
-
-Until a valid status writer exists and `octopus/verify` is enforceable, require a **human review of exact SHA, Octopus task log, eight required steps, test evidence, plus post-deploy smoke** before treating any behavioral release as accepted. A 200 from the Worker `/healthz` only means mandatory webhook/Octopus settings are present; it does **not** prove commit-status capability because that token is intentionally optional in `missingConfig`. Do not invent a passing status or relax the gates.
+**State at code authoring:** The repo configuration is changed and tests
+are added; Octopus execution and GitHub status reporting are *unverified*.
+CircleCI/Vercel checks are not Octopus evidence.
 
 Octopus reference documentation:
 - https://octopus.com/docs/projects/version-control/ocl-file-format
