@@ -54,3 +54,24 @@ test('sanitizes STS errors without returning credentials',async()=>{
     assert.equal(res.code,502);assert.deepEqual(res.result,{error:'workload_identity_exchange_failed'});
   } finally {global.fetch=previous;}
 });
+
+test('uses broad STS scope only for impersonation and narrow scope for registry', async () => {
+  process.env.AYAHOS_REGISTRY_GATEWAY_KEY=KEY;
+  const previous=global.fetch;const calls=[];
+  global.fetch=async (url,opt)=>{
+    calls.push({url,opt});
+    if(url.includes('sts.googleapis.com'))return {ok:true,text:async()=>JSON.stringify({access_token:'sts-test'})};
+    if(url.includes('iamcredentials.googleapis.com'))return {ok:true,text:async()=>JSON.stringify({accessToken:'google-test'})};
+    return {ok:true,text:async()=>JSON.stringify({agents:[]})};
+  };
+  try {
+    const res=response();
+    await handler(request('POST',{authorization:'Bearer '+KEY,'x-vercel-oidc-token':'eyJ.test.token'}),res);
+    assert.equal(res.code,200);
+    assert.equal(calls.length,3);
+    const params=new URLSearchParams(calls[0].opt.body);
+    assert.equal(params.get('scope'),'https://www.googleapis.com/auth/cloud-platform');
+    const body=JSON.parse(calls[1].opt.body);
+    assert.deepEqual(body.scope,['https://www.googleapis.com/auth/agentregistry.read-only']);
+  } finally {global.fetch=previous;}
+});
