@@ -64,6 +64,13 @@ class DriftRules(unittest.TestCase):
                 reader.get("ayahos-hq/ayahos-site/git/ref/heads/main")
         self.assertNotIn("private token", str(caught.exception))
 
+    def test_gh_invalid_json_shape_fails_closed(self):
+        reader = module.GitHubReader("", auth="gh")
+        result = subprocess.CompletedProcess([], 0, "[]", "")
+        with patch.object(module.subprocess, "run", return_value=result):
+            with self.assertRaisesRegex(ValueError, "invalid JSON"):
+                reader.get("ayahos-hq/ayahos-site/git/ref/heads/main")
+
     def test_gh_missing_binary_fails_closed(self):
         reader = module.GitHubReader("", auth="gh")
         with patch.object(module.subprocess, "run", side_effect=FileNotFoundError):
