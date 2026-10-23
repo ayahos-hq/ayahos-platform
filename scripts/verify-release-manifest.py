@@ -38,6 +38,13 @@ def git_head(path: Path) -> str:
     ).strip()
 
 
+def is_ancestor(path: Path, ancestor: str) -> bool:
+    return subprocess.run(
+        ["git", "-C", str(path), "merge-base", "--is-ancestor", ancestor, "origin/main"],
+        check=False,
+    ).returncode == 0
+
+
 def verify(path: Path, workspace_root: Path | None) -> None:
     manifest = json.loads(path.read_text(encoding="utf-8"))
     if manifest.get("schema_version") != 1:
@@ -62,7 +69,10 @@ def verify(path: Path, workspace_root: Path | None) -> None:
         digest = component.get("artifact_sha256")
         if digest is not None and not ARTIFACT.fullmatch(digest):
             raise ValueError(f"invalid artifact digest for {name}")
-        if workspace_root is not None:
+        if workspace_root is not None and name == "ayahos-platform":
+            if not is_ancestor(workspace_root / name, component["git_sha"]):
+                raise ValueError("platform source SHA is not an ancestor of origin/main")
+        elif workspace_root is not None:
             checkout = workspace_root / name
             if git_head(checkout) != component["git_sha"]:
                 raise ValueError(f"local checkout HEAD differs for {name}")
