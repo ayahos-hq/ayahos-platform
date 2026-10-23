@@ -108,8 +108,10 @@ class ReleaseAssemblerTests(unittest.TestCase):
              patch.object(module, "verify") as verified:
             result = module.assemble(self.path, self.output, PLATFORM)
         self.assertEqual(len(called), 5)
-        verified.assert_called_once()
-        self.assertEqual(verified.call_args.args[0], self.path)
+        # Validate manifest shape before clone and exact workspace contents after clone.
+        self.assertEqual(verified.call_count, 2)
+        self.assertEqual(verified.call_args_list[0].args, (self.path, None))
+        self.assertEqual(verified.call_args_list[1].args[0], self.path)
         self.assertEqual(result, self.output)
         evidence = json.loads((self.output / "CANDIDATE-SOURCE-EVIDENCE.json").read_text())
         self.assertFalse(evidence["cutover_ready"])
