@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Read-only three-way AyahOS drift audit against an immutable extraction base.
 
-Requires HQ_READ_TOKEN scoped to the six repositories. Compares Git blob SHAs,
+Requires an explicit operator 'gh' login or HQ_READ_TOKEN with read-only\naccess to the six repositories. Compares Git blob SHAs,
 never retrieves source contents or prints credentials. Not deployment approval.
 """
 from __future__ import annotations
@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
 import sys
 import urllib.error
 import urllib.request
@@ -61,12 +62,33 @@ def diff(base: dict[str, str], monorepo: dict[str, str], target: dict[str, str],
 
 
 class GitHubReader:
-    def __init__(self, token: str):
-        if not token:
+    def __init__(self, token: str, *, auth: str = "token"):
+        if auth not in ("token", "gh"):
+            raise ValueError("Unsupported GitHub audit authentication mode")
+        if auth == "token" and not token:
             raise ValueError("HQ_READ_TOKEN or GITHUB_TOKEN is required for private repositories")
+        self._auth = auth
         self._token = token
 
     def get(self, endpoint: str) -> dict:
+        if self._auth == "gh":
+            try:
+                completed = subprocess.run(
+                    ["gh", "api", "repos/" + endpoint],
+                    capture_output=True, text=True, check=False, timeout=20,
+                )
+            except (FileNotFoundError, subprocess.TimeoutExpired) as exc:
+                raise ValueError("GitHub CLI is unavailable or timed out") from None
+            if completed.returncode:
+                # Never relay CLI stderr, which may contain account or API details.
+                raise ValueError("GitHub CLI read failed; check gh login and repository access")
+            try:
+                payload = json.loads(completed.stdout)
+            except json.JSONDecodeError:
+                raise ValueError("GitHub CLI returned invalid JSON") from None
+            if not isinstance(payload, dict):
+                raise ValueError("GitHub CLI returned invalid JSON structure")
+            return payload
         request = urllib.request.Request(
             "https://api.github.com/repos/" + endpoint,
             headers={"Authorization": "Bearer " + self._token,
@@ -140,10 +162,13 @@ def main() -> int:
     parser.add_argument("--manifest", type=Path, default=Path("release-manifest.json"))
     parser.add_argument("--output", type=Path, help="write reproducible JSON evidence")
     parser.add_argument("--enforce", action="store_true", help="nonzero exit if components diverge")
+    parser.add_argument("--auth", choices=("token", "gh"), default="token",
+                        help="explicit operator gh login or a scoped injected read token")
     args = parser.parse_args()
     try:
         manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
-        reader = GitHubReader(os.getenv("HQ_READ_TOKEN") or os.getenv("GITHUB_TOKEN") or "")
+        reader = GitHubReader(os.getenv("HQ_READ_TOKEN") or os.getenv("GITHUB_TOKEN") or "",
+                              auth=args.auth)
         report = audit(reader, manifest)
         if args.output:
             args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")

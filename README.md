@@ -43,4 +43,23 @@ those gates pass, the existing endpoint's `/status/<sha>` is not HQ release evid
 exact-SHA results manually before merge or cutover; no enforced HQ required-check gate has
 been demonstrated.
 
+## Operator-only three-way drift evidence (no new CI credential)
+
+The four HQ sibling repos are private. Do not add a broad persistent Actions
+token merely to audit them. With an existing authenticated `gh` operator login,
+run from this repository:
+
+```sh
+python3 -m unittest discover -s scripts -p 'test_audit_repo_drift.py' -v
+python3 scripts/audit-repo-drift.py --auth gh --output drift-report.json
+python3 scripts/audit-repo-drift.py --auth gh --enforce
+```
+
+The `--auth gh` option uses the operator's existing GitHub CLI identity and
+does not accept or print credentials. CI tests the read-only client with mocks,
+not private repository reads. A nonzero exit blocks source promotion, and zero
+only establishes the scanned Git tree state, **never** Octopus/live release
+acceptance. Do not commit generated private-repository path reports to the public
+platform repo.
+
 See `MIGRATION-GATES.md` and master [migration issue #243](https://github.com/fuaadabdullah/AyahOS_Dual_Lineage/issues/243).
