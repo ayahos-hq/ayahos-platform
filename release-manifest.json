@@ -14,19 +14,19 @@
     },
     "ayahos-core": {
       "repository": "ayahos-hq/ayahos-core",
-      "git_sha": "5b3a7e6ad2a553ceeaa3b10efc23e2a43c8c0ee8",
+      "git_sha": "a6b81af0f379ca72b1e50ee294d8709905938d11",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     },
     "ayahos-admin": {
       "repository": "ayahos-hq/ayahos-admin",
-      "git_sha": "b67833f1f0b1994f96a4efcf707054b06f9e7e57",
+      "git_sha": "b6180662d0dabfead1021f8477ff67bf08087e89",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     },
     "ayahos-platform": {
       "repository": "ayahos-hq/ayahos-platform",
-      "git_sha": "7c13612732cfd5e70d0cb3df947f6d307d14f87c",
+      "git_sha": "e6e6f0729987d17dbe6c1d225d3d2ae15b6c8754",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     },
