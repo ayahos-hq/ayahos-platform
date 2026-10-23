@@ -82,6 +82,7 @@ run_consistency_checks() {
   python scripts/verify_weight_inventory.py
   python scripts/minilm_drift_check.py check
   python -m unittest discover -s scripts/migration -p 'test_*.py'
+  python -m unittest discover -s scripts/db -p 'test_*.py'
   python scripts/migration/repositories.py
 }
 

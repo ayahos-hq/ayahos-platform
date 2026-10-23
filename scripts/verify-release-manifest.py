@@ -80,7 +80,7 @@ def verify(path: Path, workspace_root: Path | None) -> None:
     compatibility = manifest.get("compatibility", {})
     if compatibility.get("api_contract") != "python-authority-ruby-boundary-v1":
         raise ValueError("unexpected API contract declaration")
-    if compatibility.get("database_schema") != 22:
+    if compatibility.get("database_schema") != 23:
         raise ValueError("unexpected database schema declaration")
     if compatibility.get("artifact_contract_status") != "pending-independent-build":
         raise ValueError("artifact status must remain fail-closed until built")

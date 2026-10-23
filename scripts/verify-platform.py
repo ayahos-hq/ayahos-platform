@@ -10,7 +10,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "SOURCE-PROVENANCE.json"
-ALLOWED = (".octopus/", "deploy/", "scripts/ci/", "docs/infrastructure/")
+ALLOWED = (".octopus/", "deploy/", "scripts/ci/", "scripts/db/", "docs/infrastructure/")
 BLOCKED = re.compile(r"(^|/)(?:\.env(?:\..*)?$|\.dev\.vars(?:\..*)?$|\.git/|\.npmrc$|id_rsa$|id_ed25519$|node_modules/)|\.(?:pem|p12|pfx|key|tfvars)$", re.I)
 
 
@@ -21,7 +21,7 @@ def run() -> None:
     ):
         raise ValueError("unexpected manifest schema, state or target")
     expected = m["source_files"]
-    if len(expected) != 61 or m["source_file_count"] != 61:
+    if len(expected) != 66 or m["source_file_count"] != 66:
         raise ValueError("unexpected source footprint")
     listing = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT)
     tracked = {p for p in listing.decode().split("\0") if p}
@@ -63,7 +63,7 @@ def run() -> None:
     inventory = json.loads((ROOT / "deploy/service-inventory.json").read_text())
     if inventory.get("repository") != "https://github.com/fuaadabdullah/AyahOS_Dual_Lineage":
         raise ValueError("original production source changed unexpectedly")
-    print("Verified 61 exact platform blobs, executable modes, eight required Octopus "
+    print("Verified 66 exact platform blobs, executable modes, eight required Octopus "
           "steps, script bindings and unchanged original deployment source.")
 
 
