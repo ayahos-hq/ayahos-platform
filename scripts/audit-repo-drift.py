@@ -83,9 +83,12 @@ class GitHubReader:
                 # Never relay CLI stderr, which may contain account or API details.
                 raise ValueError("GitHub CLI read failed; check gh login and repository access")
             try:
-                return json.loads(completed.stdout)
+                payload = json.loads(completed.stdout)
             except json.JSONDecodeError:
                 raise ValueError("GitHub CLI returned invalid JSON") from None
+            if not isinstance(payload, dict):
+                raise ValueError("GitHub CLI returned invalid JSON structure")
+            return payload
         request = urllib.request.Request(
             "https://api.github.com/repos/" + endpoint,
             headers={"Authorization": "Bearer " + self._token,
