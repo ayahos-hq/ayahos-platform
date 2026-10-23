@@ -5,7 +5,8 @@ on:
     branches: [main]
     types: [opened, reopened, synchronize]
 
-# Fork pull requests receive a read-only token and therefore cannot publish a status;
+# Same-repository branches receive the scoped status permission. Fork pull requests receive a
+# read-only token and therefore cannot publish a status;
 # the required status then remains absent and the protected branch stays closed. The PR head
 # checkout is needed during bootstrap because the relay script is introduced by this PR.
 permissions:
