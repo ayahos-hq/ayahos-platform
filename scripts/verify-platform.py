@@ -21,7 +21,7 @@ def run() -> None:
     ):
         raise ValueError("unexpected manifest schema, state or target")
     expected = m["source_files"]
-    if len(expected) != 55 or m["source_file_count"] != 55:
+    if len(expected) != 57 or m["source_file_count"] != 57:
         raise ValueError("unexpected source footprint")
     listing = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT)
     tracked = {p for p in listing.decode().split("\0") if p}
@@ -63,7 +63,7 @@ def run() -> None:
     inventory = json.loads((ROOT / "deploy/service-inventory.json").read_text())
     if inventory.get("repository") != "https://github.com/fuaadabdullah/AyahOS_Dual_Lineage":
         raise ValueError("original production source changed unexpectedly")
-    print("Verified 55 exact platform blobs, executable modes, eight required Octopus "
+    print("Verified 57 exact platform blobs, executable modes, eight required Octopus "
           "steps, script bindings and unchanged original deployment source.")
 
 
