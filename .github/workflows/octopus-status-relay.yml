@@ -1,12 +1,13 @@
 name: Octopus status relay
 
 on:
-  pull_request_target:
+  pull_request:
     branches: [main]
     types: [opened, reopened, synchronize]
 
 # This workflow checks out only the base branch and never executes pull-request code.
-# The token is used only to publish the octopus/verify commit status.
+# Fork pull requests receive a read-only token and therefore cannot publish a status;
+# the required status then remains absent and the protected branch stays closed.
 permissions:
   contents: read
   statuses: write
