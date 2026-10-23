@@ -4,7 +4,7 @@
   "source_repository": "fuaadabdullah/AyahOS_Dual_Lineage",
   "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
   "target_repository": "ayahos-hq/ayahos-platform",
-  "source_file_count": 61,
+  "source_file_count": 66,
   "source_files": {
     ".octopus/deployment_process.ocl": {
       "sha": "10f95921f4199a69c09e40fe313fa46bcbd579cd",
@@ -146,6 +146,10 @@
       "sha": "4c88b1d3343aae4155ab6a407154a0d75da49dd9",
       "mode": "100644"
     },
+    "docs/infrastructure/database-restore-rehearsal.md": {
+      "sha": "a236693f910a4876a95060fa253e65b271bc59b7",
+      "mode": "100644"
+    },
     "docs/infrastructure/dependency-browser-automation.md": {
       "sha": "eeccf91290d239708dc65b7da308e90294f5eb0d",
       "mode": "100644"
@@ -248,6 +252,22 @@
     },
     "scripts/ci/verify.sh": {
       "sha": "2a08e769c698d9e3fc91f92e507bec44f63d01b9",
+      "mode": "100644"
+    },
+    "scripts/db/postgres_env.py": {
+      "sha": "bf029531dbacfbb772590aa872c9ec8cef921950",
+      "mode": "100644"
+    },
+    "scripts/db/rehearse_recovery.py": {
+      "sha": "c144b18576213a257ee034eea9b90c2b88da1339",
+      "mode": "100644"
+    },
+    "scripts/db/restore_verify.py": {
+      "sha": "b60af17f38a9297f0683769d2c000ea38b494c13",
+      "mode": "100644"
+    },
+    "scripts/db/test_rehearse_recovery.py": {
+      "sha": "ba7fca942f7f9e9cf1ad3106eef772ca11a5b6aa",
       "mode": "100644"
     }
   },
