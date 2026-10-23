@@ -62,4 +62,29 @@ only establishes the scanned Git tree state, **never** Octopus/live release
 acceptance. Do not commit generated private-repository path reports to the public
 platform repo.
 
+## Immutable HQ candidate source assembly (non-deployable)
+
+After resolving a platform release candidate SHA (the **full** 40-character commit
+containing the exact `release-manifest.json`), an authorized operator can stage the
+five *private* repositories into a **new** temporary workspace using their existing
+`gh auth login` identity. No long-lived GitHub token or extra cloud runtime is
+created:
+
+```sh
+python3 scripts/assemble-hq-workspace.py \
+  --manifest release-manifest.json \
+  --platform-head FULL_PLATFORM_COMMIT_SHA \
+  --workspace /tmp/ayahos-hq-candidate
+```
+
+Choose an unused workspace path. The script refuses to overwrite anything, clones
+each exact component SHA detached, checks actual `HEAD` and tracked/untracked state,
+and verifies that the pinned platform manifest matches the supplied file byte-for-byte.
+A partial failure deletes its own staging tree. An atomic completed directory contains
+`CANDIDATE-SOURCE-EVIDENCE.json`, which is **source identity evidence only**; it
+never claims that release packages have been built, nor that Octopus, database restore,
+authenticated chat or rollback checks have passed. Do not put private source reports
+in this public repository. This is preparation for an independent HQ Octopus project,
+**not** permission to repoint the existing production bridge or deploy.
+
 See `MIGRATION-GATES.md` and master [migration issue #243](https://github.com/fuaadabdullah/AyahOS_Dual_Lineage/issues/243).
