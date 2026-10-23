@@ -16,35 +16,35 @@ branches of `GITHUB_REPOSITORY` are verified; forks, tags and branch deletions a
 passed into the Octopus process, so code on a branch under test cannot read them. A deployment
 started by hand in the Octopus UI is not reported; push again or redeliver the webhook instead.
 
-## Current state (2026-10-22)
+## Current state (2026-10-23)
 
-The Worker is **deployed** at `https://ayahos-octopus-github-bridge.fuaadabdullah.workers.dev`
-and the GitHub webhook (step 7) is **live**. KV, the Octopus values, `OCTOPUS_API_KEY`, and
-`GITHUB_WEBHOOK_SECRET` are all configured on the deployed Worker — production values live in
-the Worker configuration, not in the committed `wrangler.jsonc` (which carries the verified
-non-secret Octopus values plus placeholders for the KV id and environment name).
+The existing Worker is live at
+`https://ayahos-octopus-github-bridge.fuaadabdullah.workers.dev`. Its configured repository is
+`fuaadabdullah/AyahOS_Dual_Lineage`, environment is `Development`, and its Octopus project
+`AyahOS` uses that monorepo as its Git source. The encrypted `OCTOPUS_API_KEY` and
+`GITHUB_WEBHOOK_SECRET` bindings are present. After rotating the webhook secret, pings from
+both the monorepo and `ayahos-hq/ayahos-platform` received HTTP 200. A successful ping proves
+signature transport only: the Worker intentionally ignores HQ pushes because they do not match
+its configured repository. `GET /healthz` returned `ok`; no HQ Octopus release or passing
+`octopus/verify` status was established.
 
-**The optional-token code is now deployed** (status: *implemented*; *verified-live*
-2026-10-22): the code-only redeploy landed and `GET /healthz` answers `ok` (Worker version
-`af099a2e`), with all production config surviving untouched. `GET /status/<sha>` answers as
-documented below.
+**Do not deploy this `wrangler.jsonc` as-is or repoint the existing Worker to HQ.** Its KV ID
+and environment are placeholders, and repointing would interrupt the monorepo's release path.
+The HQ platform repository needs a separate Octopus project connected to
+`ayahos-hq/ayahos-platform`, a process whose checks fetch the manifest-pinned component SHAs
+rather than assuming a monorepo checkout, and a separate bridge/Worker with its own KV and
+scoped credentials. Configure the HQ webhook to that new endpoint only after the project and
+bridge are ready. Sealed secrets from the existing Worker cannot be copied out of Cloudflare;
+provision new scoped values directly in the new Worker. Until then, `/status/<sha>` on the
+existing endpoint is **not** HQ release evidence.
 
-**`GITHUB_STATUS_TOKEN` is not set yet** (provisioning in flight, parked on the owner's
-GitHub Mobile approval). Until it is set with `wrangler secret put GITHUB_STATUS_TOKEN`, no
-`octopus/verify` commit status is posted: verification outcomes are only readable at
-`GET /status/<sha>`. Once the token lands, prove the loop with a test push and confirm the
-`octopus/verify` status actually appears on the commit. A GitHub Actions job that turns
-`/status` into a check is *planned*, not present; `AGENTS.md` forbids new workflows without
-an architecture decision.
-
-Step 8 (requiring the status on `main`) is **not available on this repository's GitHub plan**
-(branch protection and rulesets return 403 for private repos on the free plan), so until the
-plan changes the status is advisory: merges are gated by convention, not by GitHub.
+This public HQ repository does not currently have an enforceable required-check gate. Keep
+manual review of exact-SHA Octopus evidence before any merge or cutover.
 
 ## `GET /status/<sha>`
 
-Unauthenticated and read-only. It is safe to expose only because a 40-hex commit SHA is not
-guessable, and it returns nothing but the state: no Octopus error text, task link or branch name.
+Unauthenticated and read-only. A commit SHA may be public or discoverable; the endpoint
+therefore returns only the state, with no Octopus error text, task link or branch name.
 A caller who already knows a SHA can learn whether it was verified and how it ended; nothing else.
 
 | Response | Meaning |
