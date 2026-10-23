@@ -77,6 +77,32 @@ class DriftRules(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "GitHub CLI"):
                 reader.get("ayahos-hq/ayahos-site/git/ref/heads/main")
 
+    def test_platform_ancestor_accepts_newer_nonidentical_head(self):
+        reader = module.GitHubReader("fake-only")
+        reader.get = Mock(return_value={"status": "ahead"})
+        self.assertTrue(reader.is_ancestor("ayahos-hq/ayahos-platform", "a" * 40, "b" * 40))
+        reader.get.assert_called_once_with(
+            "ayahos-hq/ayahos-platform/compare/" + "a" * 40 + "..." + "b" * 40
+        )
+
+    def test_platform_diverged_or_unknown_ref_rejected(self):
+        reader = module.GitHubReader("fake-only")
+        for status in ("diverged", "behind", None):
+            reader.get = Mock(return_value={"status": status})
+            self.assertFalse(reader.is_ancestor("ayahos-hq/ayahos-platform", "a" * 40, "b" * 40))
+
+    def test_platform_manifest_result_fails_on_nonancestor(self):
+        reader = Mock()
+        reader.head.side_effect = lambda repo: "c" * 40
+        reader.tree.return_value = {}
+        reader.is_ancestor.return_value = False
+        manifest = {"source_commit": "b" * 40,
+                    "components": {name: {"repository": "ayahos-hq/" + name,
+                                           "git_sha": ("a" if name == "ayahos-platform" else "c") * 40}
+                                   for name in module.PREFIXES}}
+        result = module.audit(reader, manifest)
+        self.assertFalse(result["components"]["ayahos-platform"]["head_matches_manifest"])
+
     def test_audit_never_attests_cutover_even_when_clean(self):
         r = Mock()
         r.head.side_effect = lambda repo: "c" * 40

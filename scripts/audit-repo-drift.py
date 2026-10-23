@@ -110,6 +110,15 @@ class GitHubReader:
             raise ValueError(f"Invalid default-branch SHA: {repository}")
         return sha
 
+    def is_ancestor(self, repository: str, pinned: str, head: str) -> bool:
+        """Only ahead/identical commits may preserve a platform manifest pin."""
+        if not SHA.fullmatch(pinned) or not SHA.fullmatch(head):
+            raise ValueError("Invalid immutable platform manifest ref")
+        if pinned == head:
+            return True
+        comparison = self.get(f"{repository}/compare/{pinned}...{head}")
+        return comparison.get("status") in ("ahead", "identical")
+
     def tree(self, repository: str, commit_sha: str) -> dict[str, str]:
         if not SHA.fullmatch(commit_sha):
             raise ValueError(f"Invalid tree ref for {repository}")
@@ -147,9 +156,13 @@ def audit(reader: GitHubReader, manifest: dict) -> dict:
         changes = diff(baseline, current, target, prefixes)
         counts = {kind: sum(entry["kind"] == kind for entry in changes)
                   for kind in ("monorepo_only", "hq_only", "both_diverged")}
+        head_matches_manifest = (
+            head == pinned
+            or (name == "ayahos-platform" and reader.is_ancestor(repository, pinned, head))
+        )
         report["components"][name] = {
             "repository": repository, "head_sha": head, "manifest_sha": pinned,
-            "head_matches_manifest": head == pinned,
+            "head_matches_manifest": head_matches_manifest,
             "changed_paths": len(changes), "counts": counts, "files": changes,
         }
     # Even zero source drift cannot certify the missing artifact, Octopus,
@@ -175,9 +188,10 @@ def main() -> int:
         for name, entry in report["components"].items():
             print(f"{name}: {entry['changed_paths']} drift paths "
                   f"{entry['counts']} manifest_head_match={entry['head_matches_manifest']}")
-        if args.enforce and any(item["changed_paths"] or
-                                (name != "ayahos-platform" and not item["head_matches_manifest"])
-                                for name, item in report["components"].items()):
+        if args.enforce and any(
+            item["changed_paths"] or not item["head_matches_manifest"]
+            for item in report["components"].values()
+        ):
             print("DRIFT GATE: BLOCKED (no service cutover)", file=sys.stderr)
             return 2
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError) as exc:
