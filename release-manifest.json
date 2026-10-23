@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "release_status": "candidate",
-  "release_id": "hq-candidate-inference-parity-20261023-no-cutover",
+  "release_id": "hq-candidate-sse-db-preflight-20261023-no-cutover",
   "source_authority": "fuaadabdullah/AyahOS_Dual_Lineage",
   "platform_manifest_commit_rule": "platform_git_sha_is_an_ancestor_of_manifest_commit",
   "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
@@ -14,7 +14,7 @@
     },
     "ayahos-core": {
       "repository": "ayahos-hq/ayahos-core",
-      "git_sha": "78597e02c47b32b498ed0a613d32d3ef8fc4122b",
+      "git_sha": "28162d26b3471e8f3866577bcbf7c155f4a211c6",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     },
@@ -59,6 +59,7 @@
     "caveat": "Independent verified fixes are present in HQ; remaining branches and cross-service integration are not certified. No production cutover.",
     "admin_sse_pr": "https://github.com/ayahos-hq/ayahos-admin/pull/7",
     "core_aliyun_pr": "https://github.com/ayahos-hq/ayahos-core/pull/18",
-    "local_dispatch_pr": "https://github.com/ayahos-hq/ayahos-core/pull/19"
+    "local_dispatch_pr": "https://github.com/ayahos-hq/ayahos-core/pull/19",
+    "core_sse_db_preflight_pr": "https://github.com/ayahos-hq/ayahos-core/pull/20"
   }
 }
