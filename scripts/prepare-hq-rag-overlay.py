@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import subprocess
 from pathlib import Path
 import shutil
 import sys
@@ -94,5 +95,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    import subprocess
     raise SystemExit(main())
