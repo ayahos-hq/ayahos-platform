@@ -46,11 +46,11 @@ jobs:
         run: node --test deploy/octopus-github-bridge/test/worker.test.js
 
   verify-hq-heads:
-    name: Verify declared HQ main heads
-    # The default GITHUB_TOKEN is repository-scoped. Run this cross-repository
-    # gate when the organization supplies a read-only HQ_READ_TOKEN; never
-    # silently downgrade the comparison to the platform checkout alone.
-    if: ${{ github.event_name == 'workflow_dispatch' || secrets.HQ_READ_TOKEN != '' }}
+    name: Verify declared HQ main heads (manual)
+    # The default GITHUB_TOKEN is repository-scoped. This cross-repository
+    # audit is manual until the organization supplies HQ_READ_TOKEN as a
+    # repository secret; never silently downgrade it to one checkout.
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     permissions:
@@ -60,7 +60,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: ayahos-platform
-          token: ${{ secrets.HQ_READ_TOKEN || secrets.GITHUB_TOKEN }}
           persist-credentials: false
       - name: Checkout the four sibling HQ repositories
         shell: bash
