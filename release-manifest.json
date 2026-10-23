@@ -3,6 +3,7 @@
   "release_status": "candidate",
   "release_id": "hq-a7ef41f-20261023",
   "source_authority": "fuaadabdullah/AyahOS_Dual_Lineage",
+  "platform_manifest_commit_rule": "platform_git_sha_is_an_ancestor_of_manifest_commit",
   "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
   "components": {
     "ayahos-site": {
