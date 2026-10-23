@@ -44,3 +44,26 @@ jobs:
           node-version: "22"
       - name: Verify mocked GitHub/Octopus webhook integration
         run: node --test deploy/octopus-github-bridge/test/worker.test.js
+
+  verify-hq-heads:
+    name: Verify declared HQ main heads
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout platform source
+        uses: actions/checkout@v4
+        with:
+          path: ayahos-platform
+          persist-credentials: false
+      - name: Checkout the four sibling HQ repositories
+        shell: bash
+        run: |
+          set -euo pipefail
+          for repo in ayahos-site ayahos-core ayahos-admin ayahos-workloads; do
+            git clone --depth 1 --branch main \
+              "https://github.com/ayahos-hq/${repo}.git" "${repo}"
+          done
+      - name: Verify manifest against all five origin main refs
+        run: python3 ayahos-platform/scripts/verify-release-manifest.py --workspace-root "$GITHUB_WORKSPACE"
