@@ -2,7 +2,8 @@
 import importlib.util
 from pathlib import Path
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
+import subprocess
 
 MODULE = Path(__file__).with_name("audit-repo-drift.py")
 spec = importlib.util.spec_from_file_location("migration_drift", MODULE)
@@ -44,6 +45,30 @@ class DriftRules(unittest.TestCase):
         reader.get = Mock(return_value={"truncated": True, "tree": []})
         with self.assertRaisesRegex(ValueError, "Incomplete Git tree"):
             reader.tree("test/repo", "a" * 40)
+
+    def test_gh_operator_login_reads_json_without_token(self):
+        reader = module.GitHubReader("", auth="gh")
+        result = subprocess.CompletedProcess([], 0, '{"object":{"sha":"abc"}}', "")
+        with patch.object(module.subprocess, "run", return_value=result) as run:
+            response = reader.get("ayahos-hq/ayahos-site/git/ref/heads/main")
+        self.assertEqual(response["object"]["sha"], "abc")
+        args = run.call_args.args[0]
+        self.assertEqual(args, ["gh", "api", "repos/ayahos-hq/ayahos-site/git/ref/heads/main"])
+        self.assertNotIn("token", str(run.call_args).lower())
+
+    def test_gh_error_never_leaks_private_response(self):
+        reader = module.GitHubReader("", auth="gh")
+        result = subprocess.CompletedProcess([], 1, "", "private token and account details")
+        with patch.object(module.subprocess, "run", return_value=result):
+            with self.assertRaises(ValueError) as caught:
+                reader.get("ayahos-hq/ayahos-site/git/ref/heads/main")
+        self.assertNotIn("private token", str(caught.exception))
+
+    def test_gh_missing_binary_fails_closed(self):
+        reader = module.GitHubReader("", auth="gh")
+        with patch.object(module.subprocess, "run", side_effect=FileNotFoundError):
+            with self.assertRaisesRegex(ValueError, "GitHub CLI"):
+                reader.get("ayahos-hq/ayahos-site/git/ref/heads/main")
 
     def test_audit_never_attests_cutover_even_when_clean(self):
         r = Mock()
