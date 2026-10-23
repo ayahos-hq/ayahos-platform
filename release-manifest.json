@@ -39,7 +39,7 @@
   },
   "compatibility": {
     "api_contract": "python-authority-ruby-boundary-v1",
-    "database_schema": 22,
+    "database_schema": 23,
     "artifact_contract_status": "pending-independent-build",
     "cross_repository_acceptance": "pending"
   },
