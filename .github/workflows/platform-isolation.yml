@@ -9,6 +9,9 @@ on:
       - "deploy/**"
       - "scripts/ci/**"
       - "scripts/verify-platform.py"
+      - "scripts/verify-release-manifest.py"
+      - "release-manifest.json"
+      - "MIGRATION-GATES.md"
       - "SOURCE-PROVENANCE.json"
   workflow_dispatch:
 
