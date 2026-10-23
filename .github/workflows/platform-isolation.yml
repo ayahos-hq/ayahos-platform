@@ -17,6 +17,7 @@ on:
       - "scripts/test_assemble_hq_workspace.py"
       - "release-manifest.json"
       - "MIGRATION-GATES.md"
+      - "README.md"
       - "SOURCE-PROVENANCE.json"
   workflow_dispatch:
 
