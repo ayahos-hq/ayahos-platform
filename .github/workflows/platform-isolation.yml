@@ -13,6 +13,8 @@ on:
       - "scripts/audit-repo-drift.py"
       - "scripts/test_audit_repo_drift.py"
       - "scripts/test_verify_release_manifest.py"
+      - "scripts/assemble-hq-workspace.py"
+      - "scripts/test_assemble_hq_workspace.py"
       - "release-manifest.json"
       - "MIGRATION-GATES.md"
       - "SOURCE-PROVENANCE.json"
@@ -39,6 +41,8 @@ jobs:
         run: python3 scripts/verify-platform.py
       - name: Verify five-repository candidate manifest
         run: python3 scripts/verify-release-manifest.py
+      - name: Test fail-closed immutable HQ source assembly (offline)
+        run: python3 -m unittest discover -s scripts -p "test_assemble_hq_workspace.py" -v
       - name: Regression-test exact-SHA five-repo workspace (offline)
         run: python3 -m unittest discover -s scripts -p "test_verify_release_manifest.py" -v
       - name: Unit-test three-way repository drift classifier (offline)
