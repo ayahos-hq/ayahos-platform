@@ -7,7 +7,8 @@ const PROJECT_NUMBER = '1086186141421';
 const SERVICE_ACCOUNT = 'ayahos-registry-reader@project-eec9b975-b6bd-4b41-bad.iam.gserviceaccount.com';
 const AUDIENCE = '//iam.googleapis.com/projects/1086186141421/locations/global/workloadIdentityPools/ayahos-vercel/providers/gateway-production';
 const SEARCH_PATH = '/v1/projects/project-eec9b975-b6bd-4b41-bad/locations/global/agents:search';
-const SCOPE = 'https://www.googleapis.com/auth/cloud-platform.read-only';
+const STS_SCOPE = 'https://www.googleapis.com/auth/cloud-platform';
+const REGISTRY_SCOPE = 'https://www.googleapis.com/auth/agentregistry.read-only';
 
 function bearerMatches(value, secret) {
   if (typeof value !== 'string' || typeof secret !== 'string' || secret.length < 32) return false;
@@ -69,7 +70,7 @@ async function handler(req, res) {
       requested_token_type: 'urn:ietf:params:oauth:token-type:access_token',
       subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
       subject_token: oidc,
-      scope: SCOPE,
+      scope: STS_SCOPE,
     });
     const sts = await postGoogleJson('https://sts.googleapis.com/v1/token', {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -79,7 +80,7 @@ async function handler(req, res) {
     const google = await postGoogleJson(
       'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/' + encodeURIComponent(SERVICE_ACCOUNT) + ':generateAccessToken',
       { Authorization: 'Bearer ' + sts.access_token, 'Content-Type': 'application/json' },
-      JSON.stringify({ scope: [SCOPE], lifetime: '600s' }),
+      JSON.stringify({ scope: [REGISTRY_SCOPE], lifetime: '600s' }),
     );
     if (!google || typeof google.accessToken !== 'string') return res.status(502).json({ error: 'workload_identity_impersonation_failed' });
 
