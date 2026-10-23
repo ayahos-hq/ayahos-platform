@@ -75,3 +75,27 @@ test('uses broad STS scope only for impersonation and narrow scope for registry'
     assert.deepEqual(body.scope,['https://www.googleapis.com/auth/agentregistry.read-only']);
   } finally {global.fetch=previous;}
 });
+
+test('caps upstream streaming response at 1 MiB before buffering it', async () => {
+  process.env.AYAHOS_REGISTRY_GATEWAY_KEY = KEY;
+  const previous = global.fetch;
+  let reads = 0, cancelled = false;
+  global.fetch = async () => ({
+    ok: true,
+    headers: { get: () => null },
+    body: { getReader() { return {
+      async read() { reads++; return { done: false, value: new Uint8Array(600 * 1024) }; },
+      async cancel() { cancelled = true; },
+      releaseLock() {},
+    }; } },
+    text: async () => { throw new Error('unbounded text read'); },
+  });
+  try {
+    const res = response();
+    await handler(request('POST', { authorization: 'Bearer '+KEY, 'x-vercel-oidc-token': 'eyJ.test.token' }), res);
+    assert.equal(res.code, 502);
+    assert.deepEqual(res.result, { error: 'workload_identity_exchange_failed' });
+    assert.equal(reads, 2);
+    assert.equal(cancelled, true);
+  } finally { global.fetch = previous; }
+});
