@@ -14,7 +14,7 @@
     },
     "ayahos-core": {
       "repository": "ayahos-hq/ayahos-core",
-      "git_sha": "ce43a6c99b2f80bc6f0b4903687373e2d007daff",
+      "git_sha": "411bccd8cfaf5f767a782dd1acb1783a647cab60",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     },
