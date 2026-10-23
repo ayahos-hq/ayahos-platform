@@ -251,7 +251,7 @@
       "mode": "100644"
     },
     "scripts/ci/verify.sh": {
-      "sha": "2a08e769c698d9e3fc91f92e507bec44f63d01b9",
+      "sha": "af7adddbd0f28bb7a7225238581d4d63ee829f64",
       "mode": "100644"
     },
     "scripts/db/postgres_env.py": {

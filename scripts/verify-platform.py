@@ -63,7 +63,7 @@ def run() -> None:
     inventory = json.loads((ROOT / "deploy/service-inventory.json").read_text())
     if inventory.get("repository") != "https://github.com/fuaadabdullah/AyahOS_Dual_Lineage":
         raise ValueError("original production source changed unexpectedly")
-    print("Verified 61 exact platform blobs, executable modes, eight required Octopus "
+    print("Verified 66 exact platform blobs, executable modes, eight required Octopus "
           "steps, script bindings and unchanged original deployment source.")
 
 
