@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "release_status": "candidate",
-  "release_id": "hq-reconciled-20261023-no-cutover",
+  "release_id": "hq-reconciled-sse-aliyun-20261023-no-cutover",
   "source_authority": "fuaadabdullah/AyahOS_Dual_Lineage",
   "platform_manifest_commit_rule": "platform_git_sha_is_an_ancestor_of_manifest_commit",
   "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
@@ -14,13 +14,13 @@
     },
     "ayahos-core": {
       "repository": "ayahos-hq/ayahos-core",
-      "git_sha": "f7b9c1dfdd631a3a06e122fae46c2932f3877609",
+      "git_sha": "eb0081f943b3ff667f41c4fba4b42c133ae06a21",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     },
     "ayahos-admin": {
       "repository": "ayahos-hq/ayahos-admin",
-      "git_sha": "37613cb32cf86026cda1e2e6892b86a77bc3245a",
+      "git_sha": "223a3b6ce6783405a4822a3cddbbbe66cc3164c2",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     },
@@ -56,6 +56,8 @@
     "core_pr": "https://github.com/ayahos-hq/ayahos-core/pull/17",
     "admin_pr": "https://github.com/ayahos-hq/ayahos-admin/pull/6",
     "workloads_pr": "https://github.com/ayahos-hq/ayahos-workloads/pull/9",
-    "caveat": "Independent verified fixes are present in HQ; remaining branches and cross-service integration are not certified. No production cutover."
+    "caveat": "Independent verified fixes are present in HQ; remaining branches and cross-service integration are not certified. No production cutover.",
+    "admin_sse_pr": "https://github.com/ayahos-hq/ayahos-admin/pull/7",
+    "core_aliyun_pr": "https://github.com/ayahos-hq/ayahos-core/pull/18"
   }
 }
