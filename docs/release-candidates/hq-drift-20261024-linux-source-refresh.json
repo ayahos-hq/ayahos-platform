@@ -1,0 +1,74 @@
+{
+    "schema_version":  1,
+    "audit_date_utc":  "2026-10-24T06:33:43Z",
+    "audit_type":  "read-only redacted source drift snapshot",
+    "redacted_file_paths":  true,
+    "cutover_ready":  false,
+    "monorepo":  {
+                     "repository":  "fuaadabdullah/AyahOS_Dual_Lineage",
+                     "sha":  "ae5a472c1de22899f818141d209732b6d891ac6c"
+                 },
+    "components":  {
+                       "ayahos-site":  {
+                                           "repository":  "ayahos-hq/ayahos-site",
+                                           "head_sha":  "a1f9461881aa4068d39a91ce4adbdf1dd73069cc",
+                                           "manifest_sha":  "a1f9461881aa4068d39a91ce4adbdf1dd73069cc",
+                                           "head_matches_manifest":  true,
+                                           "changed_paths":  3,
+                                           "counts":  {
+                                                          "monorepo_only":  0,
+                                                          "hq_only":  3,
+                                                          "both_diverged":  0
+                                                      }
+                                       },
+                       "ayahos-core":  {
+                                           "repository":  "ayahos-hq/ayahos-core",
+                                           "head_sha":  "ce43a6c99b2f80bc6f0b4903687373e2d007daff",
+                                           "manifest_sha":  "ce43a6c99b2f80bc6f0b4903687373e2d007daff",
+                                           "head_matches_manifest":  true,
+                                           "changed_paths":  56,
+                                           "counts":  {
+                                                          "monorepo_only":  14,
+                                                          "hq_only":  37,
+                                                          "both_diverged":  5
+                                                      }
+                                       },
+                       "ayahos-admin":  {
+                                            "repository":  "ayahos-hq/ayahos-admin",
+                                            "head_sha":  "223a3b6ce6783405a4822a3cddbbbe66cc3164c2",
+                                            "manifest_sha":  "223a3b6ce6783405a4822a3cddbbbe66cc3164c2",
+                                            "head_matches_manifest":  true,
+                                            "changed_paths":  33,
+                                            "counts":  {
+                                                           "monorepo_only":  28,
+                                                           "hq_only":  3,
+                                                           "both_diverged":  2
+                                                       }
+                                        },
+                       "ayahos-platform":  {
+                                               "repository":  "ayahos-hq/ayahos-platform",
+                                               "head_sha":  "f354d45b5bb904e5214f81837c846edf6d040803",
+                                               "manifest_sha":  "5623aea15094b316c355c90dc9a3e0dea04711f2",
+                                               "head_matches_manifest":  true,
+                                               "changed_paths":  39,
+                                               "counts":  {
+                                                              "monorepo_only":  33,
+                                                              "hq_only":  2,
+                                                              "both_diverged":  4
+                                                          }
+                                           },
+                       "ayahos-workloads":  {
+                                                "repository":  "ayahos-hq/ayahos-workloads",
+                                                "head_sha":  "e4de3aab568fc817816a4bd9e58eaeb0296f7a53",
+                                                "manifest_sha":  "e4de3aab568fc817816a4bd9e58eaeb0296f7a53",
+                                                "head_matches_manifest":  true,
+                                                "changed_paths":  4,
+                                                "counts":  {
+                                                               "monorepo_only":  0,
+                                                               "hq_only":  2,
+                                                               "both_diverged":  2
+                                                           }
+                                            }
+                   },
+    "scope_note":  "Historical snapshot; private repository file paths intentionally omitted. Source alignment is not cross-repository runtime acceptance or deployment proof."
+}
