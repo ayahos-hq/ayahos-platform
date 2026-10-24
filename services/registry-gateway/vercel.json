@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "functions": {
+    "api/registry.js": {
+      "maxDuration": 20
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/v1/:path*",
+      "destination": "/api/registry"
+    }
+  ]
+}

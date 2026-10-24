@@ -1,0 +1,1 @@
+{"name":"ayahos-registry-gateway","version":"0.0.1","private":true,"scripts":{"test":"node --test test/*.test.js"},"engines":{"node":">=22"}}
