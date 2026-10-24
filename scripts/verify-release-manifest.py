@@ -116,10 +116,18 @@ def verify(path: Path, workspace_root: Path | None) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--manifest", default="release-manifest.json", type=Path)
+    parser.add_argument("--manifest", default=Path(__file__).resolve().parents[1] / "release-manifest.json", type=Path)
     parser.add_argument("--workspace-root", type=Path,
                         help="also compare fetched origin/main sibling repository refs")
+    # Octopus Git-backed script steps append the source package's SHA-256 digest
+    # as a positional argument even when Script Parameters is empty. This value
+    # is transport metadata, not an acceptance artifact or a release gate.
+    parser.add_argument('octopus_source_digest', nargs='?',
+                        help='optional Octopus Git source package SHA-256')
     args = parser.parse_args()
+    if args.octopus_source_digest is not None and not ARTIFACT.fullmatch(
+            args.octopus_source_digest.lower()):
+        parser.error('Octopus source digest must be exactly 64 hexadecimal characters')
     try:
         verify(args.manifest, args.workspace_root)
     except (OSError, ValueError, KeyError, subprocess.CalledProcessError, json.JSONDecodeError) as exc:

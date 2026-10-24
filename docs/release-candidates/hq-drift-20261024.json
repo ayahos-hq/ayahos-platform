@@ -1,0 +1,702 @@
+{
+  "schema_version": 1,
+  "audit_date_utc": "2026-10-24",
+  "type": "read-only-immutable-git-blob-three-way-drift",
+  "release_ready": false,
+  "source": {
+    "baseline": {
+      "repository": "fuaadabdullah/AyahOS_Dual_Lineage",
+      "sha": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3"
+    },
+    "canonical_production": {
+      "repository": "fuaadabdullah/AyahOS_Dual_Lineage",
+      "sha": "dbf9fbde52a11bbc069e19bdeca2658d8dcc1147"
+    }
+  },
+  "method": "Compare GitHub recursive complete Git trees; classification as in scripts/audit-repo-drift.py; records include only path names, not file contents.",
+  "components": {
+    "ayahos-site": {
+      "repository": "ayahos-hq/ayahos-site",
+      "head_sha": "a1f9461881aa4068d39a91ce4adbdf1dd73069cc",
+      "counts": {
+        "monorepo_only": 0,
+        "hq_only": 3,
+        "both_diverged": 0
+      },
+      "changed_paths": 3,
+      "diff": [
+        {
+          "path": "apps/site/src/server/public-chat.test.ts",
+          "kind": "hq_only",
+          "baseline_blob": "6304d64e629e5b0eb420d6687697aaeb5c45533a",
+          "production_blob": "6304d64e629e5b0eb420d6687697aaeb5c45533a",
+          "hq_blob": "80c5d218ba5acc38c87ae8d2d0942543f671a553"
+        },
+        {
+          "path": "apps/site/src/server/public-chat.ts",
+          "kind": "hq_only",
+          "baseline_blob": "75a421afac0597a479d7c491f04c96591a7ed85f",
+          "production_blob": "75a421afac0597a479d7c491f04c96591a7ed85f",
+          "hq_blob": "0e854ac8e65dd2eed844cdd17e6cda10be637b0c"
+        },
+        {
+          "path": "apps/site/tests/browser/resilience.pw.ts",
+          "kind": "hq_only",
+          "baseline_blob": "945d2c2b4d0dfefe1827a89bf5954a9b6965cbc5",
+          "production_blob": "945d2c2b4d0dfefe1827a89bf5954a9b6965cbc5",
+          "hq_blob": "95d560ba91e96b4186a6bf494cbf622d86992010"
+        }
+      ]
+    },
+    "ayahos-core": {
+      "repository": "ayahos-hq/ayahos-core",
+      "head_sha": "28162d26b3471e8f3866577bcbf7c155f4a211c6",
+      "counts": {
+        "monorepo_only": 11,
+        "hq_only": 26,
+        "both_diverged": 3
+      },
+      "changed_paths": 40,
+      "diff": [
+        {
+          "path": "Makefile",
+          "kind": "monorepo_only",
+          "baseline_blob": "057ba8f6c6a0c75c947237bccaab3da7ffcee252",
+          "production_blob": "95e13a5b15a7920b2a71c90c404d53a4f290f7eb",
+          "hq_blob": "057ba8f6c6a0c75c947237bccaab3da7ffcee252"
+        },
+        {
+          "path": "apps/api/src/dual_lineage/api/runtime_status.py",
+          "kind": "hq_only",
+          "baseline_blob": "003c76a4110020410650b3a16092b14cd90f688e",
+          "production_blob": "003c76a4110020410650b3a16092b14cd90f688e",
+          "hq_blob": "339df3e0ffd41a9c219a7bd504c58faef6a0f37f"
+        },
+        {
+          "path": "apps/api/src/dual_lineage/coordination/execution.py",
+          "kind": "hq_only",
+          "baseline_blob": "74709c124f3c479685406b2c8270adafe0bf00cc",
+          "production_blob": "74709c124f3c479685406b2c8270adafe0bf00cc",
+          "hq_blob": "d9bcc51cbc26a03ae1006e6b7750c10c82a42ed0"
+        },
+        {
+          "path": "apps/api/src/dual_lineage/coordination/state.py",
+          "kind": "hq_only",
+          "baseline_blob": "54af24ba8cd21274fb987df3112f210151138195",
+          "production_blob": "54af24ba8cd21274fb987df3112f210151138195",
+          "hq_blob": "fbe11baf3dff0c171003278409027ab7e23d4301"
+        },
+        {
+          "path": "apps/api/src/dual_lineage/coordination/streaming.py",
+          "kind": "hq_only",
+          "baseline_blob": "1006ec80ae6dbc7fca1ee4dc65866ab5e9807cde",
+          "production_blob": "1006ec80ae6dbc7fca1ee4dc65866ab5e9807cde",
+          "hq_blob": "59c23a66b53eb92fd55eca832cf78e2630d780ef"
+        },
+        {
+          "path": "apps/api/src/dual_lineage/coordinator.py",
+          "kind": "hq_only",
+          "baseline_blob": "b1a52837037e38a890a6dee93a174a8291662c33",
+          "production_blob": "b1a52837037e38a890a6dee93a174a8291662c33",
+          "hq_blob": "5d119b4d857edab6dab9e9126453f8a3ee70f7f4"
+        },
+        {
+          "path": "apps/api/src/dual_lineage/db/migrations.py",
+          "kind": "both_diverged",
+          "baseline_blob": "3c9e15994f6a75f2b3b0f57a3062634fc95939c0",
+          "production_blob": "381a4684c269da56081d4f4888f9d4e6fa539b87",
+          "hq_blob": "6a41a5125b4c74e2d94094322173c9fa5975647f"
+        },
+        {
+          "path": "apps/api/src/dual_lineage/db/migrations/023_free_quota_reservations.sql",
+          "kind": "hq_only",
+          "baseline_blob": null,
+          "production_blob": null,
+          "hq_blob": "3b6e0e9d33925c48a1ae6dee64f28734ee621964"
+        },
+        {
+          "path": "apps/api/src/dual_lineage/providers/factory.py",
+          "kind": "both_diverged",
+          "baseline_blob": "dae4ee3f0d1443c705370e0319f1f8618f3f7cdd",
+          "production_blob": "60ac36bbe32dac6688cb19243ddd43d6923d2810",
+          "hq_blob": "68d1955a0b865abeeb6f190a2ac49e0f1fb78791"
+        },
+        {
+          "path": "apps/api/src/dual_lineage/providers/free_entitlements.py",
+          "kind": "hq_only",
+          "baseline_blob": null,
+          "production_blob": null,
+          "hq_blob": "b4d952ee4a4e605096d0578de840d3363cc2eaea"
+        },
+        {
+          "path": "apps/api/src/dual_lineage/providers/free_quota_admission.py",
+          "kind": "hq_only",
+          "baseline_blob": null,
+          "production_blob": null,
+          "hq_blob": "35636562a22c124f06f026dd57cb7cd96f3db863"
+        },
+        {
+          "path": "apps/api/src/dual_lineage/providers/free_quota_reservations.py",
+          "kind": "hq_only",
+          "baseline_blob": null,
+          "production_blob": null,
+          "hq_blob": "bf0ff8052278d07d50199ce031e6fe42649f836b"
+        },
+        {
+          "path": "apps/api/src/dual_lineage/providers/free_route_election.py",
+          "kind": "hq_only",
+          "baseline_blob": null,
+          "production_blob": null,
+          "hq_blob": "1e3c8c60d909e22e201fe3423b58255d6f60a13a"
+        },
+        {
+          "path": "apps/api/src/dual_lineage/providers/openai_compatible.py",
+          "kind": "hq_only",
+          "baseline_blob": "bedb69491ea7211f53a048d4c88a76f9a3b02af4",
+          "production_blob": "bedb69491ea7211f53a048d4c88a76f9a3b02af4",
+          "hq_blob": "8bb7b6e39361348d5e873bec86c71acdf3c21c09"
+        },
+        {
+          "path": "apps/api/src/dual_lineage/providers/registry.py",
+          "kind": "hq_only",
+          "baseline_blob": "90821538632df266327a27f70dda51abe05c518c",
+          "production_blob": "90821538632df266327a27f70dda51abe05c518c",
+          "hq_blob": "f3042aa6f7637ab1a39972116531ab36cdf20349"
+        },
+        {
+          "path": "apps/api/src/dual_lineage/rag/embeddings.py",
+          "kind": "hq_only",
+          "baseline_blob": "1ab0b7bb67dcebf5d3a5b7ea10edb1d5c4fc66ea",
+          "production_blob": "1ab0b7bb67dcebf5d3a5b7ea10edb1d5c4fc66ea",
+          "hq_blob": "74dbbdd06565677b25eba0b35744bb2569db22df"
+        },
+        {
+          "path": "apps/api/src/dual_lineage/rollout.py",
+          "kind": "hq_only",
+          "baseline_blob": "eb195b3c06748f2f117c731f85eb7d3ab86f78de",
+          "production_blob": "eb195b3c06748f2f117c731f85eb7d3ab86f78de",
+          "hq_blob": "a16457bbec39c89ed565eed4eba19b337c574912"
+        },
+        {
+          "path": "apps/api/src/dual_lineage/routing_planner.py",
+          "kind": "hq_only",
+          "baseline_blob": "d434d1b75f02f47f33951a8e8b0cc34cc207bbea",
+          "production_blob": "d434d1b75f02f47f33951a8e8b0cc34cc207bbea",
+          "hq_blob": "8127a40b9b202c905fea5fdafe0c5de8ad2f6be3"
+        },
+        {
+          "path": "apps/api/src/dual_lineage/runtime.py",
+          "kind": "both_diverged",
+          "baseline_blob": "b7aeda0dc8a515ffbe4ba6ef308893f77faf4021",
+          "production_blob": "6bee16af04c2f8c083ea0fb5cc07cc79e1cfbe82",
+          "hq_blob": "f00daca71f110578c17fb162f2ee8a11eb06e44b"
+        },
+        {
+          "path": "apps/api/src/provider_resilience/adapter.py",
+          "kind": "hq_only",
+          "baseline_blob": "95d9f0b345b5485811cbaafbf1fbeda545ab8a51",
+          "production_blob": "95d9f0b345b5485811cbaafbf1fbeda545ab8a51",
+          "hq_blob": "c0f676508f1f9a311de86864ff079e792d7a0708"
+        },
+        {
+          "path": "apps/api/tests/conftest.py",
+          "kind": "monorepo_only",
+          "baseline_blob": "cd673b962438c64953c28e8614509e15184ee88d",
+          "production_blob": "3ba64b6c0e5de336a763d94239b715f267a84c36",
+          "hq_blob": "cd673b962438c64953c28e8614509e15184ee88d"
+        },
+        {
+          "path": "apps/api/tests/test_aliyun_model_ladder.py",
+          "kind": "hq_only",
+          "baseline_blob": null,
+          "production_blob": null,
+          "hq_blob": "7e520dad5f4452a9c8296356b99ffcf0c276a590"
+        },
+        {
+          "path": "apps/api/tests/test_aliyun_registration_diagnostics.py",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "10ba9fa32c7238240d00c94cb9b04f291966ecda",
+          "hq_blob": null
+        },
+        {
+          "path": "apps/api/tests/test_database_migrations.py",
+          "kind": "hq_only",
+          "baseline_blob": "f8d88a92313149e554b193eff0a822e3daf5d2c9",
+          "production_blob": "f8d88a92313149e554b193eff0a822e3daf5d2c9",
+          "hq_blob": "08084fe772a7ce066243a758c446b6e6b73f660d"
+        },
+        {
+          "path": "apps/api/tests/test_db_backup.py",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "84c43aa4311ffac68e8fb99bdb635e8f075ca4b3",
+          "hq_blob": null
+        },
+        {
+          "path": "apps/api/tests/test_db_backup_freshness.py",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "a59e057007d1cbb893a2d53d76aee8f88020678e",
+          "hq_blob": null
+        },
+        {
+          "path": "apps/api/tests/test_db_rehearse_recovery.py",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "c7ae7a75694f63e87bf91656eb2ef04001fe7040",
+          "hq_blob": null
+        },
+        {
+          "path": "apps/api/tests/test_db_restore_verify.py",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "4f73b7103dddbac19fee9c5c2a3a7ec5d7de97df",
+          "hq_blob": null
+        },
+        {
+          "path": "apps/api/tests/test_free_entitlements.py",
+          "kind": "hq_only",
+          "baseline_blob": null,
+          "production_blob": null,
+          "hq_blob": "012f1b1dc11ca9c4cc3c92c53e4963dba0f77e84"
+        },
+        {
+          "path": "apps/api/tests/test_free_quota_admission.py",
+          "kind": "hq_only",
+          "baseline_blob": null,
+          "production_blob": null,
+          "hq_blob": "6fbe73a835c145d27daa6492ec8198b50a6545f5"
+        },
+        {
+          "path": "apps/api/tests/test_free_quota_reservations.py",
+          "kind": "hq_only",
+          "baseline_blob": null,
+          "production_blob": null,
+          "hq_blob": "68d02224078eb7ab6f7789d3594c18f2d6353ae3"
+        },
+        {
+          "path": "apps/api/tests/test_free_route_election.py",
+          "kind": "hq_only",
+          "baseline_blob": null,
+          "production_blob": null,
+          "hq_blob": "f9542b48b1529a0b0a25537a01ade5868927e89e"
+        },
+        {
+          "path": "apps/api/tests/test_local_dispatch_timeout_runtime.py",
+          "kind": "hq_only",
+          "baseline_blob": null,
+          "production_blob": null,
+          "hq_blob": "7f4c33a2336f2fb373b8568dbefe28fa837ec13e"
+        },
+        {
+          "path": "apps/api/tests/test_octopus_ci_config.py",
+          "kind": "monorepo_only",
+          "baseline_blob": "f393eb9571ec51301b90be317b121dfbc6750d15",
+          "production_blob": "dfe4d9e4a9eeea0ec66a59b2d0f2e8c4d6daf800",
+          "hq_blob": "f393eb9571ec51301b90be317b121dfbc6750d15"
+        },
+        {
+          "path": "apps/api/tests/test_pg_env_isolation.py",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "47a9c2a7917af0ae154c14d63ae304df093d8d6e",
+          "hq_blob": null
+        },
+        {
+          "path": "apps/api/tests/test_provider_factory.py",
+          "kind": "hq_only",
+          "baseline_blob": "4892bbc6fc2ee7e6d69183f0fbe12bdfcb76a418",
+          "production_blob": "4892bbc6fc2ee7e6d69183f0fbe12bdfcb76a418",
+          "hq_blob": "182b8c4c490003806b891bde68b2c73ff6394460"
+        },
+        {
+          "path": "apps/api/tests/test_route_health_postgres.py",
+          "kind": "hq_only",
+          "baseline_blob": "0a5fc6b44ab190a2d4bfddd074bc7b0b7ba19e07",
+          "production_blob": "0a5fc6b44ab190a2d4bfddd074bc7b0b7ba19e07",
+          "hq_blob": "b32b9c486336b6b4d26ba68ffa01d33ebfd94f66"
+        },
+        {
+          "path": "apps/api/tests/test_runtime_db_targets.py",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "c32658718d7a712e9ad3f5afc1495c3fc7317cfa",
+          "hq_blob": null
+        },
+        {
+          "path": "apps/api/tests/test_runtime_status_api.py",
+          "kind": "hq_only",
+          "baseline_blob": "3f86a360bde172f640fa29d4fe7b819399b3d0ef",
+          "production_blob": "3f86a360bde172f640fa29d4fe7b819399b3d0ef",
+          "hq_blob": "c95bfb57ba422a536c045f16e883c41abe06621c"
+        },
+        {
+          "path": "docs/architecture/rag.md",
+          "kind": "monorepo_only",
+          "baseline_blob": "c45ef2ab73385716d4ce8f3da2a711390e0c5369",
+          "production_blob": "dc1892a29a81c85d0c2408952fa16c6e51e73c8c",
+          "hq_blob": "c45ef2ab73385716d4ce8f3da2a711390e0c5369"
+        }
+      ]
+    },
+    "ayahos-admin": {
+      "repository": "ayahos-hq/ayahos-admin",
+      "head_sha": "223a3b6ce6783405a4822a3cddbbbe66cc3164c2",
+      "counts": {
+        "monorepo_only": 0,
+        "hq_only": 3,
+        "both_diverged": 2
+      },
+      "changed_paths": 5,
+      "diff": [
+        {
+          "path": "apps/web/app/api/runtime/free-models/route.test.ts",
+          "kind": "hq_only",
+          "baseline_blob": null,
+          "production_blob": null,
+          "hq_blob": "a2c5532249d966d3394aaf8ae54770fdde958725"
+        },
+        {
+          "path": "apps/web/app/api/runtime/free-models/route.ts",
+          "kind": "hq_only",
+          "baseline_blob": null,
+          "production_blob": null,
+          "hq_blob": "5916013fc6a006f95eb89c5d03778330e72153c0"
+        },
+        {
+          "path": "apps/web/app/control/page.tsx",
+          "kind": "both_diverged",
+          "baseline_blob": "5692b4da4ce2933c363d5ad5737a0a3cc6da9387",
+          "production_blob": "2e906afed80be909d86f7633b166ee28902de399",
+          "hq_blob": "3ff7ba9d8a9175ef23e070941f79e4ea9d0a3ee2"
+        },
+        {
+          "path": "apps/web/lib/api.ts",
+          "kind": "hq_only",
+          "baseline_blob": "3bee0312cd5967e427ca61ac418441b38cf6723c",
+          "production_blob": "3bee0312cd5967e427ca61ac418441b38cf6723c",
+          "hq_blob": "32d21d8b5f3bb4d5d5bc7c7c2d432edd58db0b4f"
+        },
+        {
+          "path": "apps/web/lib/contracts.ts",
+          "kind": "both_diverged",
+          "baseline_blob": "1976c1678ef57b2f9d8c2dda413485d1624e4a28",
+          "production_blob": "3acff9e484999cfc8941a9b58c46e3d884520dc5",
+          "hq_blob": "c10ae5a72818c40f62abb3328b30a6cf3f22aa8b"
+        }
+      ]
+    },
+    "ayahos-platform": {
+      "repository": "ayahos-hq/ayahos-platform",
+      "head_sha": "4b4aa5c77d5a07d4c4e34284a7d3a6aa18c7a45f",
+      "counts": {
+        "monorepo_only": 31,
+        "hq_only": 2,
+        "both_diverged": 4
+      },
+      "changed_paths": 37,
+      "diff": [
+        {
+          "path": ".octopus/deployment_settings.ocl",
+          "kind": "monorepo_only",
+          "baseline_blob": "6a34788e19bdf729ebc5f2c2adf98fa4b5fec0fc",
+          "production_blob": "91b44577fd041a9bba7f7486a19ecba5b17a54fb",
+          "hq_blob": "6a34788e19bdf729ebc5f2c2adf98fa4b5fec0fc"
+        },
+        {
+          "path": ".octopus/runbooks/encrypted-database-backup.ocl",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "7cc5a708c73d6586fa46b139446867e5c439f6f3",
+          "hq_blob": null
+        },
+        {
+          "path": "deploy/cloudflare/node001-rag-gateway/README.md",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "8ac668ac89af3b9815d45179f5271f66548a7982",
+          "hq_blob": null
+        },
+        {
+          "path": "deploy/cloudflare/node001-rag-gateway/worker.mjs",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "917ee77857451955cb2114767caa1bae51b59a9a",
+          "hq_blob": null
+        },
+        {
+          "path": "deploy/cloudflare/node001-rag-gateway/worker.test.mjs",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "a5f981323040d0677eebd702f53b78f6a04cf11f",
+          "hq_blob": null
+        },
+        {
+          "path": "deploy/cloudflare/node001-rag-gateway/wrangler.jsonc",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "0e253b5c6d12f714a840bc2e0331d6c98fcab1ea",
+          "hq_blob": null
+        },
+        {
+          "path": "deploy/node-001/run-qwen3-rag-embedding.ps1",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "f71893b0daa86a87e9ade76718d1b7c7720f45cb",
+          "hq_blob": null
+        },
+        {
+          "path": "deploy/octopus-github-bridge/README.md",
+          "kind": "monorepo_only",
+          "baseline_blob": "0fc056fd3e9d6622abbdf070236004f37984aa76",
+          "production_blob": "af16881d2172b7af3a963f1c3f11a20e47b3bfc5",
+          "hq_blob": "0fc056fd3e9d6622abbdf070236004f37984aa76"
+        },
+        {
+          "path": "deploy/octopus-github-bridge/src/branch_queue.js",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "23fbc24b6a1984353a5bd1f93d50b2125af64e84",
+          "hq_blob": null
+        },
+        {
+          "path": "deploy/octopus-github-bridge/src/worker.js",
+          "kind": "monorepo_only",
+          "baseline_blob": "da3265bc0d3d45a69022d4d31ca5d68ff29f6a35",
+          "production_blob": "1f794cb03e8d66687c42f66e1e886d3181f71d37",
+          "hq_blob": "da3265bc0d3d45a69022d4d31ca5d68ff29f6a35"
+        },
+        {
+          "path": "deploy/octopus-github-bridge/test/branch_queue.test.js",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "72236b5544eb02e5599a959c45991c46a68d1c56",
+          "hq_blob": null
+        },
+        {
+          "path": "deploy/octopus-github-bridge/test/worker.test.js",
+          "kind": "monorepo_only",
+          "baseline_blob": "c83bc96ad976f043e7479f79213b1bf9ff8f2db6",
+          "production_blob": "83bfd676b862cc67ceea5698d1d693bca696e250",
+          "hq_blob": "c83bc96ad976f043e7479f79213b1bf9ff8f2db6"
+        },
+        {
+          "path": "deploy/octopus-github-bridge/wrangler.jsonc",
+          "kind": "monorepo_only",
+          "baseline_blob": "00de8cd43b3a74f307286350a34b476505aebbbf",
+          "production_blob": "f4123df0803efa48a34bf0161b68c29a58220b3d",
+          "hq_blob": "00de8cd43b3a74f307286350a34b476505aebbbf"
+        },
+        {
+          "path": "deploy/service-inventory.json",
+          "kind": "monorepo_only",
+          "baseline_blob": "0bdd280fca4064d5cb8d92311dead1dc7eff267c",
+          "production_blob": "d7f74416df037264a55b58ca5f7a0fc92f04fb57",
+          "hq_blob": "0bdd280fca4064d5cb8d92311dead1dc7eff267c"
+        },
+        {
+          "path": "docs/infrastructure/database-restore-rehearsal.md",
+          "kind": "hq_only",
+          "baseline_blob": null,
+          "production_blob": null,
+          "hq_blob": "a236693f910a4876a95060fa253e65b271bc59b7"
+        },
+        {
+          "path": "docs/infrastructure/octopus-ci-verification.md",
+          "kind": "monorepo_only",
+          "baseline_blob": "4c4904bf8925c65d6a2334c0b2aabed6657dbe40",
+          "production_blob": "20ce212f9c98c12cdfb0d65952d7776401f55526",
+          "hq_blob": "4c4904bf8925c65d6a2334c0b2aabed6657dbe40"
+        },
+        {
+          "path": "docs/infrastructure/render-service-inventory.md",
+          "kind": "monorepo_only",
+          "baseline_blob": "e5c2303270d116290a81dc5816b4d86a3c2dbaca",
+          "production_blob": "b505345eff361d4df6bbc985e8ab8895f8000407",
+          "hq_blob": "e5c2303270d116290a81dc5816b4d86a3c2dbaca"
+        },
+        {
+          "path": "scripts/ci/deployable-container-smoke.sh",
+          "kind": "monorepo_only",
+          "baseline_blob": "fc50e51472658c1db8ddace0ba140dd0022f0a03",
+          "production_blob": "d9cba663cc41974ff326f9483c269acc936607bd",
+          "hq_blob": "fc50e51472658c1db8ddace0ba140dd0022f0a03"
+        },
+        {
+          "path": "scripts/ci/octopus_db_backup.sh",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "c8e209f2d9612268aa3641ae69cd509869aaea1e",
+          "hq_blob": null
+        },
+        {
+          "path": "scripts/ci/octopus_status_relay.mjs",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "4b007ca12e2ab8c08135c65a9611ed923130103c",
+          "hq_blob": null
+        },
+        {
+          "path": "scripts/ci/octopus_verify.sh",
+          "kind": "monorepo_only",
+          "baseline_blob": "9ab6cd2719e661c69805f0b45c1b6ae75297c4b0",
+          "production_blob": "19f32a316cb5300346ffb184e37037ced55c5f51",
+          "hq_blob": "9ab6cd2719e661c69805f0b45c1b6ae75297c4b0"
+        },
+        {
+          "path": "scripts/ci/tests/test_db_schema_bootstrap.py",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "4e8cb7631545966abfaffd17e23aa9c008049c2a",
+          "hq_blob": null
+        },
+        {
+          "path": "scripts/ci/tests/test_octopus_db_backup_migration.py",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "c71a557e7da5dba517eeaa2dd1dcd6669d08d265",
+          "hq_blob": null
+        },
+        {
+          "path": "scripts/ci/tests/test_octopus_status_relay.mjs",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "a73dd8d06d5ce30f9c4f278d0b97ba3452d7b44a",
+          "hq_blob": null
+        },
+        {
+          "path": "scripts/ci/tests/test_rag_env_bootstrap.py",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "4e7d31a75deccb2a676fd1f17cfeda1299f429ca",
+          "hq_blob": null
+        },
+        {
+          "path": "scripts/ci/tests/test_render_db_safety.py",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "39722dad9b78db159ef84313b2acb47cb8b446e1",
+          "hq_blob": null
+        },
+        {
+          "path": "scripts/ci/verify.sh",
+          "kind": "both_diverged",
+          "baseline_blob": "2a08e769c698d9e3fc91f92e507bec44f63d01b9",
+          "production_blob": "039058a6f04893dc1e60e1f6a2f034db2f7f18f6",
+          "hq_blob": "af7adddbd0f28bb7a7225238581d4d63ee829f64"
+        },
+        {
+          "path": "scripts/db/__init__.py",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "5d876185187fe9dd42b0b6a03533561fee4e0c3f",
+          "hq_blob": null
+        },
+        {
+          "path": "scripts/db/backup_freshness.py",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "de53aab41bb47032cfd89aef24d43eae120e5ddf",
+          "hq_blob": null
+        },
+        {
+          "path": "scripts/db/backup_postgres.py",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "432c7635210ad59a4600c00394afbaf292aa5834",
+          "hq_blob": null
+        },
+        {
+          "path": "scripts/db/postgres_env.py",
+          "kind": "both_diverged",
+          "baseline_blob": null,
+          "production_blob": "07943989ee5a90f780ee478096d6acc38dcfb1ba",
+          "hq_blob": "bf029531dbacfbb772590aa872c9ec8cef921950"
+        },
+        {
+          "path": "scripts/db/rag_env_bootstrap.sh",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "90b70cc78132e6ad798a7548e851300ef5cfbbcf",
+          "hq_blob": null
+        },
+        {
+          "path": "scripts/db/rehearse_recovery.py",
+          "kind": "both_diverged",
+          "baseline_blob": null,
+          "production_blob": "03038074ab08f003a6924ca23cd59cb577523acc",
+          "hq_blob": "c144b18576213a257ee034eea9b90c2b88da1339"
+        },
+        {
+          "path": "scripts/db/restore_verify.py",
+          "kind": "both_diverged",
+          "baseline_blob": null,
+          "production_blob": "17fd28f276ca903050a4e842cae1c5716590c77c",
+          "hq_blob": "b60af17f38a9297f0683769d2c000ea38b494c13"
+        },
+        {
+          "path": "scripts/db/runtime_targets.py",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "594605b27330fbc4186b034dae97cb0f73cbfe89",
+          "hq_blob": null
+        },
+        {
+          "path": "scripts/db/schema_startup.sh",
+          "kind": "monorepo_only",
+          "baseline_blob": null,
+          "production_blob": "8bc794db04cae629a82c04c08839d8683fdd5c9d",
+          "hq_blob": null
+        },
+        {
+          "path": "scripts/db/test_rehearse_recovery.py",
+          "kind": "hq_only",
+          "baseline_blob": null,
+          "production_blob": null,
+          "hq_blob": "ba7fca942f7f9e9cf1ad3106eef772ca11a5b6aa"
+        }
+      ]
+    },
+    "ayahos-workloads": {
+      "repository": "ayahos-hq/ayahos-workloads",
+      "head_sha": "e4de3aab568fc817816a4bd9e58eaeb0296f7a53",
+      "counts": {
+        "monorepo_only": 0,
+        "hq_only": 2,
+        "both_diverged": 2
+      },
+      "changed_paths": 4,
+      "diff": [
+        {
+          "path": "apps/rag-ruby/lib/disposable_test_database_guard.rb",
+          "kind": "hq_only",
+          "baseline_blob": null,
+          "production_blob": null,
+          "hq_blob": "e0aca4375ee89c38ad90ab45d7f9b15d8f8d5008"
+        },
+        {
+          "path": "apps/rag-ruby/test/disposable_database_guard_test.rb",
+          "kind": "hq_only",
+          "baseline_blob": null,
+          "production_blob": null,
+          "hq_blob": "130f0d125c4d3c36a8253ab2abb2df43941fa810"
+        },
+        {
+          "path": "apps/rag-ruby/test/migrated_schema_test.rb",
+          "kind": "both_diverged",
+          "baseline_blob": "7c65429077b1efa96145ce82807a464b1d154397",
+          "production_blob": "24b571527a77a8709e5a4808e2f886d37c8fbe0c",
+          "hq_blob": "8b8c61212b3974a1d42ffe61e4e95eb2c66c706d"
+        },
+        {
+          "path": "apps/rag-ruby/test/rag_test.rb",
+          "kind": "both_diverged",
+          "baseline_blob": "9f8108f7eb75171fd6575858ba4291826bb1a70a",
+          "production_blob": "9c09f43227d5c0730f87a639a76a4cf81c38c77c",
+          "hq_blob": "43804d133cbe5c80e2ac93385d2656634a124583"
+        }
+      ]
+    }
+  }
+}
