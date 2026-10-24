@@ -29,7 +29,7 @@ def run_suites() -> int:
                  "-s", str(source), "-p", "test_*.py", "-v"],
                 cwd=ROOT, check=False, timeout=180,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
-                        )
+            )
             if completed.stdout:
                 print(completed.stdout, end='' if completed.stdout.endswith('\n') else '\n')
             if completed.returncode != 0:
