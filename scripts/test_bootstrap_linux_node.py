@@ -96,7 +96,7 @@ class NodeBootstrapTests(unittest.TestCase):
         target_bin.mkdir(parents=True)
         for executable in ("node", "npm", "npx", "corepack"):
             file = target_bin / executable
-            file.write_text("#!/bin/sh\\nprintf 'v22.0.0\\\\n'\\n")
+            file.write_text(chr(10).join(("#!/bin/sh", "echo v22.0.0", "")))
             file.chmod(0o755)
         result = self.run_bootstrap("--install")
         self.assertNotEqual(result.returncode, 0)
@@ -107,7 +107,7 @@ class NodeBootstrapTests(unittest.TestCase):
         target_bin = self.target / "bin"
         target_bin.mkdir(parents=True)
         node = target_bin / "node"
-        node.write_text("#!/bin/sh\\nprintf 'v22.23.4\\\\n'\\n")
+        node.write_text(chr(10).join(("#!/bin/sh", "echo v22.23.4", "")))
         node.chmod(0o755)
         result = self.run_bootstrap("--install")
         self.assertNotEqual(result.returncode, 0)
