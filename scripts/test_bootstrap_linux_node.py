@@ -91,6 +91,29 @@ class NodeBootstrapTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("Do not run as root", result.stderr)
 
+    def test_install_wrong_preexisting_runtime_does_not_publish_links(self) -> None:
+        target_bin = self.target / "bin"
+        target_bin.mkdir(parents=True)
+        for executable in ("node", "npm", "npx", "corepack"):
+            file = target_bin / executable
+            file.write_text("#!/bin/sh\\nprintf 'v22.0.0\\\\n'\\n")
+            file.chmod(0o755)
+        result = self.run_bootstrap("--install")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Wrong Node version", result.stderr)
+        self.assertFalse(self.links.exists(), "Failed install must not create PATH links")
+
+    def test_install_partial_preexisting_runtime_does_not_publish_links(self) -> None:
+        target_bin = self.target / "bin"
+        target_bin.mkdir(parents=True)
+        node = target_bin / "node"
+        node.write_text("#!/bin/sh\\nprintf 'v22.23.4\\\\n'\\n")
+        node.chmod(0o755)
+        result = self.run_bootstrap("--install")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Missing npm", result.stderr)
+        self.assertFalse(self.links.exists(), "Failed install must not publish dangling PATH links")
+
     def test_install_refuses_to_replace_existing_user_executable(self) -> None:
         self.links.mkdir(parents=True)
         existing = self.links / "node"
