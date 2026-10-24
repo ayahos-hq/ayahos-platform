@@ -25,24 +25,41 @@ REPOSITORIES = {
 
 
 def git_head(path: Path) -> str:
-    # Prefer the fetched release ref. The shared workspace may intentionally
-    # have an older working branch with unrelated changes.
-    try:
-        return subprocess.check_output(
-            ["git", "-C", str(path), "rev-parse", "origin/main"], text=True
-        ).strip()
-    except subprocess.CalledProcessError:
-        pass
+    """The SHA actually checked out, never a stale remote-tracking reference."""
     return subprocess.check_output(
-        ["git", "-C", str(path), "rev-parse", "HEAD"], text=True
+        ["git", "-C", str(path), "rev-parse", "HEAD"],
+        text=True, stderr=subprocess.DEVNULL,
     ).strip()
 
 
 def is_ancestor(path: Path, ancestor: str) -> bool:
     return subprocess.run(
-        ["git", "-C", str(path), "merge-base", "--is-ancestor", ancestor, "origin/main"],
-        check=False,
+        ["git", "-C", str(path), "merge-base", "--is-ancestor", ancestor, "HEAD"],
+        check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     ).returncode == 0
+
+
+def verify_checkout(path: Path, workspace: Path) -> str:
+    """Reject contaminated, escaped or incorrect build trees before any release gate."""
+    try:
+        real = path.resolve(strict=True)
+    except OSError:
+        raise ValueError("HQ checkout is missing") from None
+    if path.is_symlink() or not real.is_relative_to(workspace.resolve(strict=True)):
+        raise ValueError("HQ checkout resolves outside workspace")
+    toplevel = subprocess.check_output(
+        ["git", "-C", str(real), "rev-parse", "--show-toplevel"],
+        text=True, stderr=subprocess.DEVNULL,
+    ).strip()
+    if Path(toplevel).resolve() != real:
+        raise ValueError("HQ checkout is not a separate Git working tree")
+    status = subprocess.check_output(
+        ["git", "-C", str(real), "status", "--porcelain=v1", "--untracked-files=all"],
+        text=True, stderr=subprocess.DEVNULL,
+    )
+    if status:
+        raise ValueError("HQ checkout has dirty or untracked files")
+    return git_head(real)
 
 
 def verify(path: Path, workspace_root: Path | None) -> None:
@@ -69,12 +86,13 @@ def verify(path: Path, workspace_root: Path | None) -> None:
         digest = component.get("artifact_sha256")
         if digest is not None and not ARTIFACT.fullmatch(digest):
             raise ValueError(f"invalid artifact digest for {name}")
-        if workspace_root is not None and name == "ayahos-platform":
-            if not is_ancestor(workspace_root / name, component["git_sha"]):
-                raise ValueError("platform source SHA is not an ancestor of origin/main")
-        elif workspace_root is not None:
+        if workspace_root is not None:
             checkout = workspace_root / name
-            if git_head(checkout) != component["git_sha"]:
+            actual_sha = verify_checkout(checkout, workspace_root)
+            if name == "ayahos-platform":
+                if not is_ancestor(checkout, component["git_sha"]):
+                    raise ValueError("platform source SHA is not an ancestor of checked-out HEAD")
+            elif actual_sha != component["git_sha"]:
                 raise ValueError(f"local checkout HEAD differs for {name}")
 
     compatibility = manifest.get("compatibility", {})
@@ -98,10 +116,18 @@ def verify(path: Path, workspace_root: Path | None) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--manifest", default="release-manifest.json", type=Path)
+    parser.add_argument("--manifest", default=Path(__file__).resolve().parents[1] / "release-manifest.json", type=Path)
     parser.add_argument("--workspace-root", type=Path,
                         help="also compare fetched origin/main sibling repository refs")
+    # Octopus Git-backed script steps append the source package's SHA-256 digest
+    # as a positional argument even when Script Parameters is empty. This value
+    # is transport metadata, not an acceptance artifact or a release gate.
+    parser.add_argument('octopus_source_digest', nargs='?',
+                        help='optional Octopus Git source package SHA-256')
     args = parser.parse_args()
+    if args.octopus_source_digest is not None and not ARTIFACT.fullmatch(
+            args.octopus_source_digest.lower()):
+        parser.error('Octopus source digest must be exactly 64 hexadecimal characters')
     try:
         verify(args.manifest, args.workspace_root)
     except (OSError, ValueError, KeyError, subprocess.CalledProcessError, json.JSONDecodeError) as exc:

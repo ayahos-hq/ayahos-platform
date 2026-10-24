@@ -1,38 +1,38 @@
 {
   "schema_version": 1,
   "release_status": "candidate",
-  "release_id": "hq-a7ef41f-20261023",
+  "release_id": "hq-candidate-sse-db-preflight-20261023-no-cutover",
   "source_authority": "fuaadabdullah/AyahOS_Dual_Lineage",
   "platform_manifest_commit_rule": "platform_git_sha_is_an_ancestor_of_manifest_commit",
   "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
   "components": {
     "ayahos-site": {
       "repository": "ayahos-hq/ayahos-site",
-      "git_sha": "539c3bc609cfd8eaad34f7c97046fcbc6cb798bb",
+      "git_sha": "a1f9461881aa4068d39a91ce4adbdf1dd73069cc",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     },
     "ayahos-core": {
       "repository": "ayahos-hq/ayahos-core",
-      "git_sha": "0be54c8c36836a310c9781413daa0f4cb63f7801",
+      "git_sha": "28162d26b3471e8f3866577bcbf7c155f4a211c6",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     },
     "ayahos-admin": {
       "repository": "ayahos-hq/ayahos-admin",
-      "git_sha": "b6180662d0dabfead1021f8477ff67bf08087e89",
+      "git_sha": "223a3b6ce6783405a4822a3cddbbbe66cc3164c2",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     },
     "ayahos-platform": {
       "repository": "ayahos-hq/ayahos-platform",
-      "git_sha": "e6e6f0729987d17dbe6c1d225d3d2ae15b6c8754",
+      "git_sha": "5623aea15094b316c355c90dc9a3e0dea04711f2",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     },
     "ayahos-workloads": {
       "repository": "ayahos-hq/ayahos-workloads",
-      "git_sha": "60f76203de45a1c340eb7bfea89a29b2abcfcbca",
+      "git_sha": "d57e6db9ade4218870ba6bc8455cc606b5ef594a",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     }
@@ -48,5 +48,18 @@
     "database_restore_rehearsal": "pending",
     "authenticated_live_smoke": "pending",
     "rollback_rehearsal": "pending"
+  },
+  "reconciliation_evidence": {
+    "status": "source-only-reviewed",
+    "canonical_production_commit": "dbf9fbde52a11bbc069e19bdeca2658d8dcc1147",
+    "site_pr": "https://github.com/ayahos-hq/ayahos-site/pull/14",
+    "core_pr": "https://github.com/ayahos-hq/ayahos-core/pull/17",
+    "admin_pr": "https://github.com/ayahos-hq/ayahos-admin/pull/6",
+    "workloads_pr": "https://github.com/ayahos-hq/ayahos-workloads/pull/9",
+    "caveat": "Independent verified fixes are present in HQ; remaining branches and cross-service integration are not certified. No production cutover.",
+    "admin_sse_pr": "https://github.com/ayahos-hq/ayahos-admin/pull/7",
+    "core_aliyun_pr": "https://github.com/ayahos-hq/ayahos-core/pull/18",
+    "local_dispatch_pr": "https://github.com/ayahos-hq/ayahos-core/pull/19",
+    "core_sse_db_preflight_pr": "https://github.com/ayahos-hq/ayahos-core/pull/20"
   }
 }
