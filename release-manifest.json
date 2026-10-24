@@ -14,7 +14,7 @@
     },
     "ayahos-core": {
       "repository": "ayahos-hq/ayahos-core",
-      "git_sha": "28162d26b3471e8f3866577bcbf7c155f4a211c6",
+      "git_sha": "ce43a6c99b2f80bc6f0b4903687373e2d007daff",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     },
@@ -56,18 +56,20 @@
     "core_pr": "https://github.com/ayahos-hq/ayahos-core/pull/17",
     "admin_pr": "https://github.com/ayahos-hq/ayahos-admin/pull/6",
     "workloads_pr": "https://github.com/ayahos-hq/ayahos-workloads/pull/9",
-    "caveat": "Source-only evidence: 89 scoped Git blob differences remain across HQ and canonical main (some intentionally diverged). Cross-repository runtime, database restore, artifact digests, authenticated smoke and rollback are not verified. No production cutover.",
+    "caveat": "Read-only source evidence, not production acceptance. A refreshed 2026-10-24 drift snapshot is attached; remaining divergences require per-component review. Independently built artifacts, authenticated chat, PostgreSQL recovery, Octopus cross-repo integration and rollback remain pending. No production cutover.",
     "admin_sse_pr": "https://github.com/ayahos-hq/ayahos-admin/pull/7",
     "core_aliyun_pr": "https://github.com/ayahos-hq/ayahos-core/pull/18",
     "local_dispatch_pr": "https://github.com/ayahos-hq/ayahos-core/pull/19",
     "core_sse_db_preflight_pr": "https://github.com/ayahos-hq/ayahos-core/pull/20",
     "workloads_safety_pr": "https://github.com/ayahos-hq/ayahos-workloads/pull/10",
-    "drift_audit_path": "docs/release-candidates/hq-drift-20261024.json",
+    "drift_audit_path": "docs/release-candidates/hq-drift-20261024-linux-source-refresh.json",
     "drift_audit_summary": {
-      "monorepo_only": 42,
-      "hq_only": 36,
-      "both_diverged": 11,
-      "changed_paths": 89
-    }
+      "monorepo_only": 75,
+      "hq_only": 47,
+      "both_diverged": 13,
+      "changed_paths": 135
+    },
+    "latest_observed_monorepo_main": "ae5a472c1de22899f818141d209732b6d891ac6c",
+    "drift_audit_snapshot_utc": "2026-10-24T06:33:43Z"
   }
 }
