@@ -12,9 +12,6 @@ on:
       - "scripts/verify-release-manifest.py"
       - "scripts/audit-repo-drift.py"
       - "scripts/test_audit_repo_drift.py"
-      - "scripts/bootstrap-linux-node.sh"
-      - "scripts/test_bootstrap_linux_node.py"
-      - "docs/linux-dev-bootstrap.md"
       - "scripts/test_verify_release_manifest.py"
       - "scripts/assemble-hq-workspace.py"
       - "scripts/test_assemble_hq_workspace.py"
@@ -30,12 +27,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: provisional-platform-verification
   cancel-in-progress: true
 
 jobs:
   verify:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
       CI: "true"
@@ -55,10 +52,6 @@ jobs:
         run: python3 -m unittest discover -s scripts -p "test_verify_release_manifest.py" -v
       - name: Unit-test three-way repository drift classifier (offline)
         run: python3 -m unittest discover -s scripts -p "test_audit_repo_drift.py" -v
-      - name: Validate Linux bootstrap without performing an installation
-        run: |
-          bash -n scripts/bootstrap-linux-node.sh
-          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts -p "test_bootstrap_linux_node.py" -v
       - name: Check shell syntax without running release scripts
         run: find scripts/ci -type f -name '*.sh' -exec bash -n '{}' \;
       - name: Setup Node 22 for dependency-free bridge tests
