@@ -25,11 +25,20 @@ class NodeBootstrapTests(unittest.TestCase):
         self.home = Path(self.tmp.name)
         self.target = self.home / ".local" / "opt" / f"node-v{VERSION}-linux-x64"
         self.links = self.home / ".local" / "bin"
+        # Simulate an ordinary developer identity even on root-run Octopus workers.
+        self.stub_bin = self.home / "stubbin"
+        self.stub_bin.mkdir()
+        self.fake_id = self.stub_bin / "id"
+        self.fake_id.write_text(
+            "#!/bin/sh\nif [ \"$1\" = '-u' ]; then echo 1000; else /usr/bin/id \"$@\"; fi\n"
+        )
+        self.fake_id.chmod(0o755)
 
     def run_bootstrap(self, mode: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             ["bash", str(BOOTSTRAP), mode],
-            env={**os.environ, "HOME": str(self.home)},
+            env={**os.environ, "HOME": str(self.home),
+                 "PATH": str(self.stub_bin) + os.pathsep + os.environ.get("PATH", "/usr/bin:/bin")},
             capture_output=True,
             text=True,
             timeout=15,
@@ -75,20 +84,10 @@ class NodeBootstrapTests(unittest.TestCase):
 
     def test_check_refuses_root_identity_even_with_valid_node(self) -> None:
         self.fixture(f"v{VERSION}")
-        stub_bin = self.home / "stubbin"
-        stub_bin.mkdir()
-        fake_id = stub_bin / "id"
-        fake_id.write_text("#!/bin/sh\nif [ \"$1\" = '-u' ]; then echo 0; else /usr/bin/id \"$@\"; fi\n")
-        fake_id.chmod(0o755)
-        result = subprocess.run(
-            ["bash", str(BOOTSTRAP), "--check"],
-            env={**os.environ, "HOME": str(self.home),
-                 "PATH": str(stub_bin) + os.pathsep + os.environ["PATH"]},
-            capture_output=True,
-            text=True,
-            timeout=15,
-            check=False,
+        self.fake_id.write_text(
+            "#!/bin/sh\nif [ \"$1\" = '-u' ]; then echo 0; else /usr/bin/id \"$@\"; fi\n"
         )
+        result = self.run_bootstrap("--check")
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("Do not run as root", result.stderr)
 
