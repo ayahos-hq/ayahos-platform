@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "release_status": "candidate",
-  "release_id": "hq-candidate-sse-db-preflight-20261023-no-cutover",
+  "release_id": "hq-candidate-20261024-safety-refresh-no-cutover",
   "source_authority": "fuaadabdullah/AyahOS_Dual_Lineage",
   "platform_manifest_commit_rule": "platform_git_sha_is_an_ancestor_of_manifest_commit",
   "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
@@ -32,7 +32,7 @@
     },
     "ayahos-workloads": {
       "repository": "ayahos-hq/ayahos-workloads",
-      "git_sha": "d57e6db9ade4218870ba6bc8455cc606b5ef594a",
+      "git_sha": "e4de3aab568fc817816a4bd9e58eaeb0296f7a53",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     }
@@ -56,10 +56,18 @@
     "core_pr": "https://github.com/ayahos-hq/ayahos-core/pull/17",
     "admin_pr": "https://github.com/ayahos-hq/ayahos-admin/pull/6",
     "workloads_pr": "https://github.com/ayahos-hq/ayahos-workloads/pull/9",
-    "caveat": "Independent verified fixes are present in HQ; remaining branches and cross-service integration are not certified. No production cutover.",
+    "caveat": "Source-only evidence: 89 scoped Git blob differences remain across HQ and canonical main (some intentionally diverged). Cross-repository runtime, database restore, artifact digests, authenticated smoke and rollback are not verified. No production cutover.",
     "admin_sse_pr": "https://github.com/ayahos-hq/ayahos-admin/pull/7",
     "core_aliyun_pr": "https://github.com/ayahos-hq/ayahos-core/pull/18",
     "local_dispatch_pr": "https://github.com/ayahos-hq/ayahos-core/pull/19",
-    "core_sse_db_preflight_pr": "https://github.com/ayahos-hq/ayahos-core/pull/20"
+    "core_sse_db_preflight_pr": "https://github.com/ayahos-hq/ayahos-core/pull/20",
+    "workloads_safety_pr": "https://github.com/ayahos-hq/ayahos-workloads/pull/10",
+    "drift_audit_path": "docs/release-candidates/hq-drift-20261024.json",
+    "drift_audit_summary": {
+      "monorepo_only": 42,
+      "hq_only": 36,
+      "both_diverged": 11,
+      "changed_paths": 89
+    }
   }
 }
