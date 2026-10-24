@@ -73,6 +73,25 @@ class NodeBootstrapTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("refusing to overwrite", result.stderr)
 
+    def test_check_refuses_root_identity_even_with_valid_node(self) -> None:
+        self.fixture(f"v{VERSION}")
+        stub_bin = self.home / "stubbin"
+        stub_bin.mkdir()
+        fake_id = stub_bin / "id"
+        fake_id.write_text("#!/bin/sh\nif [ \"$1\" = '-u' ]; then echo 0; else /usr/bin/id \"$@\"; fi\n")
+        fake_id.chmod(0o755)
+        result = subprocess.run(
+            ["bash", str(BOOTSTRAP), "--check"],
+            env={**os.environ, "HOME": str(self.home),
+                 "PATH": str(stub_bin) + os.pathsep + os.environ["PATH"]},
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=False,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Do not run as root", result.stderr)
+
     def test_install_refuses_to_replace_existing_user_executable(self) -> None:
         self.links.mkdir(parents=True)
         existing = self.links / "node"
