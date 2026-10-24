@@ -64,10 +64,12 @@
     "workloads_safety_pr": "https://github.com/ayahos-hq/ayahos-workloads/pull/10",
     "drift_audit_path": "docs/release-candidates/hq-drift-20261024-linux-source-refresh.json",
     "drift_audit_summary": {
-      "monorepo_only": 42,
-      "hq_only": 36,
-      "both_diverged": 11,
-      "changed_paths": 89
-    }
+      "monorepo_only": 75,
+      "hq_only": 47,
+      "both_diverged": 13,
+      "changed_paths": 135
+    },
+    "latest_observed_monorepo_main": "ae5a472c1de22899f818141d209732b6d891ac6c",
+    "drift_audit_snapshot_utc": "2026-10-24T06:33:43Z"
   }
 }
