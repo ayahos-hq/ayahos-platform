@@ -17,6 +17,7 @@ case "$1" in
   *) die "Usage: $0 --check | --install" ;;
 esac
 
+[[ "$(id -u)" != "0" ]] || die "Do not run as root; use a non-root Ubuntu account."
 [[ "$(uname -s)" == "Linux" && "$(uname -m)" == "x86_64" ]] ||
   die "Only Linux x86_64 is supported by this pinned artifact."
 [[ -n "${HOME:-}" && "$HOME" != "/" ]] || die "Refusing unsafe HOME."
