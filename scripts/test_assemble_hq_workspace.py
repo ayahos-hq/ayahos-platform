@@ -119,5 +119,49 @@ class ReleaseAssemblerTests(unittest.TestCase):
         self.assertEqual(len(evidence["component_checkout_shas"]), 5)
 
 
+    def test_without_gh_cli_linux_git_clone_uses_https_and_immutable_sha(self):
+        destination = self.root / "clone"
+        with patch.object(module.shutil, "which", return_value=None), \
+             patch.object(module.subprocess, "run") as run:
+            run.return_value.returncode = 0
+            module.clone_at("ayahos-hq/ayahos-core", "a" * 40, destination)
+        self.assertEqual(run.call_count, 2)
+        clone = run.call_args_list[0]
+        self.assertEqual(
+            clone.args[0],
+            ["git", "clone", "--quiet", "--no-checkout",
+             "https://github.com/ayahos-hq/ayahos-core.git", str(destination)],
+        )
+        self.assertEqual(clone.kwargs["env"]["GIT_TERMINAL_PROMPT"], "0")
+        self.assertEqual(clone.kwargs["env"]["GH_PROMPT_DISABLED"], "1")
+        self.assertEqual(
+            run.call_args_list[1].args[0],
+            ["git", "-C", str(destination), "checkout", "--detach", "--quiet", "a" * 40],
+        )
+
+    def test_when_gh_cli_exists_preserves_existing_clone_contract(self):
+        destination = self.root / "clone"
+        with patch.object(module.shutil, "which", return_value="/usr/bin/gh"), \
+             patch.object(module.subprocess, "run") as run:
+            run.return_value.returncode = 0
+            module.clone_at("ayahos-hq/ayahos-site", "a" * 40, destination)
+        self.assertEqual(
+            run.call_args_list[0].args[0],
+            ["gh", "repo", "clone", "ayahos-hq/ayahos-site",
+             str(destination), "--", "--quiet", "--no-checkout"],
+        )
+
+    def test_clone_never_accepts_unknown_repo_or_invalid_sha(self):
+        with patch.object(module.subprocess, "run") as run:
+            for repository, sha in (
+                ("attacker/fork", "a" * 40),
+                ("ayahos-hq/ayahos-core", "main"),
+                ("ayahos-hq/ayahos-core", "a" * 39),
+            ):
+                with self.subTest(repository=repository, sha=sha), self.assertRaises(ValueError):
+                    module.clone_at(repository, sha, self.root / "clone")
+        run.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()

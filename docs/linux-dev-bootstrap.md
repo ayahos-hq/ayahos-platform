@@ -52,6 +52,38 @@ The installer is idempotent for the pinned version and refuses to overwrite an e
 
 For a local-only rollback, first stop all local processes using the binary, verify each of the four symlinks still points at the pinned install, remove just those exact symlinks and that one pinned directory. Do not touch unrelated binaries, other toolchains or production systems.
 
+## Five-repository source assembly on native Linux
+
+`scripts/assemble-hq-workspace.py` supports two **noninteractive** authenticated checkout paths: the existing GitHub CLI (`gh`) when installed, or regular `git clone` over HTTPS with an already configured Git credential helper when `gh` is absent. Both paths allowlist the five repositories, check out immutable commit SHAs from the candidate manifest, verify clean Git trees and matching manifest bytes, and atomically publish a **source-only** receipt. Neither authenticates by exposing a token in the remote URL or creates a deployable artifact.
+
+Run from a native Linux checkout of `ayahos-platform`, using an empty, non-existent workspace destination:
+
+```bash
+export PYTHONDONTWRITEBYTECODE=1
+
+# Preferred: existing authenticated gh CLI, or previously configured git credential helper.
+python3 scripts/assemble-hq-workspace.py \
+  --manifest release-manifest.json \
+  --platform-head "$(git rev-parse HEAD)" \
+  --workspace "$HOME/src/ayahos/candidate-$(git rev-parse --short HEAD)"
+```
+
+For a developer whose **authorized Windows Git Credential Manager** is already accessible in WSL2, the local-only Git fallback can be selected per process without persisting credentials or changing the global Git configuration:
+
+```bash
+GIT_CONFIG_COUNT=1 \
+GIT_CONFIG_KEY_0=credential.helper \
+GIT_CONFIG_VALUE_0="$HOME/.local/bin/gcm-windows.exe" \
+python3 scripts/assemble-hq-workspace.py \
+  --manifest release-manifest.json \
+  --platform-head "$(git rev-parse HEAD)" \
+  --workspace "$HOME/src/ayahos/candidate-$(git rev-parse --short HEAD)"
+```
+
+The helper path is an example for the currently authorized WSL workstation, **not** an Octopus worker dependency. Hosted Octopus workers should use their own securely scoped access to the five Git sources. Failures, missing credentials, dirty trees, invalid source refs and existing destinations stop assembly; they never create success evidence. The `CANDIDATE-SOURCE-EVIDENCE.json` receipt has `cutover_ready: false` and intentionally keeps artifact and live gates pending.
+
+**2026-10-24 observation:** The original monorepo and five current HQ repositories were cloned on Ubuntu 24.04's native Linux filesystem, with no secrets printed. At platform candidate `c9c8901faadd684c81e22df66853969170439f8a` the real five-repo assembler passed source SHA verification, immutable platform and Core provenance checks, clean Git status for all five checkouts, and generated a redacted source-only receipt. Its focused test suite passed **10/10**, and the platform offline suite passed **45 + 11** tests. This is a workstation source-acquisition check, not independent five-repository Octopus execution or production integration.
+
 ## Initial verification evidence (2026-10-24 UTC)
 
 - **Environment:** non-root user `pgrun`, Ubuntu 24.04.4 LTS on WSL2, native ext4 checkout under `/home/pgrun/src/ayahos/ayahos-platform`.
