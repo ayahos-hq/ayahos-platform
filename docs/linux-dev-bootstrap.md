@@ -60,7 +60,9 @@ For a local-only rollback, first stop all local processes using the binary, veri
 - **Platform:** 39 script tests and seven Octopus runner tests passed; manifest and source-provenance checks passed.
 - **Bridge:** 26 Node bridge tests passed under Linux-native Node.
 - **Monorepo frontend on native ext4:** private `main` checkout at `dbf9fbde52a11bbc069e19bdeca2658d8dcc1147`; `pnpm install --frozen-lockfile` passed supply-chain policy checks, all shared/web/site TypeScript checks passed, **295 frontend tests** passed (14 shared + 188 site + 93 web), and both Next.js production builds passed. No deployment occurred.
-- **Python and Ruby:** Python 3.12.3 venv created and lightweight API development/control extras installed; Ruby 3.2.3 and Bundler 2.6.9 verified. The Python API focused tests, Ruff and mypy passed.
+- **Python/API:** Python 3.12.3 per-repo venv with API development/control extras installed; **1,403 API tests passed, 34 skipped**, and focused 40-test policy/SSE/routing suite, Ruff and mypy all passed. Skipped tests remain outside this gate.
+- **Sandbox worker:** **57 tests passed, nine skipped**. Real gVisor isolation is not attested.
+- **Ruby:** Ruby 3.2.3 and Bundler 2.6.9, with gems isolated to the non-root user's bundle directory. Workflow worker **128 runs, 646 assertions, 13 skips**; control **20 runs, 79 assertions, zero skips**; RAG **31 runs, 75 assertions, 10 skips**. Database/pgvector skip reasons block real RAG acceptance.
 - **Not verified:** complete monorepo `make check` including heavy ML, real PostgreSQL/pgvector contract, authenticated live chat/SSE, independent HQ Octopus, or production rollback.
 
 This is **verified local**, not production acceptance. Record exact commit SHA, OS, exit status and evidence for every subsequent phase.
