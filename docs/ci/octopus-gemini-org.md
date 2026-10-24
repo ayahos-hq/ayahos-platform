@@ -27,3 +27,11 @@ The existing `AyahOS`, `AyahOS HQ Verification`, `Development`, `Staging`, `Prod
 ## Current state
 
 Repository-side configuration is committed on review branches only. The new Octopus project, environment, lifecycle, sensitive API key, read-only private-repo access, real Gemini inference, and production-ready review adapter are **not verified**. Do not treat this documentation or a passing syntax check as operational activation.
+
+## Cline CLI companion
+
+A second, **optional** advisory reviewer is prepared in `scripts/ci/octopus_cline_org_review.sh`. It uses the same allowlisted five repositories and the same isolated Octopus environment, but **does not replace Gemini or mandatory tests**. Cline's documented headless mode supports `--json`, `--auto-approve false`, and piped review context. <https://github.com/cline/cline/blob/main/docs/usage/cli-overview.mdx>
+
+**Operational prerequisites:** Install and pin the official `cline` CLI on the trusted worker; configure its model provider through `cline auth` using a project-scoped credential or isolated pre-authenticated worker state. Do not share production keys. Obtain the exact SHA's diff using a separate read-only GitHub integration and write it to a size-limited trusted file. The runner validates the repo, SHA and diff size before invoking Cline, and disables automatic tool approvals. This reduces risk but is not a hardened sandbox: the host worker must also enforce network, filesystem and credential isolation.
+
+**Not yet verified:** Cline authentication, Octopus project creation, diff retrieval, actual Cline output, and worker-level sandboxing. Keep this optional/manual until those checks pass. Do not auto-approve Cline tools or allow it to push commits.
