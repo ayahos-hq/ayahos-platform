@@ -36,16 +36,24 @@ for executable in node npm npx corepack; do
   fi
 done
 
-check_installed() {
-  [[ -x "${INSTALL_DIR}/bin/node" ]] ||
-    die "Node v${VERSION} not installed under ${INSTALL_DIR}."
-  actual_version="$("${INSTALL_DIR}/bin/node" --version)" ||
+validate_runtime_tree() {
+  local tree="$1" executable
+  [[ -x "${tree}/bin/node" ]] ||
+    die "Node v${VERSION} not installed under ${tree}."
+  actual_version="$("${tree}/bin/node" --version)" ||
     die "Unable to execute pinned Node."
   [[ "$actual_version" == "v${VERSION}" ]] ||
     die "Wrong Node version: ${actual_version}; expected v${VERSION}."
   for executable in node npm npx corepack; do
-    [[ -e "${INSTALL_DIR}/bin/${executable}" ]] ||
+    [[ -e "${tree}/bin/${executable}" ]] ||
       die "Missing ${executable} in pinned Node installation."
+  done
+}
+
+check_installed() {
+  local executable
+  validate_runtime_tree "$INSTALL_DIR"
+  for executable in node npm npx corepack; do
     [[ -L "${BIN_DIR}/${executable}" ]] ||
       die "Missing local ${executable} symlink."
     [[ "$(readlink "${BIN_DIR}/${executable}")" == "${INSTALL_DIR}/bin/${executable}" ]] ||
@@ -64,7 +72,7 @@ for executable in curl tar sha256sum mktemp; do
     die "Missing required tool: ${executable}"
 done
 
-mkdir -p "$OPT_DIR" "$BIN_DIR"
+mkdir -p "$OPT_DIR"
 
 if [[ ! -e "${INSTALL_DIR}/bin/node" ]]; then
   [[ ! -e "$INSTALL_DIR" && ! -L "$INSTALL_DIR" ]] ||
@@ -81,12 +89,14 @@ if [[ ! -e "${INSTALL_DIR}/bin/node" ]]; then
   ) || die "Node archive checksum mismatch."
   tar -xJf "${tmpdir}/${ARCHIVE}" -C "$tmpdir" ||
     die "Unable to unpack verified official Node archive."
-  [[ -x "${tmpdir}/node-v${VERSION}-linux-x64/bin/node" ]] ||
-    die "Verified archive missing Node binary."
+  validate_runtime_tree "${tmpdir}/node-v${VERSION}-linux-x64"
   mv -- "${tmpdir}/node-v${VERSION}-linux-x64" "$INSTALL_DIR"
 fi
 
-# The link targets were checked above before making any changes.
+# Validate cached or freshly downloaded files before publishing any PATH links.
+# Failed installs must not leave dangling or wrong-version links behind.
+validate_runtime_tree "$INSTALL_DIR"
+mkdir -p "$BIN_DIR"
 for executable in node npm npx corepack; do
   if [[ ! -L "${BIN_DIR}/${executable}" ]]; then
     ln -s -- "${INSTALL_DIR}/bin/${executable}" "${BIN_DIR}/${executable}"
