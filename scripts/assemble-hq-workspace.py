@@ -75,20 +75,37 @@ def refs(manifest: dict, platform_head: str) -> dict[str, str]:
 
 
 def clone_at(repository: str, sha: str, destination: Path) -> None:
-    """Clone without shell expansion, injected tokens or mutable release checkout."""
+    """Clone an allowlisted immutable source using GH CLI or configured Git.
+
+    Git fallback is for Linux workers with a supported credential helper but no
+    gh binary. Neither path embeds tokens, shells out through a shell, or
+    accepts arbitrary repositories. An available-but-broken gh must fail closed.
+    """
+    if repository not in REPOSITORIES.values() or not SHA.fullmatch(sha):
+        raise ValueError("unknown HQ repository or invalid immutable Git revision")
     environment = dict(os.environ, GH_PROMPT_DISABLED="1", GIT_TERMINAL_PROMPT="0")
+    if shutil.which("gh"):
+        clone_command = [
+            "gh", "repo", "clone", repository, str(destination),
+            "--", "--quiet", "--no-checkout",
+        ]
+    else:
+        clone_command = [
+            "git", "clone", "--quiet", "--no-checkout",
+            "https://github.com/" + repository + ".git", str(destination),
+        ]
     commands = (
-        ["gh", "repo", "clone", repository, str(destination), "--", "--quiet", "--no-checkout"],
+        clone_command,
         ["git", "-C", str(destination), "checkout", "--detach", "--quiet", sha],
     )
     for cmd in commands:
         try:
             proc = subprocess.run(cmd, capture_output=True, text=True, check=False,
                                   timeout=180, env=environment)
-        except (FileNotFoundError, subprocess.TimeoutExpired) as exc:
-            raise ValueError("GitHub CLI / Git missing or timed out while fetching " + repository) from None
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            raise ValueError("Git/GitHub tooling missing or timed out while fetching " + repository) from None
         if proc.returncode != 0:
-            # Deliberately suppress child stderr: avoid leaking private account/token details.
+            # Suppress child stdout/stderr; credential helpers can emit secrets.
             raise ValueError("immutable HQ checkout failed for " + repository) from None
 
 
