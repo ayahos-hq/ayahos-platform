@@ -72,7 +72,7 @@ test('uses broad STS scope only for impersonation and narrow scope for registry'
     const params=new URLSearchParams(calls[0].opt.body);
     assert.equal(params.get('scope'),'https://www.googleapis.com/auth/cloud-platform');
     const body=JSON.parse(calls[1].opt.body);
-    assert.deepEqual(body.scope,['https://www.googleapis.com/auth/agentregistry.read-only']);
+    assert.deepEqual(body.scope,['https://www.googleapis.com/auth/cloud-platform.read-only']);
   } finally {global.fetch=previous;}
 });
 

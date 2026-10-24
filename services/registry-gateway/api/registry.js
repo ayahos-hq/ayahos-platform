@@ -8,7 +8,7 @@ const SERVICE_ACCOUNT = 'ayahos-registry-reader@project-eec9b975-b6bd-4b41-bad.i
 const AUDIENCE = '//iam.googleapis.com/projects/1086186141421/locations/global/workloadIdentityPools/ayahos-vercel/providers/gateway-production';
 const SEARCH_PATH = '/v1/projects/project-eec9b975-b6bd-4b41-bad/locations/global/agents:search';
 const STS_SCOPE = 'https://www.googleapis.com/auth/cloud-platform';
-const REGISTRY_SCOPE = 'https://www.googleapis.com/auth/agentregistry.read-only';
+const REGISTRY_SCOPE = 'https://www.googleapis.com/auth/cloud-platform.read-only';
 
 function bearerMatches(value, secret) {
   if (typeof value !== 'string' || typeof secret !== 'string' || secret.length < 32) return false;
