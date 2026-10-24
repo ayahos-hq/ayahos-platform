@@ -116,7 +116,7 @@ def verify(path: Path, workspace_root: Path | None) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--manifest", default="release-manifest.json", type=Path)
+    parser.add_argument("--manifest", default=Path(__file__).resolve().parents[1] / "release-manifest.json", type=Path)
     parser.add_argument("--workspace-root", type=Path,
                         help="also compare fetched origin/main sibling repository refs")
     # Octopus Git-backed script steps append the source package's SHA-256 digest
