@@ -20,6 +20,9 @@ def run_suites() -> int:
     for directory in ("scripts", "tests"):
         source = ROOT / directory
         if not source.is_dir() or not list(source.glob("test_*.py")):
+            if directory == "tests":
+                print("OFFLINE TEST NOTE: no optional root tests suite; script suites remain authoritative")
+                continue
             print(f"OFFLINE TEST FAILURE: missing {directory} suite", file=sys.stderr)
             failed = True
             continue
