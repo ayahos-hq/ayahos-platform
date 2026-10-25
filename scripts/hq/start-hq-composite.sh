@@ -3,10 +3,10 @@
 # Python remains the public control-plane and action-authority process.
 set -euo pipefail
 
-role="\${AYAHOS_RUNTIME_ROLE:-api}"
-api_port="\${PORT:-8000}"
-rag_port="\${DUAL_LINEAGE_RAG_PORT:-8102}"
-control_port="\${DUAL_LINEAGE_CONTROL_PORT:-8103}"
+role="${AYAHOS_RUNTIME_ROLE:-api}"
+api_port="${PORT:-8000}"
+rag_port="${DUAL_LINEAGE_RAG_PORT:-8102}"
+control_port="${DUAL_LINEAGE_CONTROL_PORT:-8103}"
 pids=()
 
 fail() {
@@ -15,12 +15,12 @@ fail() {
 }
 
 cleanup() {
-  local status="\${1:-0}"
+  local status="${1:-0}"
   trap - EXIT INT TERM
-  for pid in "\${pids[@]}"; do
+  for pid in "${pids[@]}"; do
     kill "$pid" 2>/dev/null || true
   done
-  for pid in "\${pids[@]}"; do
+  for pid in "${pids[@]}"; do
     wait "$pid" 2>/dev/null || true
   done
   exit "$status"
@@ -31,7 +31,7 @@ trap 'cleanup $?' EXIT
 
 require_value() {
   local name="$1"
-  [[ -n "\${!name:-}" ]] || fail "$name must be set"
+  [[ -n "${!name:-}" ]] || fail "$name must be set"
 }
 
 start_rag() {
@@ -82,6 +82,6 @@ case "$role" in
 esac
 
 # Any child exit tears down the composite. A partial stack is not healthy.
-wait -n "\${pids[@]}"
+wait -n "${pids[@]}"
 status="$?"
 cleanup "$status"
