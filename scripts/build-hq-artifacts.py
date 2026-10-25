@@ -62,6 +62,30 @@ def checked_archive(path: Path) -> None:
                 raise ValueError('unsafe archive member type')
 
 
+def archive_directory(source: Path, destination: Path) -> None:
+    """Create a deterministic tar archive of a reviewed runtime context."""
+    if source.is_symlink() or not source.is_dir():
+        raise ValueError("runtime context must be a real directory")
+    with tarfile.open(destination, "w:", format=tarfile.PAX_FORMAT) as tar:
+        for path in sorted(source.rglob("*"), key=lambda item: item.relative_to(source).as_posix()):
+            relative = path.relative_to(source).as_posix()
+            if path.is_symlink():
+                raise ValueError("runtime context contains a symlink")
+            if not path.is_dir() and not path.is_file():
+                raise ValueError("runtime context contains a special file")
+            info = tar.gettarinfo(str(path), arcname=relative)
+            info.mtime = 0
+            info.uid = 0
+            info.gid = 0
+            info.uname = ""
+            info.gname = ""
+            if info.isreg():
+                with path.open("rb") as stream:
+                    tar.addfile(info, stream)
+            else:
+                tar.addfile(info)
+
+
 def inspect_oci(reference: str, revision: str) -> dict:
     """Read exact registry digest bytes and immutable image-config revision label."""
     match = OCI.fullmatch(reference)
@@ -105,6 +129,17 @@ def verify_output(directory: Path) -> dict:
         if archive.stat().st_size != info.get('bytes') or sha256(archive) != info.get('sha256'):
             raise ValueError('source archive digest or size mismatch: ' + name)
         checked_archive(archive)
+    runtime = evidence.get('runtime_context')
+    if runtime is not None:
+        if not isinstance(runtime, dict) or runtime.get('file') != 'runtime-context.tar':
+            raise ValueError('invalid runtime context evidence')
+        runtime_archive = directory / 'runtime-context.tar'
+        if (runtime_archive.is_symlink() or
+            runtime_archive.stat().st_size != runtime.get('bytes') or
+            sha256(runtime_archive) != runtime.get('sha256')):
+            raise ValueError('runtime context digest or size mismatch')
+        checked_archive(runtime_archive)
+
     images = evidence.get('oci_images')
     if not isinstance(images, dict) or any(name not in REPOSITORIES for name in images):
         raise ValueError('invalid OCI evidence components')
@@ -121,7 +156,8 @@ def verify_output(directory: Path) -> dict:
 
 
 def build(manifest_path: Path, workspace: Path, destination: Path,
-          oci_lock: Path | None = None) -> dict:
+          oci_lock: Path | None = None,
+          runtime_context: Path | None = None) -> dict:
     if destination.exists() or destination.is_symlink():
         raise ValueError('artifact destination already exists')
     if not destination.parent.is_dir():
@@ -182,8 +218,24 @@ def build(manifest_path: Path, workspace: Path, destination: Path,
             archives[name] = {'repository': REPOSITORIES[name], 'git_sha': ref,
                               'file': name + '.tar', 'sha256': sha256(archive),
                               'bytes': archive.stat().st_size}
+        runtime_record = None
+        if runtime_context is not None:
+            provenance = runtime_context / 'COMPOSITE-SOURCE-MANIFEST.json'
+            if provenance.is_symlink() or not provenance.is_file():
+                raise ValueError('runtime context provenance is missing')
+            runtime_archive = staging / 'runtime-context.tar'
+            archive_directory(runtime_context, runtime_archive)
+            checked_archive(runtime_archive)
+            runtime_record = {
+                'file': 'runtime-context.tar',
+                'sha256': sha256(runtime_archive),
+                'bytes': runtime_archive.stat().st_size,
+                'source_manifest': 'COMPOSITE-SOURCE-MANIFEST.json',
+                'source_manifest_sha256': sha256(provenance),
+            }
         evidence = {'schema_version': 1, 'release_authorized': False,
                     'manifest_sha256': manifest_hash, 'source_archives': archives,
+                    'runtime_context': runtime_record,
                     'oci_status': 'registry-verified' if oci_images else 'pending',
                     'oci_images': oci_images,
                     'octopus_exact_sha': 'pending', 'database_restore': 'pending',
@@ -205,6 +257,8 @@ def main() -> int:
     parser.add_argument('--workspace', type=Path)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--oci-lock', type=Path, help='registry pins, independently checked using skopeo')
+    parser.add_argument('--runtime-context', type=Path,
+                        help='reviewed Core + Workloads context to archive as a separate source artifact')
     parser.add_argument('--verify-only', action='store_true')
     args = parser.parse_args()
     try:
@@ -212,7 +266,7 @@ def main() -> int:
             verify_output(args.output)
             print('Verified artifact SHA-256 records; no release authorization')
         elif args.workspace:
-            build(args.manifest, args.workspace, args.output, args.oci_lock)
+            build(args.manifest, args.workspace, args.output, args.oci_lock, args.runtime_context)
             print('Built exact-SHA source artifacts; OCI and Octopus gates remain independent')
         else:
             parser.error('--workspace is required unless --verify-only is set')
