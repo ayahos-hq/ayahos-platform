@@ -34,6 +34,7 @@ else:
         raise ValueError('source preflight is unavailable')
 
 SHA = re.compile(r'\A[0-9a-f]{40}\Z')
+ARTIFACT = re.compile(r'\A[0-9a-f]{64}\Z')
 OCI = re.compile(r'\A[a-z0-9][a-z0-9._:/-]+@sha256:([0-9a-f]{64})\Z')
 EVIDENCE = 'RELEASE-ARTIFACT-EVIDENCE.json'
 
