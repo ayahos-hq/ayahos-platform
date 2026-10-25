@@ -11,7 +11,6 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "SOURCE-PROVENANCE.json"
 ALLOWED = (".octopus/", "deploy/", "scripts/ci/", "scripts/db/", "docs/infrastructure/")
-TARGET_OWNED = {"deploy/octopus-github-bridge/wrangler.hq.jsonc"}
 BLOCKED = re.compile(r"(^|/)(?:\.env(?:\..*)?$|\.dev\.vars(?:\..*)?$|\.git/|\.npmrc$|id_rsa$|id_ed25519$|node_modules/)|\.(?:pem|p12|pfx|key|tfvars)$", re.I)
 
 
@@ -26,7 +25,7 @@ def run() -> None:
         raise ValueError("unexpected source footprint")
     listing = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT)
     tracked = {p for p in listing.decode().split("\0") if p}
-    actual = {p for p in tracked if p.startswith(ALLOWED) and p not in TARGET_OWNED}
+    actual = {p for p in tracked if p.startswith(ALLOWED)}
     if actual != set(expected):
         raise ValueError(f"source file set differs: missing={sorted(set(expected)-actual)} "
                          f"unexpected={sorted(actual-set(expected))}")
@@ -46,10 +45,10 @@ def run() -> None:
         if path.startswith(("apps/", "models/", "integrations/")):
             raise ValueError("cross-service code in platform source: " + path)
 
-    hq_worker = json.loads((ROOT / "deploy/octopus-github-bridge/wrangler.hq.jsonc").read_text())
+    hq_worker = json.loads((ROOT / "wrangler.jsonc").read_text())
     if hq_worker.get("name") != "ayahos-hq-verification-bridge":
         raise ValueError("unexpected HQ Worker name")
-    if hq_worker.get("main") != "src/worker.js":
+    if hq_worker.get("main") != "deploy/octopus-github-bridge/src/worker.js":
         raise ValueError("unexpected HQ Worker entrypoint")
     if hq_worker.get("vars") != {
         "GITHUB_REPOSITORY": "ayahos-hq/ayahos-platform",

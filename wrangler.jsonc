@@ -1,6 +1,6 @@
 {
   "name": "ayahos-hq-verification-bridge",
-  "main": "src/worker.js",
+  "main": "deploy/octopus-github-bridge/src/worker.js",
   "compatibility_date": "2026-10-01",
   "vars": {
     "GITHUB_REPOSITORY": "ayahos-hq/ayahos-platform",
