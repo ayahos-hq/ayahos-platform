@@ -38,7 +38,7 @@ start_rag() {
   require_value DUAL_LINEAGE_RAG_SERVICE_TOKEN
   (
     cd /app/apps/rag-ruby
-    exec bundle exec puma -C config/puma.rb
+    DUAL_LINEAGE_RAG_PORT="$rag_port" exec bundle exec puma -C config/puma.rb
   ) &
   pids+=("$!")
 }
