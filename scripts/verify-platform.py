@@ -11,6 +11,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "SOURCE-PROVENANCE.json"
 ALLOWED = (".octopus/", "deploy/", "scripts/ci/", "scripts/db/", "docs/infrastructure/")
+TARGET_OWNED = {"deploy/octopus-github-bridge/wrangler.hq.jsonc"}
 BLOCKED = re.compile(r"(^|/)(?:\.env(?:\..*)?$|\.dev\.vars(?:\..*)?$|\.git/|\.npmrc$|id_rsa$|id_ed25519$|node_modules/)|\.(?:pem|p12|pfx|key|tfvars)$", re.I)
 
 
@@ -25,7 +26,7 @@ def run() -> None:
         raise ValueError("unexpected source footprint")
     listing = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT)
     tracked = {p for p in listing.decode().split("\0") if p}
-    actual = {p for p in tracked if p.startswith(ALLOWED)}
+    actual = {p for p in tracked if p.startswith(ALLOWED) and p not in TARGET_OWNED}
     if actual != set(expected):
         raise ValueError(f"source file set differs: missing={sorted(set(expected)-actual)} "
                          f"unexpected={sorted(actual-set(expected))}")
@@ -44,6 +45,25 @@ def run() -> None:
             raise ValueError("tracked sensitive source: " + path)
         if path.startswith(("apps/", "models/", "integrations/")):
             raise ValueError("cross-service code in platform source: " + path)
+
+    hq_worker = json.loads((ROOT / "deploy/octopus-github-bridge/wrangler.hq.jsonc").read_text())
+    if hq_worker.get("name") != "ayahos-hq-verification-bridge":
+        raise ValueError("unexpected HQ Worker name")
+    if hq_worker.get("main") != "src/worker.js":
+        raise ValueError("unexpected HQ Worker entrypoint")
+    if hq_worker.get("vars") != {
+        "GITHUB_REPOSITORY": "ayahos-hq/ayahos-platform",
+        "OCTOPUS_URL": "https://ayahos.octopus.app",
+        "OCTOPUS_SPACE_ID": "Spaces-1",
+        "OCTOPUS_PROJECT": "AyahOS HQ Verification",
+        "OCTOPUS_ENVIRONMENT": "Verification",
+        "STATUS_CONTEXT": "octopus/hq-operator-verified",
+    }:
+        raise ValueError("unexpected HQ Worker routing configuration")
+    namespaces = hq_worker.get("kv_namespaces")
+    if not isinstance(namespaces, list) or len(namespaces) != 1 or namespaces[0].get("binding") != "TASKS" \
+            or not re.fullmatch(r"[a-f0-9]{32}", namespaces[0].get("id", "")):
+        raise ValueError("invalid HQ Worker KV binding")
 
     process = (ROOT / ".octopus/deployment_process.ocl").read_text()
     steps = re.findall(r'^step "([^"]+)" \{', process, flags=re.M)
