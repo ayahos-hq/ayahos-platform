@@ -20,6 +20,7 @@ on:
       - "scripts/test_compose_hq_runtime.py"
       - "scripts/octopus/hq-artifact-gate.sh"
       - "docs/hq-artifact-assembly.md"
+      - "docs/release-candidates/**"
       - "scripts/test_assemble_hq_workspace.py"
       - "scripts/prepare-hq-rag-overlay.py"
       - "scripts/test_prepare_hq_rag_overlay.py"
