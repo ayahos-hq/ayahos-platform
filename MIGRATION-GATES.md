@@ -18,4 +18,4 @@ The original monorepo is canonical until all explicit gates pass. This snapshot 
 
 ## Artifact assembly extension (2026-10-25 feature branch)
 
-Added an offline content-addressed builder and independent artifact verifier after immutable source assembly. Optional OCI registry digest and pinned revision verification require actual published images. A fail-closed Octopus-only HQ entrypoint is proposed but not activated in the server. No changes to the existing monorepo Octopus project/Worker, no HQ CI success, and no release cutover are claimed. See docs/hq-artifact-assembly.md.
+Added an offline content-addressed builder and independent artifact verifier after immutable source assembly, plus an exact-SHA Core + Workloads composite context with a reviewed FastAPI/Ruby startup contract. Optional composite OCI registry digest and Core/Workloads/Platform/manifest label verification require an actual published image. A fail-closed Octopus-only HQ entrypoint is proposed but not activated in the server. No changes to the existing monorepo Octopus project/Worker, no HQ CI success, and no release cutover are claimed. See docs/hq-artifact-assembly.md.
