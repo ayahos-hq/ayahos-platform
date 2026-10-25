@@ -1,5 +1,14 @@
 # AyahOS Platform — provisional source extraction
 
+## Documentation checkpoint — 2026-10-25
+
+Observed platform `main` is `094328e66a90c7d4f629db8c31e1b1d0c7bca246`. **Update to earlier status notes below:** merged [PR #34](https://github.com/ayahos-hq/ayahos-platform/pull/34) reports a real separate **AyahOS HQ Verification** Octopus **Development** release `0.0.18` / `Deployments-351`, with its three required source-check steps passing on immutable source revisions. It also documents five-repository detached checkout on native Ubuntu, clean-worktree/source receipt, and `cutover_ready=false`. Therefore dated statements below saying *no HQ Octopus project or execution exists* are superseded for **Development source-only checking**. The original monorepo Octopus project and GitHub-status bridge remain distinct and authoritative for incumbent production; successful HQ Development checks do not transfer that authority.
+
+[PR #36](https://github.com/ayahos-hq/ayahos-platform/pull/36) for deterministic build artifacts, composite Python+Ruby context and immutable OCI digest verification was **open** at this checkpoint. Its tests, build recipes and acceptance declarations are not part of platform `main`. No independent image digest, full eight-lane monorepo or future HQ cross-service gate, PostgreSQL 16/pgvector restore, authenticated stage E2E, provider failover, deployed build identity, DNS update or rollback has been verified by this documentation pass. The shared production Worker must **not** be repointed for HQ; keep its secrets in managed stores. Preserve the explicit zero-overage and approved worker-cost gates.
+
+The `a7ef41f` provenance commit described below is the **historical source import**, not current release-manifest or deployed image identity. Operator evidence and exact-SHA verification must be repeated on the candidate being promoted.
+
+
 **Status: public by owner decision, provisional source extraction, not deployed and not production authority.** This repository is a staging home for CI/CD orchestration, Octopus project definitions, deployment templates, release checks and infrastructure records. Do not connect Octopus, GitHub webhooks, Cloudflare or any production service to this repo until the migration gates are complete. Treat all repository contents as public; secrets belong exclusively in managed secret stores.
 
 ## Pinned import
@@ -35,9 +44,9 @@ was established. The copied bridge README is pinned source evidence, not current
 instructions.
 
 Do not repoint or redeploy the shared Worker for HQ: doing so would interrupt the monorepo
-release path. HQ needs a separate Octopus project connected to this repository, checks that
-fetch exact manifest-pinned component SHAs rather than assuming a monorepo checkout, and a
-separate Worker with its own KV and scoped credentials. Sealed credentials cannot be copied
+release path. HQ now has a distinct **Development-only source-verification** Octopus project per merged PR #34; production promotion still needs a complete artifact/integration gate that
+fetches exact manifest-pinned component SHAs rather than assuming a monorepo checkout, and a
+separate authoritative bridge with its own scoped credentials. Sealed credentials cannot be copied
 out of the existing Worker; provision new values directly in the new secret store. Until
 those gates pass, the existing endpoint's `/status/<sha>` is not HQ release evidence. Review
 exact-SHA results manually before merge or cutover; no enforced HQ required-check gate has
@@ -126,13 +135,10 @@ Set small PG shared buffers and serial native-gem installation on memory-bound
 workers; investigate exit code 137, never waive it. The overlay evidence is
 **candidate-only**, not a passing pgvector result.
 
-For **Octopus Cloud**, create a *separate* `AyahOS HQ Verification` project
-and configure its GitHub App connection to exactly the five approved
+For **Octopus Cloud**, preserve the existing separate Development-only `AyahOS HQ Verification` project (source-check success recorded in PR #34) and verify its GitHub App connection to exactly the five approved
 `ayahos-hq` repositories under Deploy > Manage > GitHub Connections. Octopus
 GitHub connections can authenticate additional Git resources without a new PAT;
 pin Git resources to the release manifest's immutable revisions. Keep the
-existing `AyahOS` monorepo project and its Worker bridge unchanged. The HQ
-project itself still needs authenticated dashboard access and real execution:
-this repository does **not** claim it exists or has passed.
+existing `AyahOS` monorepo project and its Worker bridge unchanged. The project **does exist** and the three source-check Development steps passed in release 0.0.18 per merged PR #34; authenticated reinspection and full container, integration, database and release acceptance remain outstanding.
 
 See `MIGRATION-GATES.md` and master [migration issue #243](https://github.com/fuaadabdullah/AyahOS_Dual_Lineage/issues/243).
