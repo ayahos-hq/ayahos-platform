@@ -75,7 +75,19 @@ python3 scripts/build-hq-artifacts.py --manifest release-manifest.json \
   --oci-lock /private/oci-lock.json
 ~~~
 
-Skopeo reads the registry image manifest bytes, verifies their actual SHA-256 against the locked reference, and checks the image config revision label. Missing registry access, mismatched bytes, a mutable tag, invalid source SHA or missing revision label blocks the build. The current core Dockerfile has no image revision label: a verified OCI lock is therefore not yet available. OCI identity and claimed source consistency still require trustworthy Octopus image-build logs and immutable artifact retention before release approval.
+Skopeo reads the registry image manifest bytes, verifies their actual SHA-256 against the locked reference, and checks the image config revision label. Missing registry access, mismatched bytes, a mutable tag, invalid source SHA or missing revision label blocks the build. The extracted core Dockerfile remains an invalid standalone multi-repo build. The reviewed composite Dockerfile has the required provenance labels, but no verified OCI digest exists until Octopus performs the isolated image build and registry retention step. OCI identity and claimed source consistency still require trustworthy Octopus image-build logs and immutable artifact retention before release approval.
+
+## Composite image provenance
+
+The reviewed composite Dockerfile carries separate labels for the Core SHA,
+Workloads SHA, Platform checkout SHA, and release-manifest digest. When the
+Octopus image-build step has published the image, set
+`HQ_RUNTIME_IMAGE_REF` to its full immutable `repository@sha256:<64 hex>`
+reference. The existing builder then reads the registry manifest bytes and
+image config with Skopeo and blocks unless the digest and every lineage label
+match the exact assembled candidate. A source tar checksum cannot satisfy this
+check. If the variable is absent, runtime-image evidence remains explicitly
+pending and cannot authorize promotion.
 
 ## Single pipeline authority: Octopus
 
