@@ -127,4 +127,37 @@ class ArtifactsTests(unittest.TestCase):
             self.build()
         self.assertFalse(self.output.exists())
 
+
+    def test_rejects_forged_oci_receipt_without_images(self):
+        self.build()
+        path = self.output / module.EVIDENCE
+        data = json.loads(path.read_text())
+        data['oci_status'] = 'registry-verified'
+        path.write_text(json.dumps(data))
+        with self.assertRaisesRegex(ValueError, 'OCI'):
+            module.verify_output(self.output)
+
+    def test_skopeo_registry_manifest_and_revision_are_independently_compared(self):
+        raw = b'{"schemaVersion":2}'
+        expected = hashlib.sha256(raw).hexdigest()
+        ref = 'registry.example.invalid/ayahos/core@sha256:' + expected
+        revision = 'b' * 40
+        results = [
+            subprocess.CompletedProcess([], 0, stdout=raw),
+            subprocess.CompletedProcess([], 0, stdout=json.dumps({
+                'config': {'Labels': {'org.opencontainers.image.revision': revision}}
+            }).encode())
+        ]
+        with patch.object(module.subprocess, 'run', side_effect=results):
+            record = module.inspect_oci(ref, revision)
+        self.assertTrue(record['registry_verified'])
+        self.assertEqual(record['manifest_sha256'], expected)
+
+    def test_skopeo_rejects_registry_digest_or_revision_mismatch(self):
+        ref = 'registry.example.invalid/ayahos/core@sha256:' + 'a' * 64
+        with patch.object(module.subprocess, 'run', return_value=
+                          subprocess.CompletedProcess([], 0, stdout=b'wrong bytes')):
+            with self.assertRaisesRegex(ValueError, 'digest'):
+                module.inspect_oci(ref, 'b' * 40)
+
 if __name__=='__main__':unittest.main()
