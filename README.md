@@ -1,5 +1,14 @@
 # AyahOS Platform — provisional source extraction
 
+## Documentation checkpoint — 2026-10-25
+
+Observed platform `main` is `094328e66a90c7d4f629db8c31e1b1d0c7bca246`. **Update to earlier status notes below:** merged [PR #34](https://github.com/ayahos-hq/ayahos-platform/pull/34) reports a real separate **AyahOS HQ Verification** Octopus **Development** release `0.0.18` / `Deployments-351`, with its three required source-check steps passing on immutable source revisions. It also documents five-repository detached checkout on native Ubuntu, clean-worktree/source receipt, and `cutover_ready=false`. Therefore dated statements below saying *no HQ Octopus project or execution exists* are superseded for **Development source-only checking**. The original monorepo Octopus project and GitHub-status bridge remain distinct and authoritative for incumbent production; successful HQ Development checks do not transfer that authority.
+
+[PR #36](https://github.com/ayahos-hq/ayahos-platform/pull/36) for deterministic build artifacts, composite Python+Ruby context and immutable OCI digest verification was **open** at this checkpoint. Its tests, build recipes and acceptance declarations are not part of platform `main`. No independent image digest, full eight-lane monorepo or future HQ cross-service gate, PostgreSQL 16/pgvector restore, authenticated stage E2E, provider failover, deployed build identity, DNS update or rollback has been verified by this documentation pass. The shared production Worker must **not** be repointed for HQ; keep its secrets in managed stores. Preserve the explicit zero-overage and approved worker-cost gates.
+
+The `a7ef41f` provenance commit described below is the **historical source import**, not current release-manifest or deployed image identity. Operator evidence and exact-SHA verification must be repeated on the candidate being promoted.
+
+
 **Status: public by owner decision, provisional source extraction, not deployed and not production authority.** This repository is a staging home for CI/CD orchestration, Octopus project definitions, deployment templates, release checks and infrastructure records. Do not connect Octopus, GitHub webhooks, Cloudflare or any production service to this repo until the migration gates are complete. Treat all repository contents as public; secrets belong exclusively in managed secret stores.
 
 ## Pinned import
