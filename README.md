@@ -136,3 +136,7 @@ project itself still needs authenticated dashboard access and real execution:
 this repository does **not** claim it exists or has passed.
 
 See `MIGRATION-GATES.md` and master [migration issue #243](https://github.com/fuaadabdullah/AyahOS_Dual_Lineage/issues/243).
+
+## Verified HQ artifact builder (feature-branch scope)
+
+The existing five-repo source assembler now has a candidate-only artifact builder, an exact-SHA Core + Workloads composite context, and an Octopus gate entrypoint. See [HQ artifact assembly and release authority](docs/hq-artifact-assembly.md). It verifies deterministic source archive SHA-256 values, records the composite runtime context separately, and supports immutable registry OCI digest checks with independent Core/Workloads/Platform/manifest label verification. **No actual HQ container digest, Octopus HQ acceptance, live rollout or source cutover is attested by the offline tests.** GitHub PR checks remain informational and do not replace Octopus.

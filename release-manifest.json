@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "release_status": "candidate",
-  "release_id": "hq-candidate-20261024-safety-refresh-no-cutover",
+  "release_id": "hq-candidate-20261025-hq-topology-no-cutover",
   "source_authority": "fuaadabdullah/AyahOS_Dual_Lineage",
   "platform_manifest_commit_rule": "platform_git_sha_is_an_ancestor_of_manifest_commit",
   "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
@@ -14,7 +14,7 @@
     },
     "ayahos-core": {
       "repository": "ayahos-hq/ayahos-core",
-      "git_sha": "ce43a6c99b2f80bc6f0b4903687373e2d007daff",
+      "git_sha": "be672280cad0f114974703b89fc2c1026dc8f54c",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     },

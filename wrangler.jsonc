@@ -1,0 +1,17 @@
+{
+  "name": "ayahos-hq-verification-bridge",
+  "main": "deploy/octopus-github-bridge/src/worker.js",
+  "compatibility_date": "2026-10-01",
+  "vars": {
+    "GITHUB_REPOSITORY": "ayahos-hq/ayahos-platform",
+    "OCTOPUS_URL": "https://ayahos.octopus.app",
+    "OCTOPUS_SPACE_ID": "Spaces-1",
+    "OCTOPUS_PROJECT": "AyahOS HQ Verification",
+    "OCTOPUS_ENVIRONMENT": "Verification",
+    "STATUS_CONTEXT": "octopus/hq-operator-verified"
+  },
+  "kv_namespaces": [
+    { "binding": "TASKS", "id": "49ce086dc87f4de9a5110e5771907cb3" }
+  ],
+  "triggers": { "crons": ["* * * * *"] }
+}
