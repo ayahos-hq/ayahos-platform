@@ -16,6 +16,8 @@ on:
       - "scripts/assemble-hq-workspace.py"
       - "scripts/build-hq-artifacts.py"
       - "scripts/test_build_hq_artifacts.py"
+      - "scripts/hq/**"
+      - "scripts/test_compose_hq_runtime.py"
       - "scripts/octopus/hq-artifact-gate.sh"
       - "docs/hq-artifact-assembly.md"
       - "scripts/test_assemble_hq_workspace.py"
@@ -52,6 +54,8 @@ jobs:
         run: python3 -m unittest discover -s scripts -p "test_assemble_hq_workspace.py" -v
       - name: Test five-SHA content-addressed source artifacts (offline only)
         run: python3 -m unittest discover -s scripts -p "test_build_hq_artifacts.py" -v
+      - name: Test exact-SHA Core + Workloads composite context (offline only)
+        run: python3 -m unittest discover -s scripts -p "test_compose_hq_runtime.py" -v
       - name: Test isolated cross-repository Ruby RAG schema overlay (offline)
         run: python3 -m unittest discover -s scripts -p "test_prepare_hq_rag_overlay.py" -v
       - name: Regression-test exact-SHA five-repo workspace (offline)
@@ -60,6 +64,8 @@ jobs:
         run: python3 -m unittest discover -s scripts -p "test_audit_repo_drift.py" -v
       - name: Check shell syntax without running release scripts
         run: find scripts/ci -type f -name '*.sh' -exec bash -n '{}' \;
+      - name: Check composite startup shell syntax
+        run: bash -n scripts/hq/start-hq-composite.sh
       - name: Validate the new Octopus-only HQ artifact entrypoint syntax
         run: bash -n scripts/octopus/hq-artifact-gate.sh
       - name: Setup Node 22 for dependency-free bridge tests
