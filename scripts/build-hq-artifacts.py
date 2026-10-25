@@ -105,6 +105,18 @@ def verify_output(directory: Path) -> dict:
         if archive.stat().st_size != info.get('bytes') or sha256(archive) != info.get('sha256'):
             raise ValueError('source archive digest or size mismatch: ' + name)
         checked_archive(archive)
+    images = evidence.get('oci_images')
+    if not isinstance(images, dict) or any(name not in REPOSITORIES for name in images):
+        raise ValueError('invalid OCI evidence components')
+    if (evidence['oci_status'] == 'pending') != (not images):
+        raise ValueError('OCI status and evidence disagree')
+    for name, item in images.items():
+        ref = item.get('reference')
+        match = OCI.fullmatch(ref) if isinstance(ref, str) else None
+        if (not match or item.get('registry_verified') is not True
+            or item.get('manifest_sha256') != match.group(1)
+            or item.get('source_sha') != evidence['source_archives'][name]['git_sha']):
+            raise ValueError('invalid immutable OCI evidence: ' + name)
     return evidence
 
 
