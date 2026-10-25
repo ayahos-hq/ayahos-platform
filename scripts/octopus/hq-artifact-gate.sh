@@ -23,13 +23,19 @@ python3 scripts/assemble-hq-workspace.py \
   --manifest release-manifest.json \
   --platform-head "$release_sha" \
   --workspace "$workroot/workspace"
+python3 scripts/hq/compose-hq-runtime.py \
+  --manifest release-manifest.json \
+  --workspace "$workroot/workspace" \
+  --output "$workroot/composite-context"
 if [[ -n "${HQ_OCI_LOCK:-}" ]]; then
   python3 scripts/build-hq-artifacts.py --manifest release-manifest.json \
     --workspace "$workroot/workspace" --output "$workroot/artifacts" \
+    --runtime-context "$workroot/composite-context" \
     --oci-lock "$HQ_OCI_LOCK"
 else
   python3 scripts/build-hq-artifacts.py --manifest release-manifest.json \
-    --workspace "$workroot/workspace" --output "$workroot/artifacts"
+    --workspace "$workroot/workspace" --output "$workroot/artifacts" \
+    --runtime-context "$workroot/composite-context"
 fi
 python3 scripts/build-hq-artifacts.py --verify-only --output "$workroot/artifacts"
 command -v new_octopusartifact >/dev/null || fail "Octopus artifact retention unavailable"
