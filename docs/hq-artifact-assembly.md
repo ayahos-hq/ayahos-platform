@@ -72,3 +72,7 @@ The extracted legacy Octopus eight-step process still references monorepo paths 
 ## Truthful status
 
 The branch implements local artifact generation, checksum verification, optional live-registry OCI digest checks, a proposed HQ Octopus entrypoint and regression tests. The real private five-repo assembly, actual image digests, authenticated Octopus project/run/status authority, PostgreSQL recovery, live smoke and rollback remain unverified. HOLD production deployment and cutover until independent evidence passes.
+
+## Inspected standalone-image blocker
+
+The current ayahos-hq/ayahos-core Dockerfile copies only the core checkout but then runs Bundler in apps/rag-ruby, apps/control-ruby and apps/ruby_worker. Those directories live in the separately pinned ayahos-workloads repository, not core. Its CMD also references scripts/start-dual-lineage.sh, absent from the core, platform and workloads current source trees. Therefore the extracted core Dockerfile is **not a verified standalone multi-repo build**. Resolve the explicit composition/startup contract, then build on an isolated worker and record the actual image registry digests; do not report these source archives as deployable images.
