@@ -25,6 +25,31 @@ python3 scripts/build-hq-artifacts.py \
 
 The new builder revalidates the existing source verifier and the assembler receipt, checks the five actual detached commit SHAs, verifies the platform manifest byte for byte, and builds deterministic Git archives. It emits SHA-256 and size evidence for exactly five source tar files, then independently verifies them. Symlink escapes, untrusted receipts, changed commits, path traversal, missing input and overwrite attempts fail closed. Temporary partial output is removed. Archives contain private source: never commit these generated outputs to this public repository.
 
+## Core + Workloads composite context
+
+The source assembler is followed by scripts/hq/compose-hq-runtime.py. It
+revalidates the clean exact-SHA workspace, copies only apps/api from Core and
+apps/rag-ruby, apps/control-ruby, and apps/ruby_worker from Workloads, and
+adds the reviewed scripts/hq/Dockerfile.hq-composite plus
+scripts/hq/start-hq-composite.sh. Any missing path, symlink, special file,
+collision, dirty checkout, receipt mismatch, or platform-manifest mismatch
+blocks composition.
+
+The candidate public listener is the Python FastAPI application on port 8000.
+Ruby remains internal bounded support: RAG on 8102, control transport on 8103,
+and an optional worker role. The entrypoint performs no migrations and tears
+down the stack if a required child exits. The generated
+COMPOSITE-SOURCE-MANIFEST.json records the manifest digest, the platform
+checkout SHA, all four sibling pins, and the authority contract: Python owns
+deterministic Undermind, authorization, quota admission, routing, interrupts,
+Action Gateway, and Shared Spine; Ruby owns transport/workflow/RAG only.
+Provider calls are forbidden in Site, Admin, and Workloads. Overmind and
+advisory-Undermind RAG corpora remain separate, and external RAG text remains
+untrusted data.
+
+The composer is still a source-context gate. It is not a successful container
+build, image provenance attestation, deployment, or release approval.
+
 ## Container digest pinning (separate acceptance layer)
 
 Source tarball checksums are NOT OCI image digests or application build evidence. An optionally supplied OCI lock file must name the built image by full immutable registry manifest digest and matching source commit. Example of structure (placeholder deliberately NOT executable):
