@@ -44,9 +44,9 @@ was established. The copied bridge README is pinned source evidence, not current
 instructions.
 
 Do not repoint or redeploy the shared Worker for HQ: doing so would interrupt the monorepo
-release path. HQ needs a separate Octopus project connected to this repository, checks that
-fetch exact manifest-pinned component SHAs rather than assuming a monorepo checkout, and a
-separate Worker with its own KV and scoped credentials. Sealed credentials cannot be copied
+release path. HQ now has a distinct **Development-only source-verification** Octopus project per merged PR #34; production promotion still needs a complete artifact/integration gate that
+fetches exact manifest-pinned component SHAs rather than assuming a monorepo checkout, and a
+separate authoritative bridge with its own scoped credentials. Sealed credentials cannot be copied
 out of the existing Worker; provision new values directly in the new secret store. Until
 those gates pass, the existing endpoint's `/status/<sha>` is not HQ release evidence. Review
 exact-SHA results manually before merge or cutover; no enforced HQ required-check gate has
@@ -135,13 +135,10 @@ Set small PG shared buffers and serial native-gem installation on memory-bound
 workers; investigate exit code 137, never waive it. The overlay evidence is
 **candidate-only**, not a passing pgvector result.
 
-For **Octopus Cloud**, create a *separate* `AyahOS HQ Verification` project
-and configure its GitHub App connection to exactly the five approved
+For **Octopus Cloud**, preserve the existing separate Development-only `AyahOS HQ Verification` project (source-check success recorded in PR #34) and verify its GitHub App connection to exactly the five approved
 `ayahos-hq` repositories under Deploy > Manage > GitHub Connections. Octopus
 GitHub connections can authenticate additional Git resources without a new PAT;
 pin Git resources to the release manifest's immutable revisions. Keep the
-existing `AyahOS` monorepo project and its Worker bridge unchanged. The HQ
-project itself still needs authenticated dashboard access and real execution:
-this repository does **not** claim it exists or has passed.
+existing `AyahOS` monorepo project and its Worker bridge unchanged. The project **does exist** and the three source-check Development steps passed in release 0.0.18 per merged PR #34; authenticated reinspection and full container, integration, database and release acceptance remain outstanding.
 
 See `MIGRATION-GATES.md` and master [migration issue #243](https://github.com/fuaadabdullah/AyahOS_Dual_Lineage/issues/243).
