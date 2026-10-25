@@ -48,9 +48,9 @@ class ArtifactsTests(unittest.TestCase):
             'component_checkout_shas':self.heads}))
         self.output = self.root/'artifacts'
 
-    def build(self, output=None, oci=None, runtime=None):
+    def build(self, output=None, oci=None, runtime=None, runtime_image=None):
         with patch.object(module,'verify_source'):
-            return module.build(self.manifest,self.workspace,output or self.output,oci,runtime)
+            return module.build(self.manifest,self.workspace,output or self.output,oci,runtime,runtime_image)
 
     def test_builds_five_reproducible_archives_and_checks_sha(self):
         self.build()
@@ -79,6 +79,30 @@ class ArtifactsTests(unittest.TestCase):
         with (self.output / 'runtime-context.tar').open('ab') as stream:
             stream.write(b'changed')
         with self.assertRaisesRegex(ValueError, 'runtime context'):
+            module.verify_output(self.output)
+
+    def test_verifies_composite_image_provenance_evidence(self):
+        digest = 'a' * 64
+        reference = 'registry.example.invalid/ayahos/hq@sha256:' + digest
+        runtime = {
+            'reference': reference,
+            'manifest_sha256': digest,
+            'source_shas': {
+                'ayahos-core': self.heads['ayahos-core'],
+                'ayahos-workloads': self.heads['ayahos-workloads'],
+                'ayahos-platform': self.heads['ayahos-platform'],
+            },
+            'release_manifest_sha256': hashlib.sha256(self.manifest.read_bytes()).hexdigest(),
+            'registry_verified': True,
+        }
+        with patch.object(module, 'inspect_runtime_image', return_value=runtime) as inspected:
+            self.build(runtime_image=reference)
+        inspected.assert_called_once()
+        evidence = module.verify_output(self.output)
+        self.assertEqual(evidence['runtime_image_status'], 'registry-verified')
+        evidence['runtime_image']['source_shas']['ayahos-core'] = 'f' * 40
+        (self.output / module.EVIDENCE).write_text(json.dumps(evidence))
+        with self.assertRaisesRegex(ValueError, 'composite OCI'):
             module.verify_output(self.output)
 
     def test_tampering_with_archive_is_detected(self):
