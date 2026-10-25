@@ -15,3 +15,7 @@ The original monorepo is canonical until all explicit gates pass. This snapshot 
 7. **Cutover:** Separate pre-prod testing from protected production update. Require user-authorized destination and credentials steps, signed rollback plan, correct deployed SHAs, and post-deploy SSE/chat, trace, auth and failure probes. Keep Cloudflare primary, Vercel rollback and old monorepo CI until cutover is proven.
 
 **No Octopus project, external webhook, Render, Cloudflare, Vercel, DNS, secrets or Google Cloud modifications are part of this PR.**
+
+## Artifact assembly extension (2026-10-25 feature branch)
+
+Added an offline content-addressed builder and independent artifact verifier after immutable source assembly. Optional OCI registry digest and pinned revision verification require actual published images. A fail-closed Octopus-only HQ entrypoint is proposed but not activated in the server. No changes to the existing monorepo Octopus project/Worker, no HQ CI success, and no release cutover are claimed. See docs/hq-artifact-assembly.md.
