@@ -13,7 +13,7 @@ project="$(get_octopusvariable Octopus.Project.Name)"
 [[ "$project" == "AyahOS HQ Verification" ]] || fail "wrong Octopus project"
 release_sha="$(get_octopusvariable Octopus.Release.Git.CommitHash)"
 [[ "$release_sha" =~ ^[0-9a-f]{40}$ ]] || fail "missing exact release platform SHA"
-[[ "$HQ_PLATFORM_SHA" == "$release_sha" ]] || fail "platform commit mismatch"
+[[ "${HQ_PLATFORM_SHA:-}" == "$release_sha" ]] || fail "platform commit mismatch"
 command -v git >/dev/null || fail "git is required"
 python3 scripts/verify-release-manifest.py --manifest release-manifest.json
 python3 scripts/run-hq-offline-tests.py
@@ -23,7 +23,7 @@ python3 scripts/assemble-hq-workspace.py \
   --manifest release-manifest.json \
   --platform-head "$release_sha" \
   --workspace "$workroot/workspace"
-if [[ -n "$HQ_OCI_LOCK" ]]; then
+if [[ -n "${HQ_OCI_LOCK:-}" ]]; then
   python3 scripts/build-hq-artifacts.py --manifest release-manifest.json \
     --workspace "$workroot/workspace" --output "$workroot/artifacts" \
     --oci-lock "$HQ_OCI_LOCK"
@@ -32,6 +32,8 @@ else
     --workspace "$workroot/workspace" --output "$workroot/artifacts"
 fi
 python3 scripts/build-hq-artifacts.py --verify-only --output "$workroot/artifacts"
+command -v new_octopusartifact >/dev/null || fail "Octopus artifact retention unavailable"
+new_octopusartifact "$workroot/artifacts/RELEASE-ARTIFACT-EVIDENCE.json"
 # The Octopus run must separately attest all integration, restore, live and rollback
 # steps before reporting an authoritative release result or GitHub required status.
 echo "Source artifacts verified for $release_sha; no production authorization"
