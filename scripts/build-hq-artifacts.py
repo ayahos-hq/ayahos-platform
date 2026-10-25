@@ -38,6 +38,10 @@ OCI = re.compile(r'\A[a-z0-9][a-z0-9._:/-]+@sha256:([0-9a-f]{64})\Z')
 EVIDENCE = 'RELEASE-ARTIFACT-EVIDENCE.json'
 
 
+def sha256_bytes(value: bytes) -> str:
+    return hashlib.sha256(value).hexdigest()
+
+
 def sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open('rb') as stream:
@@ -197,9 +201,21 @@ def verify_output(directory: Path) -> dict:
         runtime_archive = directory / 'runtime-context.tar'
         if (runtime_archive.is_symlink() or
             runtime_archive.stat().st_size != runtime.get('bytes') or
-            sha256(runtime_archive) != runtime.get('sha256')):
-            raise ValueError('runtime context digest or size mismatch')
+            sha256(runtime_archive) != runtime.get('sha256') or
+            runtime.get('source_manifest') != 'COMPOSITE-SOURCE-MANIFEST.json' or
+            not ARTIFACT.fullmatch(runtime.get('source_manifest_sha256', ''))):
+            raise ValueError('runtime context digest or provenance mismatch')
         checked_archive(runtime_archive)
+        with tarfile.open(runtime_archive, 'r:') as tar:
+            provenance_members = [
+                entry for entry in tar.getmembers()
+                if entry.name == 'COMPOSITE-SOURCE-MANIFEST.json'
+            ]
+            if len(provenance_members) != 1 or not provenance_members[0].isfile():
+                raise ValueError('runtime context provenance member is missing')
+            provenance = tar.extractfile(provenance_members[0])
+            if provenance is None or sha256_bytes(provenance.read()) != runtime['source_manifest_sha256']:
+                raise ValueError('runtime context provenance digest mismatch')
 
     images = evidence.get('oci_images')
     if not isinstance(images, dict) or any(name not in REPOSITORIES for name in images):
