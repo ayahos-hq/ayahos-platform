@@ -1,0 +1,74 @@
+# AyahOS HQ: verified artifact assembly and Octopus release authority
+
+Status: feature-branch implementation; NO production cutover or live verification.
+
+## Design
+
+Continue using the existing five-repo assembler. The immutable candidate manifest stays in the ayahos-hq/ayahos-platform repository. The full platform HEAD SHA must be supplied explicitly (never main), and its embedded platform manifest SHA must be an ancestor. All four sibling repository HEADs must exactly match their pins. The original fuaadabdullah/AyahOS_Dual_Lineage repository remains the canonical production source.
+
+On a trusted Linux machine with authorized access to all five repositories:
+
+~~~sh
+python3 scripts/assemble-hq-workspace.py \
+  --manifest release-manifest.json \
+  --platform-head FULL_PLATFORM_HEAD_SHA \
+  --workspace /private/new-hq-workspace
+
+python3 scripts/build-hq-artifacts.py \
+  --manifest release-manifest.json \
+  --workspace /private/new-hq-workspace \
+  --output /private/new-hq-artifacts
+
+python3 scripts/build-hq-artifacts.py \
+  --verify-only --output /private/new-hq-artifacts
+~~~
+
+The new builder revalidates the existing source verifier and the assembler receipt, checks the five actual detached commit SHAs, verifies the platform manifest byte for byte, and builds deterministic Git archives. It emits SHA-256 and size evidence for exactly five source tar files, then independently verifies them. Symlink escapes, untrusted receipts, changed commits, path traversal, missing input and overwrite attempts fail closed. Temporary partial output is removed. Archives contain private source: never commit these generated outputs to this public repository.
+
+## Container digest pinning (separate acceptance layer)
+
+Source tarball checksums are NOT OCI image digests or application build evidence. An optionally supplied OCI lock file must name the built image by full immutable registry manifest digest and matching source commit. Example of structure (placeholder deliberately NOT executable):
+
+~~~json
+{
+  "images": [
+    {
+      "component": "ayahos-core",
+      "source_sha": "ce43a6c99b2f80bc6f0b4903687373e2d007daff",
+      "reference": "registry.example.invalid/ayahos/core@sha256:REPLACE_WITH_64_HEX_DIGEST"
+    }
+  ]
+}
+~~~
+
+After Octopus builds and publishes an image with OCI config label org.opencontainers.image.revision equal to the exact source commit, use:
+
+~~~sh
+python3 scripts/build-hq-artifacts.py --manifest release-manifest.json \
+  --workspace /private/new-hq-workspace \
+  --output /private/new-hq-artifacts-with-oci \
+  --oci-lock /private/oci-lock.json
+~~~
+
+Skopeo reads the registry image manifest bytes, verifies their actual SHA-256 against the locked reference, and checks the image config revision label. Missing registry access, mismatched bytes, a mutable tag, invalid source SHA or missing revision label blocks the build. The current core Dockerfile has no image revision label: a verified OCI lock is therefore not yet available. OCI identity and claimed source consistency still require trustworthy Octopus image-build logs and immutable artifact retention before release approval.
+
+## Single pipeline authority: Octopus
+
+Keep the existing Octopus Deploy product, existing monorepo project, production sources, GitHub bridge and octopus/verify context unchanged. Configure a separate, restricted AyahOS HQ Verification project in Octopus only after authorized review. This is project isolation within Octopus, not a new release framework or a second CI provider.
+
+Its mandatory Git-backed artifact step is scripts/octopus/hq-artifact-gate.sh. It requires Octopus.Project.Name to be AyahOS HQ Verification, an explicit HQ_PLATFORM_SHA matching Octopus.Release.Git.CommitHash, and authorized read access to the four private sibling repositories. It runs the pre-existing offline platform suites, the existing source assembler, the builder and the independent checksum verifier. Octopus retains only its evidence JSON, not the private source tar files. The script does not mark a release or post a GitHub success status.
+
+Additional mandatory Octopus checks before any success status or cutover:
+1. Actual source SHA, manifest SHA-256, five archive checksums, and OCI registry digests tied to the same release.
+2. Core deterministic authority, API and cross-language contracts, site/admin SSE and auth, ML, Ruby worker and control suites, all with zero required-test skips.
+3. Isolated PostgreSQL 16 + real pgvector, schema v23 and Ruby RAG integration with exit-code and resource evidence.
+4. Database backup restoration into a disposable instance with integrity and rollback checks.
+5. Staging authenticated chat, provider failover, SSE, policy-denial and telemetry probes against the exact image digests.
+6. Known-good digest rollback rehearsal and explicitly approved canary.
+7. Every Octopus required task step actually passes. Only a dedicated HQ-scoped reporter may post status to the exact HQ platform commit. Missing and skipped required steps count as failure.
+
+The extracted legacy Octopus eight-step process still references monorepo paths and cannot prove this multi-repo release. No GitHub Actions or other CI should become competing release authority. Existing informational PR checks are useful but are not Octopus acceptance.
+
+## Truthful status
+
+The branch implements local artifact generation, checksum verification, optional live-registry OCI digest checks, a proposed HQ Octopus entrypoint and regression tests. The real private five-repo assembly, actual image digests, authenticated Octopus project/run/status authority, PostgreSQL recovery, live smoke and rollback remain unverified. HOLD production deployment and cutover until independent evidence passes.
