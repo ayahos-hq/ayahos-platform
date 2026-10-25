@@ -37,7 +37,9 @@ blocks composition.
 
 The candidate public listener is the Python FastAPI application on port 8000.
 Ruby remains internal bounded support: RAG on 8102, control transport on 8103,
-and an optional worker role. The entrypoint performs no migrations and tears
+and an optional worker role. The real-gVisor sandbox is intentionally
+kept outside this composite and must be built and leased as an independent
+isolated worker. The entrypoint performs no migrations and tears
 down the stack if a required child exits. The generated
 COMPOSITE-SOURCE-MANIFEST.json records the manifest digest, the platform
 checkout SHA, all four sibling pins, and the authority contract: Python owns
