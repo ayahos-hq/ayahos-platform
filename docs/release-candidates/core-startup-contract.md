@@ -29,9 +29,11 @@ owned by Workloads; their health and integration require independent checks.
   authentication and rate limiting. Do not invent a health endpoint.
 - Test graceful SIGTERM shutdown and failure when mandatory configuration is
   missing. No database schema changes during startup.
-- If the release needs a combined Ruby/Python process supervisor, require a
-  separate reviewed architecture decision and explicit lifecycle tests;
-  do not recreate an unknown `start-dual-lineage.sh` by guesswork.
+- The candidate combined runtime is the reviewed
+  `scripts/hq/start-hq-composite.sh` entrypoint. It keeps FastAPI public on
+  port 8000, keeps Ruby RAG and control transport internal on 8102 and 8103,
+  and supports an explicit Ruby worker role. Any required child exit tears down
+  the composite; startup performs no database migrations.
 - Publish immutable image digests and have Octopus independently verify
   provenance and runtime acceptance before release promotion.
 
