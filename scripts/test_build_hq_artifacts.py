@@ -180,6 +180,34 @@ class ArtifactsTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'OCI'):
             module.verify_output(self.output)
 
+    def test_skopeo_checks_all_composite_lineage_labels(self):
+        raw = b'{"schemaVersion":2}'
+        digest = hashlib.sha256(raw).hexdigest()
+        reference = 'registry.example.invalid/ayahos/hq@sha256:' + digest
+        source_shas = {
+            'ayahos-core': 'c' * 40,
+            'ayahos-workloads': 'd' * 40,
+            'ayahos-platform': 'e' * 40,
+        }
+        manifest_hash = 'f' * 64
+        labels = {
+            'org.opencontainers.image.revision': source_shas['ayahos-platform'],
+            'com.ayahos.source.ayahos-core': source_shas['ayahos-core'],
+            'com.ayahos.source.ayahos-workloads': source_shas['ayahos-workloads'],
+            'com.ayahos.source.ayahos-platform': source_shas['ayahos-platform'],
+            'com.ayahos.release-manifest-sha256': manifest_hash,
+        }
+        results = [
+            subprocess.CompletedProcess([], 0, stdout=raw),
+            subprocess.CompletedProcess([], 0, stdout=json.dumps({
+                'config': {'Labels': labels}
+            }).encode()),
+        ]
+        with patch.object(module.subprocess, 'run', side_effect=results):
+            record = module.inspect_runtime_image(reference, source_shas, manifest_hash)
+        self.assertTrue(record['registry_verified'])
+        self.assertEqual(record['source_shas'], source_shas)
+
     def test_skopeo_registry_manifest_and_revision_are_independently_compared(self):
         raw = b'{"schemaVersion":2}'
         expected = hashlib.sha256(raw).hexdigest()
