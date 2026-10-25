@@ -3,6 +3,7 @@
 ARG PYTHON_BASE_IMAGE
 FROM ${PYTHON_BASE_IMAGE}
 
+ARG PYTHON_BASE_IMAGE
 ARG CORE_SHA
 ARG WORKLOADS_SHA
 ARG PLATFORM_SHA
@@ -20,10 +21,119 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     BUNDLE_WITHOUT="development:test"
 
-RUN test -n "${CORE_SHA}" \
-    && test -n "${WORKLOADS_SHA}" \
-    && test -n "${PLATFORM_SHA}" \
-    && test -n "${RELEASE_MANIFEST_SHA256}"
+RUN printf '%s\n' "${PYTHON_BASE_IMAGE}" | grep -Eq '@sha256:[0-9a-f]{64}
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+       build-essential \
+       libpq-dev \
+       libsqlite3-dev \
+       pkg-config \
+       ruby-full \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY apps/api /app/apps/api
+COPY apps/rag-ruby /app/apps/rag-ruby
+COPY apps/control-ruby /app/apps/control-ruby
+COPY apps/ruby_worker /app/apps/ruby_worker
+COPY scripts/start-hq-composite.sh /app/scripts/start-hq-composite.sh
+COPY COMPOSITE-SOURCE-MANIFEST.json /app/COMPOSITE-SOURCE-MANIFEST.json
+
+RUN python -m pip install --no-cache-dir -e './apps/api[control]'
+
+ENV BUNDLE_PATH=/usr/local/bundle \
+    BUNDLE_JOBS=1 \
+    BUNDLE_RETRY=2
+
+RUN cd /app/apps/rag-ruby && bundle install --no-cache \
+    && cd /app/apps/control-ruby && bundle install --no-cache \
+    && cd /app/apps/ruby_worker && bundle install --no-cache
+
+RUN chmod 0755 /app/scripts/start-hq-composite.sh \
+    && test -s /app/COMPOSITE-SOURCE-MANIFEST.json \
+    && python -c 'from dual_lineage.main import app; assert app is not None'
+
+EXPOSE 8000
+
+ENTRYPOINT ["/app/scripts/start-hq-composite.sh"]
+ \
+    && for value in "${CORE_SHA}" "${WORKLOADS_SHA}" "${PLATFORM_SHA}"; do \
+         printf '%s\n' "$value" | grep -Eq '^[0-9a-f]{40}
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+       build-essential \
+       libpq-dev \
+       libsqlite3-dev \
+       pkg-config \
+       ruby-full \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY apps/api /app/apps/api
+COPY apps/rag-ruby /app/apps/rag-ruby
+COPY apps/control-ruby /app/apps/control-ruby
+COPY apps/ruby_worker /app/apps/ruby_worker
+COPY scripts/start-hq-composite.sh /app/scripts/start-hq-composite.sh
+COPY COMPOSITE-SOURCE-MANIFEST.json /app/COMPOSITE-SOURCE-MANIFEST.json
+
+RUN python -m pip install --no-cache-dir -e './apps/api[control]'
+
+ENV BUNDLE_PATH=/usr/local/bundle \
+    BUNDLE_JOBS=1 \
+    BUNDLE_RETRY=2
+
+RUN cd /app/apps/rag-ruby && bundle install --no-cache \
+    && cd /app/apps/control-ruby && bundle install --no-cache \
+    && cd /app/apps/ruby_worker && bundle install --no-cache
+
+RUN chmod 0755 /app/scripts/start-hq-composite.sh \
+    && test -s /app/COMPOSITE-SOURCE-MANIFEST.json \
+    && python -c 'from dual_lineage.main import app; assert app is not None'
+
+EXPOSE 8000
+
+ENTRYPOINT ["/app/scripts/start-hq-composite.sh"]
+ || exit 1; \
+       done \
+    && printf '%s\n' "${RELEASE_MANIFEST_SHA256}" | grep -Eq '^[0-9a-f]{64}
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+       build-essential \
+       libpq-dev \
+       libsqlite3-dev \
+       pkg-config \
+       ruby-full \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY apps/api /app/apps/api
+COPY apps/rag-ruby /app/apps/rag-ruby
+COPY apps/control-ruby /app/apps/control-ruby
+COPY apps/ruby_worker /app/apps/ruby_worker
+COPY scripts/start-hq-composite.sh /app/scripts/start-hq-composite.sh
+COPY COMPOSITE-SOURCE-MANIFEST.json /app/COMPOSITE-SOURCE-MANIFEST.json
+
+RUN python -m pip install --no-cache-dir -e './apps/api[control]'
+
+ENV BUNDLE_PATH=/usr/local/bundle \
+    BUNDLE_JOBS=1 \
+    BUNDLE_RETRY=2
+
+RUN cd /app/apps/rag-ruby && bundle install --no-cache \
+    && cd /app/apps/control-ruby && bundle install --no-cache \
+    && cd /app/apps/ruby_worker && bundle install --no-cache
+
+RUN chmod 0755 /app/scripts/start-hq-composite.sh \
+    && test -s /app/COMPOSITE-SOURCE-MANIFEST.json \
+    && python -c 'from dual_lineage.main import app; assert app is not None'
+
+EXPOSE 8000
+
+ENTRYPOINT ["/app/scripts/start-hq-composite.sh"]
+
 
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
