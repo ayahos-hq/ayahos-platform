@@ -1,5 +1,10 @@
 # Platform extraction acceptance gates
 
+## Documentation checkpoint — 2026-10-25: gate progress and remaining HOLD
+
+**Passed only in limited scope:** merged [Platform PR #34](https://github.com/ayahos-hq/ayahos-platform/pull/34) documents Linux-native clean exact-SHA five-repo assembly and three passing Octopus HQ Verification **Development** source checks in release `0.0.18` / `Deployments-351`. This supersedes the earlier blanket claim that no HQ Octopus project exists. **Not passed:** production-authoritative release-status bridge, complete cross-repository dependency gates, isolated actual PostgreSQL 16/pgvector restore, real composite image build and OCI digest verification, authenticated site/admin E2E, rollback rehearsal and explicit cutover. Composite artifact work is still unmerged in PR #36. Keep original Octopus release authority and production Cloudflare bindings unchanged until independent evidence closes each gate.
+
+
 The original monorepo is canonical until all explicit gates pass. This snapshot never modifies a live Octopus project.
 
 1. **Integrity and privacy:** Verify 66 tracked platform source blobs and their Git modes; audit any executable/script edits and scan for accidental credentials. Example .env templates have empty values. Never move existing secret values into Git.
