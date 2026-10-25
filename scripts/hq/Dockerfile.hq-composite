@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # The Octopus image-build step must supply an immutable PYTHON_BASE_IMAGE@sha256:...
 ARG PYTHON_BASE_IMAGE
-FROM \${PYTHON_BASE_IMAGE}
+FROM ${PYTHON_BASE_IMAGE}
 
 ARG CORE_SHA
 ARG WORKLOADS_SHA
@@ -10,20 +10,20 @@ ARG RELEASE_MANIFEST_SHA256
 
 LABEL org.opencontainers.image.title="AyahOS Core + Ruby Workloads"
 LABEL org.opencontainers.image.description="Candidate composite runtime; Python remains authoritative"
-LABEL org.opencontainers.image.revision="\${PLATFORM_SHA}"
-LABEL com.ayahos.source.ayahos-core="\${CORE_SHA}"
-LABEL com.ayahos.source.ayahos-workloads="\${WORKLOADS_SHA}"
-LABEL com.ayahos.source.ayahos-platform="\${PLATFORM_SHA}"
-LABEL com.ayahos.release-manifest-sha256="\${RELEASE_MANIFEST_SHA256}"
+LABEL org.opencontainers.image.revision="${PLATFORM_SHA}"
+LABEL com.ayahos.source.ayahos-core="${CORE_SHA}"
+LABEL com.ayahos.source.ayahos-workloads="${WORKLOADS_SHA}"
+LABEL com.ayahos.source.ayahos-platform="${PLATFORM_SHA}"
+LABEL com.ayahos.release-manifest-sha256="${RELEASE_MANIFEST_SHA256}"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     BUNDLE_WITHOUT="development:test"
 
-RUN test -n "\${CORE_SHA}" \
-    && test -n "\${WORKLOADS_SHA}" \
-    && test -n "\${PLATFORM_SHA}" \
-    && test -n "\${RELEASE_MANIFEST_SHA256}"
+RUN test -n "${CORE_SHA}" \
+    && test -n "${WORKLOADS_SHA}" \
+    && test -n "${PLATFORM_SHA}" \
+    && test -n "${RELEASE_MANIFEST_SHA256}"
 
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
