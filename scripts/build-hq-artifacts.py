@@ -109,6 +109,46 @@ def inspect_oci(reference: str, revision: str) -> dict:
             'manifest_sha256': match.group(1), 'registry_verified': True}
 
 
+def inspect_runtime_image(reference: str, source_shas: dict[str, str], manifest_hash: str) -> dict:
+    """Verify an immutable composite image digest and all source-lineage labels."""
+    match = OCI.fullmatch(reference)
+    if not match:
+        raise ValueError('immutable composite OCI image reference required')
+    try:
+        raw = subprocess.run(['skopeo', 'inspect', '--raw', 'docker://' + reference],
+                             capture_output=True, check=False, timeout=120)
+        if raw.returncode or hashlib.sha256(raw.stdout).hexdigest() != match.group(1):
+            raise ValueError('composite OCI registry manifest digest mismatch')
+        config = subprocess.run(['skopeo', 'inspect', '--config', 'docker://' + reference],
+                                capture_output=True, check=False, timeout=120)
+        if config.returncode:
+            raise ValueError('composite OCI image config inaccessible')
+        labels = json.loads(config.stdout).get('config', {}).get('Labels') or {}
+        expected_labels = {
+            'org.opencontainers.image.revision': source_shas['ayahos-platform'],
+            'com.ayahos.source.ayahos-core': source_shas['ayahos-core'],
+            'com.ayahos.source.ayahos-workloads': source_shas['ayahos-workloads'],
+            'com.ayahos.source.ayahos-platform': source_shas['ayahos-platform'],
+            'com.ayahos.release-manifest-sha256': manifest_hash,
+        }
+        for label, expected in expected_labels.items():
+            if labels.get(label) != expected:
+                raise ValueError('composite OCI provenance label mismatch: ' + label)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise ValueError('composite OCI registry verification unavailable') from exc
+    return {
+        'reference': reference,
+        'manifest_sha256': match.group(1),
+        'source_shas': {
+            'ayahos-core': source_shas['ayahos-core'],
+            'ayahos-workloads': source_shas['ayahos-workloads'],
+            'ayahos-platform': source_shas['ayahos-platform'],
+        },
+        'release_manifest_sha256': manifest_hash,
+        'registry_verified': True,
+    }
+
+
 def verify_output(directory: Path) -> dict:
     """Rehash portable output; never infer Octopus, smoke, or release approval."""
     if directory.is_symlink():
@@ -129,6 +169,27 @@ def verify_output(directory: Path) -> dict:
         if archive.stat().st_size != info.get('bytes') or sha256(archive) != info.get('sha256'):
             raise ValueError('source archive digest or size mismatch: ' + name)
         checked_archive(archive)
+    runtime_image = evidence.get('runtime_image')
+    runtime_image_status = evidence.get('runtime_image_status', 'pending')
+    if runtime_image_status not in ('pending', 'registry-verified'):
+        raise ValueError('invalid runtime image status')
+    if (runtime_image_status == 'pending') != (runtime_image is None):
+        raise ValueError('runtime image status and evidence disagree')
+    if runtime_image is not None:
+        reference = runtime_image.get('reference')
+        match = OCI.fullmatch(reference) if isinstance(reference, str) else None
+        platform_sha = evidence['source_archives']['ayahos-platform']['git_sha']
+        expected_sources = {
+            'ayahos-core': components['ayahos-core']['git_sha'],
+            'ayahos-workloads': components['ayahos-workloads']['git_sha'],
+            'ayahos-platform': platform_sha,
+        }
+        if (not match or runtime_image.get('registry_verified') is not True
+            or runtime_image.get('manifest_sha256') != match.group(1)
+            or runtime_image.get('source_shas') != expected_sources
+            or runtime_image.get('release_manifest_sha256') != evidence['manifest_sha256']):
+            raise ValueError('invalid composite OCI evidence')
+
     runtime = evidence.get('runtime_context')
     if runtime is not None:
         if not isinstance(runtime, dict) or runtime.get('file') != 'runtime-context.tar':
@@ -157,7 +218,8 @@ def verify_output(directory: Path) -> dict:
 
 def build(manifest_path: Path, workspace: Path, destination: Path,
           oci_lock: Path | None = None,
-          runtime_context: Path | None = None) -> dict:
+          runtime_context: Path | None = None,
+          runtime_image_ref: str | None = None) -> dict:
     if destination.exists() or destination.is_symlink():
         raise ValueError('artifact destination already exists')
     if not destination.parent.is_dir():
@@ -184,6 +246,17 @@ def build(manifest_path: Path, workspace: Path, destination: Path,
         expected = platform_head if name == 'ayahos-platform' else manifest['components'][name]['git_sha']
         if not SHA.fullmatch(expected) or receipt['component_checkout_shas'][name] != expected or actual != expected:
             raise ValueError('checkout HEAD and manifest receipt disagree: ' + name)
+    runtime_image = None
+    if runtime_image_ref is not None:
+        runtime_image = inspect_runtime_image(
+            runtime_image_ref,
+            {
+                'ayahos-core': manifest['components']['ayahos-core']['git_sha'],
+                'ayahos-workloads': manifest['components']['ayahos-workloads']['git_sha'],
+                'ayahos-platform': platform_head,
+            },
+            manifest_hash,
+        )
     oci_images = {}
     if oci_lock is not None:
         lock = json.loads(oci_lock.read_text(encoding='utf-8'))
@@ -236,6 +309,8 @@ def build(manifest_path: Path, workspace: Path, destination: Path,
         evidence = {'schema_version': 1, 'release_authorized': False,
                     'manifest_sha256': manifest_hash, 'source_archives': archives,
                     'runtime_context': runtime_record,
+                    'runtime_image_status': 'registry-verified' if runtime_image else 'pending',
+                    'runtime_image': runtime_image,
                     'oci_status': 'registry-verified' if oci_images else 'pending',
                     'oci_images': oci_images,
                     'octopus_exact_sha': 'pending', 'database_restore': 'pending',
@@ -259,6 +334,8 @@ def main() -> int:
     parser.add_argument('--oci-lock', type=Path, help='registry pins, independently checked using skopeo')
     parser.add_argument('--runtime-context', type=Path,
                         help='reviewed Core + Workloads context to archive as a separate source artifact')
+    parser.add_argument('--runtime-image-ref',
+                        help='immutable composite image reference, verified with skopeo')
     parser.add_argument('--verify-only', action='store_true')
     args = parser.parse_args()
     try:
@@ -266,7 +343,7 @@ def main() -> int:
             verify_output(args.output)
             print('Verified artifact SHA-256 records; no release authorization')
         elif args.workspace:
-            build(args.manifest, args.workspace, args.output, args.oci_lock, args.runtime_context)
+            build(args.manifest, args.workspace, args.output, args.oci_lock, args.runtime_context, args.runtime_image_ref)
             print('Built exact-SHA source artifacts; OCI and Octopus gates remain independent')
         else:
             parser.error('--workspace is required unless --verify-only is set')
