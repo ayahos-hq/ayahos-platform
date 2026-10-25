@@ -115,3 +115,29 @@ The branch implements local artifact generation, checksum verification, optional
 ## Inspected standalone-image blocker
 
 The current ayahos-hq/ayahos-core Dockerfile copies only the core checkout but then runs Bundler in apps/rag-ruby, apps/control-ruby and apps/ruby_worker. Those directories live in the separately pinned ayahos-workloads repository, not core. Its CMD also references scripts/start-dual-lineage.sh, absent from the core, platform and workloads current source trees. Therefore the extracted core Dockerfile is **not a verified standalone multi-repo build**. Resolve the explicit composition/startup contract, then build on an isolated worker and record the actual image registry digests; do not report these source archives as deployable images.
+
+## Separate HQ status bridge
+
+The existing `ayahos-octopus-github-bridge` remains attached to the legacy
+`fuaadabdullah/AyahOS_Dual_Lineage` repository and the `octopus/verify`
+context. Do not repoint it: that would interrupt the canonical production
+release path.
+
+The HQ gate requires a separate Worker deployment using this same
+parameterized bridge source, a separate KV namespace, and credentials scoped
+only to the HQ platform repository and the restricted Octopus verification
+project:
+
+- `GITHUB_REPOSITORY=ayahos-hq/ayahos-platform`
+- `STATUS_CONTEXT=octopus/hq-operator-verified`
+- `OCTOPUS_PROJECT=AyahOS HQ Verification`
+- `OCTOPUS_ENVIRONMENT` set to the exact environment created in that project
+- a fine-grained GitHub token with commit-status write permission only for
+  `ayahos-hq/ayahos-platform`
+- separate `OCTOPUS_API_KEY`, webhook secret, and KV namespace
+
+The deployment is not accepted until `/healthz` returns `200 ok`, a signed
+push for the exact candidate platform SHA creates a pending task, the status
+endpoint records the task, and GitHub receives the exact
+`octopus/hq-operator-verified` context. A healthy Worker without that
+commit-status evidence does not satisfy the merge gate.
