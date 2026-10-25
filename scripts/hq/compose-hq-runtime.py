@@ -180,6 +180,11 @@ def compose(manifest_path: Path, workspace: Path, destination: Path) -> Path:
                     "apps/ruby_worker",
                 ],
             },
+            "excluded_paths": {
+                "ayahos-workloads": {
+                    "apps/sandbox_worker": "independent real-gVisor worker image and lease",
+                },
+            },
             "authority_contract": {
                 "python_authority": [
                     "deterministic_undermind",
