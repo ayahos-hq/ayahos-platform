@@ -48,9 +48,9 @@ class ArtifactsTests(unittest.TestCase):
             'component_checkout_shas':self.heads}))
         self.output = self.root/'artifacts'
 
-    def build(self, output=None, oci=None):
+    def build(self, output=None, oci=None, runtime=None):
         with patch.object(module,'verify_source'):
-            return module.build(self.manifest,self.workspace,output or self.output,oci)
+            return module.build(self.manifest,self.workspace,output or self.output,oci,runtime)
 
     def test_builds_five_reproducible_archives_and_checks_sha(self):
         self.build()
@@ -61,6 +61,25 @@ class ArtifactsTests(unittest.TestCase):
         second = self.root/'again'
         self.build(second)
         self.assertEqual(record['source_archives'], module.verify_output(second)['source_archives'])
+
+    def test_archives_runtime_context_and_rechecks_digest(self):
+        context = self.root / 'context'
+        (context / 'scripts').mkdir(parents=True)
+        (context / 'scripts' / 'start.sh').write_text('#!/bin/sh\n')
+        (context / 'COMPOSITE-SOURCE-MANIFEST.json').write_text(json.dumps({
+            'schema_version': 1,
+            'candidate_only': True,
+            'checkout_shas': self.heads,
+        }) + '\n')
+        self.build(runtime=context)
+        evidence = module.verify_output(self.output)
+        runtime = evidence['runtime_context']
+        self.assertEqual(runtime['file'], 'runtime-context.tar')
+        self.assertEqual(runtime['bytes'], (self.output / 'runtime-context.tar').stat().st_size)
+        with (self.output / 'runtime-context.tar').open('ab') as stream:
+            stream.write(b'changed')
+        with self.assertRaisesRegex(ValueError, 'runtime context'):
+            module.verify_output(self.output)
 
     def test_tampering_with_archive_is_detected(self):
         self.build()
