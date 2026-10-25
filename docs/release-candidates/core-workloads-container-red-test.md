@@ -1,8 +1,10 @@
-# HQ container composition: regression contract (RED)
+# HQ container composition: regression contract (candidate context implemented)
 
-This test documents the known failure of the pinned extracted Core Dockerfile.
-It must remain a **failing test** until the build context and startup contract
-are implemented. Do not change the existing production Dockerfile to hide it.
+This document records the former Core-only Dockerfile failure and the reviewed
+source-composition contract. The platform branch now has an exact-SHA composer
+and a candidate composite startup contract, but it must remain **RED for
+release** until an isolated Linux image build, immutable OCI digest, and runtime
+acceptance gates produce independent evidence.
 
 ## Reproduction
 
@@ -20,12 +22,13 @@ filesystem contract.
 
 ## GREEN acceptance criteria
 
-1. The build context is assembled from **exactly** the Core and Workloads SHAs
+1. The source context is assembled from **exactly** the Core and Workloads SHAs
    in `release-manifest.json`; no mutable branch references or untracked files.
 2. The context contains all three Ruby application directories and a reviewed,
    executable startup script, with collision handling that fails closed.
-3. The image exposes an immutable provenance record for **both** component SHAs;
-   a single `org.opencontainers.image.revision` label cannot attest two sources.
+3. The context records immutable provenance for **both** component SHAs and the
+   complete five-repository candidate; a single image revision label cannot
+   attest two sources.
 4. An isolated Linux build succeeds; container startup and health checks pass.
 5. Tampering with either input SHA, missing Ruby directory, missing startup
    script, or a path collision produces a nonzero result.
@@ -34,5 +37,8 @@ filesystem contract.
 
 ## Current result
 
-**RED / BLOCKED:** requirements 1–6 have not been demonstrated in a real
-container build. This is a test specification, not an acceptance certificate.
+**SOURCE CONTEXT GREEN / RUNTIME RED:** the composer and offline regression
+suite cover the exact-source, required-path, provenance, and fail-closed
+composition checks. Requirements 4–6 still require a real isolated container
+build, startup/health evidence, registry digest capture, and independent
+Octopus recheck. This is not an acceptance certificate.
