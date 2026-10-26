@@ -37,6 +37,21 @@ class AccessDoctorTests(unittest.TestCase):
         check = doctor.check_cloudflare(lambda _: doctor.CommandResult(1, "profile not found"), HQ)
         self.assertEqual(check.status, "not_authenticated")
 
+    def test_windows_wrangler_command_shim_is_resolved_without_shell(self):
+        from unittest.mock import patch
+        with (
+            patch.object(doctor.shutil, "which", return_value="C:/tools/wrangler.CMD"),
+            patch.object(doctor.subprocess, "run") as proc,
+            patch.dict(doctor.os.environ, {"AYAHOS_CLOUDFLARE_CONFIG_HOME": "C:/test/hq"}),
+        ):
+            proc.return_value.returncode = 0
+            proc.return_value.stdout = "AyahOS_HQ"
+            proc.return_value.stderr = ""
+            result = doctor.safe_run(["wrangler", "whoami"])
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual(proc.call_args.args[0], ["C:/tools/wrangler.CMD", "whoami"])
+            self.assertFalse(proc.call_args.kwargs["shell"])
+
     def test_cloudflare_uses_separate_home_with_no_default_profile_mutation(self):
         from unittest.mock import patch
         with (
