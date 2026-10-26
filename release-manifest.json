@@ -14,7 +14,7 @@
     },
     "ayahos-core": {
       "repository": "ayahos-hq/ayahos-core",
-      "git_sha": "ce43a6c99b2f80bc6f0b4903687373e2d007daff",
+      "git_sha": "0be54c8c36836a310c9781413daa0f4cb63f7801",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     },
@@ -32,7 +32,7 @@
     },
     "ayahos-workloads": {
       "repository": "ayahos-hq/ayahos-workloads",
-      "git_sha": "e4de3aab568fc817816a4bd9e58eaeb0296f7a53",
+      "git_sha": "60f76203de45a1c340eb7bfea89a29b2abcfcbca",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     }
