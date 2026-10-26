@@ -60,13 +60,14 @@ Read-only desktop CLI reproduced the distinction:
   succeeded for JS bundling, **but** explicitly reported
   `TASKS=REPLACE_WITH_KV_NAMESPACE_ID` and empty
   `OCTOPUS_ENVIRONMENT`. Local compilation is **not** deploy safety.
-- `GET /accounts/{account}/workers/scripts/ayahos-hq-verification-bridge`
-  returned the existing deployed script with SHA256
-  `f3162fe8598d81697a531095c63ffb98030ba16a3e37e9bd084fecc6a4130a2c`.
-  Its bytes differ from repo `deploy/octopus-github-bridge/src/worker.js`
-  SHA256 `ed448d4db14f00fca254d7dcb37864aa762b8a35ef20f100280128a17d91a98d`.
-  These hash facts prohibit replacing the deployed Worker with that repo
-  source until their code, required bindings, and authority are reconciled.
+- Read-only deployed Worker retrieval produced a **bundled JavaScript**
+  SHA256 `f3162fe8598d81697a531095c63ffb98030ba16a3e37e9bd084fecc6a4130a2c`.
+  The raw source in `deploy/octopus-github-bridge/src/worker.js` has a
+  different hash, as expected for unbundled source, **but** Wrangler 4.152
+  `deploy --dry-run` from that source produced exactly the same bundle hash.
+  The code lineage is reconciled; the **separate bindings/Worker identity**
+  remain a hard safety boundary. The raw-source-versus-bundle hash difference
+  is *not* a source divergence.
 - Local `wrangler init --from-dash` invoked Create Cloudflare and generated
   a generic starter app; the CLI invocation ended with an error and explicitly
   answered **no deploy**. That scaffold is neither deployed nor source
@@ -87,6 +88,46 @@ verification Worker and that preview variables/bindings are configured
 separately; test an isolated exact-commit preview before touching a
 production deployment. Never convert a failing CI check to optional,
 disable checks or silently bypass an Octopus gate.
+
+## Exact-SHA HQ Worker preview repair (verified 2026-10-26 UTC)
+
+On Platform PR #38, commit
+`c94d999fa1a9f5f98318678b21b75d0aa28116b6`, added separate
+`deploy/hq-verification-bridge/wrangler.jsonc` and a fail-closed
+`scripts/ci/check_hq_worker_build.py`. The source manifest now pins
+**69 exact immutable platform blobs**, independently checked by
+`scripts/verify-platform.py`. No new release/check authority was created.
+
+- Created dedicated preview-only KV namespace
+  `ayahos-hq-verification-preview-tasks` (`2b5af79207114dec9989bc1d952c3c9d`),
+  distinct from the production TASKS KV
+  (`49ce086dc87f4de9a5110e5771907cb3`).
+- Wrangler 4.152 initially refused the preview config without an explicit
+  `previews` block. Wrote a regression test reproducing the error, added
+  `previews.vars` and `previews.kv_namespaces`, and re-pinned every
+  changed source file in `SOURCE-PROVENANCE.json`.
+- All 5 HQ config tests, 11 access-doctor tests, 26 bridge integration tests,
+  immutable source verification and candidate release-manifest checks passed.
+- Uploaded an isolated Cloudflare Preview using exact candidate SHA
+  `c94d999fa1a9f5f98318678b21b75d0aa28116b6`; immutable
+  preview deployment `3f06cbb3-82cd-4af5-80bd-a76e2900a520`.
+  The preview URL is
+  `https://access-fix-20261026-ayahos-hq-verification-bridge.ayahos-hq.workers.dev`.
+  Preview `GET /healthz` intentionally returns **503** because no
+  Octopus/GitHub production secrets were copied into Preview;
+  live production `GET /healthz` returned **200 ok**. No production
+  release was performed. Do not treat this preview as an authenticated
+  integration test or an accepted production promotion.
+- The existing **hosted Workers Builds** check still fails on the branch
+  because its configured build command forcibly checks out another branch
+  and points to the monorepo Worker config. The correct *next* settings
+  are specified exactly in
+  `deploy/hq-verification-bridge/BUILD_COMMANDS.md` and require a
+  Workers Builds Configuration-scoped user API token or an authorized
+  interactive Cloudflare dashboard edit; the existing Wrangler OAuth
+  token receives **403** on both build logs and trigger configuration.
+  Do not change production Worker deployment settings or bypass the
+  failing GitHub check to manufacture success.
 
 ## Credential architecture
 
