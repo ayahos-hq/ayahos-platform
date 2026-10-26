@@ -16,6 +16,7 @@ import subprocess
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = ROOT / "deploy" / "hq-verification-bridge" / "wrangler.jsonc"
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+NAMESPACE_RE = re.compile(r"^[0-9a-f]{32}$")
 EXPECTED_NAME = "ayahos-hq-verification-bridge"
 EXPECTED_SOURCE = "../octopus-github-bridge/src/worker.js"
 EXPECTED_REPO = "ayahos-hq/ayahos-platform"
@@ -63,8 +64,7 @@ def validate_config() -> None:
         raise ValueError("Dedicated preview tasks binding missing")
     if namespaces[0].get("id") == "49ce086dc87f4de9a5110e5771907cb3":
         raise ValueError("Production tasks KV must never be exposed to previews")
-    if not SHA_RE.fullmatch(namespaces[0].get("id", "") + "00000000"):
-        # Namespace IDs are 32 hex; normalize before validating.
+    if not NAMESPACE_RE.fullmatch(namespaces[0].get("id", "")):
         raise ValueError("Invalid preview namespace")
     if not (CONFIG.parent / EXPECTED_SOURCE).is_file():
         raise ValueError("Reviewed worker source is missing")
