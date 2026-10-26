@@ -9,6 +9,8 @@ from __future__ import annotations
 import argparse
 from dataclasses import asdict, dataclass
 import json
+import os
+from pathlib import Path
 import re
 import shutil
 import subprocess
@@ -40,9 +42,18 @@ def safe_run(args: list[str]) -> CommandResult:
     if shutil.which(args[0]) is None:
         return CommandResult(127)
     try:
+        env = None
+        if args[0] == "wrangler":
+            # Device OAuth uses a separate config root: do not change personal Wrangler auth.
+            base = os.environ.get("APPDATA") or str(Path.home() / ".config")
+            isolated = os.environ.get("AYAHOS_CLOUDFLARE_CONFIG_HOME") or str(
+                Path(base) / "AyahOS" / "wrangler-hq"
+            )
+            env = os.environ.copy()
+            env["XDG_CONFIG_HOME"] = isolated
         proc = subprocess.run(args, capture_output=True, text=True, timeout=25,
                               shell=False, encoding="utf-8", errors="replace",
-                              check=False)
+                              check=False, env=env)
         return CommandResult(proc.returncode, proc.stdout, proc.stderr)
     except (OSError, subprocess.TimeoutExpired):
         return CommandResult(124)
@@ -65,10 +76,10 @@ def check_github(run: Runner = safe_run) -> Check:
 
 
 def check_cloudflare(run: Runner = safe_run, expected_account: str | None = None) -> Check:
-    output = run(["wrangler", "whoami", "--profile", "ayahos-hq"])
+    output = run(["wrangler", "whoami"])
     if output.returncode:
-        return Check("cloudflare_hq", "not_authenticated", "Dedicated HQ Wrangler profile unavailable.",
-                     "Owner signs in once with wrangler auth create ayahos-hq on the authorized desktop.")
+        return Check("cloudflare_hq", "not_authenticated", "Separate HQ Wrangler device-login session unavailable.",
+                     "Use wrangler login --device inside the isolated AyahOS Cloudflare config directory.")
     if not expected_account:
         return Check("cloudflare_hq", "needs_target", "Authenticated account cannot be validated without HQ account ID.",
                      "Pass --cloudflare-account-id from the owning account's dashboard.")
@@ -78,8 +89,8 @@ def check_cloudflare(run: Runner = safe_run, expected_account: str | None = None
     accounts = set(ACCOUNT_ID.findall(output.stdout))
     if expected_account.lower() not in {a.lower() for a in accounts}:
         return Check("cloudflare_hq", "wrong_account", "CLI identity cannot enumerate the HQ Worker account.",
-                     "Owner grants this principal scoped membership to HQ, then re-authenticates the named profile.")
-    return Check("cloudflare_hq", "ready", "Named Wrangler profile can enumerate HQ account.",
+                     "Owner grants this principal scoped membership to HQ, then signs in with the HQ-isolated device flow.")
+    return Check("cloudflare_hq", "ready", "Isolated Wrangler session can enumerate the expected HQ account.",
                  "Check service-level read/write permissions independently before any mutation.")
 
 
