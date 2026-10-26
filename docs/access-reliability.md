@@ -16,6 +16,28 @@ must remain independent from the proposed HQ promotion path.
 | HQ Workers Builds | Cloudflare posted a failed Worker build on Platform PR #37 and other platform commits | Need **owning-account** build logs before editing root-directory, Worker name, deploy command, token or Git connection. Do not assume a particular root cause |
 | Monorepo | Ruff import-order repair in #419 was merged after an authoritative passing Octopus check; #421 has a separate pending exact-SHA gate | Passing one PR does not transfer acceptance to another SHA |
 
+## Verified after owner approval (2026-10-26 UTC)
+
+The owner completed Cloudflare OAuth device authorization on the connected
+Windows host. The separately isolated `wrangler whoami` now enumerates the
+**AyahOS_HQ** account, and `wrangler deployments list --name
+ayahos-hq-verification-bridge` succeeded with that explicit account. The
+personal Wrangler default profile still enumerates GoblinOS/ForgeTM and was
+not overwritten. The access doctor originally produced a Windows false
+negative because Python's `subprocess` did not resolve the npm
+`wrangler.CMD` shim automatically. The fix resolves the exact executable
+with `shutil.which` and invokes it without a shell; 11/11 isolated tests
+and platform source/manifest checks passed, and the local helper was updated.
+
+**Remaining least-privilege gap:** Cloudflare's Workers Builds log REST endpoint
+returned HTTP 403 / code 12004 even though Worker deployment-list access
+succeeded. This is a separate **Workers CI Read** authorization boundary, not
+proof that the Cloudflare identity is wrong. Inspect logs using an authorized
+dashboard session or a user-scoped Workers CI Read token provisioned directly
+in Cloudflare's secret store; never paste tokens into chat or public CI output.
+The exact failing build root cause remains unverified. Local Octopus CLI
+authentication is still absent, and production release checks remain mandatory.
+
 ## Credential architecture
 
 1. **Human identity:** Use one named GitHub identity `fuaadabdullah` and an approved Cloudflare HQ membership, with MFA. An organization invitation is safer than circulating a personal account's tokens. No password or OTP is needed in a repository.
