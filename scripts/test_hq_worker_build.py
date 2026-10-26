@@ -60,7 +60,7 @@ class HQWorkerBuildTests(unittest.TestCase):
         self.assertNotIn("git checkout", config)
         self.assertNotIn("wrangler deploy\n", config)
         self.assertIn("WORKERS_CI_COMMIT_SHA", config)
-        self.assertIn("wrangler preview", config)
+        self.assertRegex(config, r"wrangler@4\\.152\\.0 preview")
 
 
 if __name__ == "__main__":
