@@ -42,7 +42,7 @@ raw CLI output, and fails closed for an unknown or wrong Cloudflare account.
 ### One-time, owner-approved bootstrap
 
 - **GitHub:** `gh auth status` and `gh api user --jq .login`. If the wrong identity is active, use `gh auth switch` / `gh auth login` interactively. Do not create a new broad PAT.
-- **Cloudflare:** The HQ account owner invites the chosen principal to the account with enough permissions for *build diagnostics*, then runs `wrangler auth create ayahos-hq` **on the authorized desktop**. Complete the browser's localhost OAuth callback there. Verify `wrangler whoami --profile ayahos-hq` includes the target account, and separately verify the specific Worker is readable. Keep the personal default profile untouched. If an old exposed token exists, revoke/rotate it; never reuse a token pasted into chat.
+- **Cloudflare:** The HQ account owner opens the **specific** `ayahos-hq-verification-bridge` Worker and selects **Invite**. Start with **Metadata Read-Only** (settings, logs, traces) scoped to this Worker, promoting to Content Read-Only only if necessary to debug the build; use Editor only for a separately approved deployment. Cloudflare supports individual-Worker roles, so account-wide administrator access is unnecessary. After membership is accepted, run `wrangler auth create ayahos-hq` **on the authorized desktop**. Complete the browser's localhost OAuth callback there. Verify `wrangler whoami --profile ayahos-hq` includes the target account, and separately verify the specific Worker is readable. Keep the personal default profile untouched. If an old exposed token exists, revoke/rotate it; never reuse a token pasted into chat.
 - **Octopus:** Run `octopus login` locally against the known `https://ayahos.octopus.app` service via the CLI's interactive secure flow. Grant a scoped TaskView/ProjectView identity for diagnostics, not permanent cross-project deployment/admin rights. Run the doctor again and confirm an authenticated response.
 - **Workers Builds:** After HQ-account read permission is verified, inspect the exact failed Build ID under **Worker > Deployments > Build history**, then only change the proven misconfiguration. Cloudflare documents root directory, Wrangler `name`, `account_id`, and stale build tokens as distinct possible failure classes. Changing the repo to point to the incumbent monorepo bridge is prohibited.
 
@@ -56,6 +56,8 @@ queue state never proves a passed gate. Do not bypass the failed Cloudflare chec
 or pending `octopus/verify` to merge production-related PRs.
 
 Official references:
+- https://developers.cloudflare.com/changelog/post/2026-09-21-invite-members-to-workers/
+- https://developers.cloudflare.com/workers/authorization/workers/
 - https://developers.cloudflare.com/workers/wrangler/commands/general/
 - https://developers.cloudflare.com/workers/ci-cd/builds/configuration/
 - https://developers.cloudflare.com/workers/ci-cd/builds/troubleshoot/
