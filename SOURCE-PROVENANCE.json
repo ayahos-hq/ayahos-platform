@@ -4,7 +4,7 @@
   "source_repository": "fuaadabdullah/AyahOS_Dual_Lineage",
   "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
   "target_repository": "ayahos-hq/ayahos-platform",
-  "source_file_count": 66,
+  "source_file_count": 68,
   "source_files": {
     ".octopus/deployment_process.ocl": {
       "sha": "10f95921f4199a69c09e40fe313fa46bcbd579cd",
@@ -216,6 +216,14 @@
     },
     "scripts/ci/minilm-train.sh": {
       "sha": "1ea4147e23e9243f0e68e40f4e0c2b704228c63a",
+      "mode": "100644"
+    },
+    "scripts/ci/octopus_cline_org_review.sh": {
+      "sha": "8765238f40547bc42f46da0ea4263a9baeb27f02",
+      "mode": "100644"
+    },
+    "scripts/ci/octopus_gemini_org_review.sh": {
+      "sha": "9ef3543128d4344bcc1a957777805ee612848605",
       "mode": "100644"
     },
     "scripts/ci/octopus_verify.sh": {
