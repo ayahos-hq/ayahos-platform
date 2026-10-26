@@ -12,8 +12,8 @@ doctor = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = doctor
 spec.loader.exec_module(doctor)
 
-HQ = "265071fc5a2ac8bbe85e2bd724361080"
-OTHER = "a9c52e892f7361bab3bfd084c6ffaccb"
+HQ = "a" * 32
+OTHER = "b" * 32
 
 
 class AccessDoctorTests(unittest.TestCase):
