@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "organization": "ayahos",
+  "monthly_budget_usd": "5.00",
+  "safety_reserve_usd": "0.50",
+  "max_running_machines": 1,
+  "allowed_machine_preset": "shared-cpu-1x-256mb",
+  "machine_hourly_usd": "0.0030",
+  "egress_per_gb_usd": "0.02"
+}

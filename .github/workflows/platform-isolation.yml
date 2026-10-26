@@ -9,6 +9,10 @@ on:
       - "deploy/**"
       - "scripts/ci/**"
       - "scripts/verify-platform.py"
+      - "scripts/fly_budget_guard.py"
+      - "tests/test_fly_budget_guard.py"
+      - "budget/fly-budget-policy.json"
+      - "docs/finops/fly-budget-enforcement.md"
       - "scripts/verify-release-manifest.py"
       - "scripts/audit-repo-drift.py"
       - "scripts/test_audit_repo_drift.py"
@@ -42,6 +46,8 @@ jobs:
           persist-credentials: false
       - name: Confirm immutable platform source and mandatory Octopus topology
         run: python3 scripts/verify-platform.py
+      - name: Verify fail-closed Fly.io five-dollar release admission policy
+        run: python3 -m unittest discover -s tests -p "test_fly_budget_guard.py" -v
       - name: Verify five-repository candidate manifest
         run: python3 scripts/verify-release-manifest.py
       - name: Test fail-closed immutable HQ source assembly (offline)
