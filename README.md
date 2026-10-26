@@ -2,6 +2,15 @@
 
 **Status: public by owner decision, provisional source extraction, not deployed and not production authority.** This repository is a staging home for CI/CD orchestration, Octopus project definitions, deployment templates, release checks and infrastructure records. Do not connect Octopus, GitHub webhooks, Cloudflare or any production service to this repo until the migration gates are complete. Treat all repository contents as public; secrets belong exclusively in managed secret stores.
 
+## Fly.io budget admission (source-only)
+
+An optional, fail-closed **$5/month Fly.io release preflight gate** and tests are
+in `budget/`, `scripts/fly_budget_guard.py` and `tests/`.
+See `docs/finops/fly-budget-enforcement.md`. The gate has NOT been wired into
+the authoritative Octopus release process or authenticated Fly account, and
+**Fly itself cannot impose an account-level spending cap**. No Fly resources
+are created, stopped or modified by this addition.
+
 ## Pinned import
 
 - Original: `fuaadabdullah/AyahOS_Dual_Lineage` at `a7ef41fe1ec6a680bc734a5d54890fb13972d3a3`.

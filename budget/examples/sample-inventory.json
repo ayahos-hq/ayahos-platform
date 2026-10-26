@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "source": "example-only-not-verified",
+  "organization": "ayahos",
+  "timestamp_utc": "2026-10-26T05:00:00Z",
+  "billing_month_utc": "2026-10",
+  "billing_to_date_usd": "0.00",
+  "billed_charges_complete": false,
+  "all_org_apps_enumerated": false,
+  "unknown_resources": true,
+  "volumes_gb": 0,
+  "dedicated_ipv4": 0,
+  "reserved_capacity": false,
+  "managed_services": false,
+  "other_monthly_commitments_usd": "0.00",
+  "running_machines": [],
+  "stopped_machines": []
+}
