@@ -7,7 +7,8 @@ Source-controlled AyahOS RELEASE admission now fails closed without an
 authenticated, recent, complete organization-wide billing and resource
 inventory. The internal admission ceiling is **$4.50** with a $0.50
 safety reserve. The default resource envelope permits at most **one**
-shared-cpu-1x 256 MB Machine and **zero** additional paid capacity.
+shared-cpu-1x 256 MB Machine, pinned to Fly region **iad** (North America),
+and **zero** additional paid capacity.
 
 **This does NOT guarantee that Fly.io's actual invoice will stay at $5.**
 Fly.io support confirmed on 2026-06-15 that it does not offer account-level
@@ -24,7 +25,7 @@ Primary documentation:
 
 ## Implemented package
 
-- `budget/fly-budget-policy.json` — pinned $5 policy, reserve, maximum one
+- `budget/fly-budget-policy.json` — pinned $5 policy, reserve, `iad` region, maximum one
   256 MB Machine, minimum known machine/network tariffs. Larger machines,
   a second Machine, managed DB, volumes, stopped Machines, paid IPv4,
   reservations and unclassified costs are rejected, never silently priced.

@@ -3,6 +3,7 @@
   "org": "ayahos",
   "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "machine_preset": "shared-cpu-1x-256mb",
+  "region": "iad",
   "desired_total_running_machines": 1,
   "max_egress_gb_remaining_month": "5",
   "max_certificate_usd_remaining_month": "0.00"

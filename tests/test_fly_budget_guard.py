@@ -34,7 +34,7 @@ def candidate():
         "schema_version": 1,
         "org": "ayahos",
         "sha": "a" * 40,
-        "machine_preset": "shared-cpu-1x-256mb",
+        "machine_preset": "shared-cpu-1x-256mb", "region": "iad",
         "desired_total_running_machines": 1,
         "max_egress_gb_remaining_month": "5",
         "max_certificate_usd_remaining_month": "0.00",
@@ -126,13 +126,13 @@ class BudgetGuardTests(unittest.TestCase):
 
     def test_current_inventory_requires_exact_desired_machine_count(self):
         data = snapshot() | {"running_machines": [
-            {"app": "ayahos-core", "id": "x", "preset": "shared-cpu-1x-256mb"}
+            {"app": "ayahos-core", "id": "x", "preset": "shared-cpu-1x-256mb", "region": "iad"}
         ]}
         self.assertTrue(self.check(snap=data).allowed)
         with self.assertRaises(BudgetError):
             self.check(snap=data | {"running_machines": [
-                {"app": "ayahos-core", "id": "x", "preset": "shared-cpu-1x-256mb"},
-                {"app": "ayahos-core", "id": "y", "preset": "shared-cpu-1x-256mb"},
+                {"app": "ayahos-core", "id": "x", "preset": "shared-cpu-1x-256mb", "region": "iad"},
+                {"app": "ayahos-core", "id": "y", "preset": "shared-cpu-1x-256mb", "region": "iad"},
             ]})
 
     def test_calendar_month_not_30_day_average(self):
@@ -190,6 +190,15 @@ class BudgetGuardTests(unittest.TestCase):
             ], capture_output=True, text=True, env=env, timeout=10)
             self.assertEqual(result.returncode, 3)
             self.assertEqual(json.loads(result.stdout)["decision"], "DENY")
+
+    def test_foreign_region_is_denied(self):
+        with self.assertRaises(BudgetError):
+            self.check(intent=candidate() | {"region": "bom"})
+        snapshot_ = snapshot() | {"running_machines": [
+            {"app": "x", "id": "a", "preset": "shared-cpu-1x-256mb", "region": "bom"}
+        ]}
+        with self.assertRaises(BudgetError):
+            self.check(snap=snapshot_)
 
 if __name__ == "__main__":
     unittest.main()

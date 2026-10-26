@@ -31,6 +31,7 @@ class Policy:
     safety_ceiling_usd: Decimal
     max_machines: int
     preset: str
+    region: str
     per_hour_usd: Decimal
     egress_per_gb_usd: Decimal
 
@@ -48,7 +49,7 @@ class Verdict:
 _POLICY_KEYS = {
     "schema_version", "organization", "monthly_budget_usd", "safety_reserve_usd",
     "max_running_machines", "allowed_machine_preset", "machine_hourly_usd",
-    "egress_per_gb_usd",
+    "egress_per_gb_usd", "allowed_region",
 }
 _EVIDENCE_KEYS = {
     "schema_version", "source", "organization", "timestamp_utc",
@@ -59,10 +60,10 @@ _EVIDENCE_KEYS = {
 }
 _INTENT_KEYS = {
     "schema_version", "org", "sha", "machine_preset",
-    "desired_total_running_machines", "max_egress_gb_remaining_month",
+    "desired_total_running_machines", "region", "max_egress_gb_remaining_month",
     "max_certificate_usd_remaining_month",
 }
-_MACHINE_KEYS = {"app", "id", "preset"}
+_MACHINE_KEYS = {"app", "id", "preset", "region"}
 
 
 def _dict(value: object, fields: set[str], field: str) -> dict:
@@ -106,6 +107,7 @@ def load_policy(path: Path) -> Policy:
     if (type(data["schema_version"]) is not int or data["schema_version"] != 1 or
             data["organization"] != "ayahos" or
             data["allowed_machine_preset"] != "shared-cpu-1x-256mb" or
+            data["allowed_region"] != "iad" or
             type(data["max_running_machines"]) is not int or
             data["max_running_machines"] != 1):
         raise BudgetError("budget policy changes require explicit code review")
@@ -119,7 +121,7 @@ def load_policy(path: Path) -> Policy:
     return Policy(
         organization="ayahos", limit_usd=limit,
         safety_ceiling_usd=limit - reserve,
-        max_machines=1, preset="shared-cpu-1x-256mb",
+        max_machines=1, preset="shared-cpu-1x-256mb", region="iad",
         per_hour_usd=per_hour, egress_per_gb_usd=egress,
     )
 
@@ -131,7 +133,8 @@ def _machines(value: object, policy: Policy) -> list[dict]:
     for item in value:
         machine = _dict(item, _MACHINE_KEYS, "Machine")
         if (not all(isinstance(machine[x], str) and machine[x] for x in _MACHINE_KEYS)
-                or machine["preset"] != policy.preset or machine["id"] in ids):
+                or machine["preset"] != policy.preset or
+                machine["region"] != policy.region or machine["id"] in ids):
             raise BudgetError("Machine with unknown preset or identity")
         ids.add(machine["id"])
     return value
@@ -167,6 +170,7 @@ def evaluate(
     if (type(i["desired_total_running_machines"]) is not int or
             i["desired_total_running_machines"] != policy.max_machines or
             i["machine_preset"] != policy.preset or
+            i["region"] != policy.region or
             not isinstance(i["sha"], str) or not re.fullmatch(r"[0-9a-f]{40}", i["sha"])):
         raise BudgetError("deployment would exceed approved resource envelope")
     if now.tzinfo is None or now.utcoffset() != timedelta(0):
