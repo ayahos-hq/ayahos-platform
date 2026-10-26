@@ -1,0 +1,18 @@
+# TEMPLATE ONLY; replace with an actually verified Fly app name.
+app = "replace-with-existing-fly-app"
+primary_region = "iad"
+
+[env]
+DUAL_LINEAGE_COMPACT_COGNITION_MODE = "shadow"
+
+[http_service]
+internal_port = 8080
+force_https = true
+auto_stop_machines = "stop"
+auto_start_machines = true
+min_machines_running = 0
+
+[[vm]]
+cpu_kind = "shared"
+cpus = 1
+memory = "512mb"

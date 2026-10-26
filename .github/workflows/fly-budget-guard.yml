@@ -1,0 +1,33 @@
+name: Fly $5 budget admission tests
+
+on:
+  pull_request:
+    paths:
+      - 'fly_budget/**'
+      - '.github/workflows/fly-budget-guard.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify platform source isolation
+        run: python3 scripts/verify-platform.py
+      - name: Verify fail-closed $5 Fly budget policy and mock deploy route
+        run: python3 -m unittest discover -s fly_budget -p 'test_*.py' -v
+      - name: Confirm deploy requires live evidence
+        run: |
+          if python3 fly_budget/guarded_deploy.py \
+            --fly-config fly_budget/fly.toml.template \
+            --billing-snapshot fly_budget/billing-snapshot.example.json \
+            --organization example-org; then
+            echo 'ERROR: deployment preflight unexpectedly passed without live billing' >&2
+            exit 1
+          fi

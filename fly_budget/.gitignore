@@ -1,0 +1,9 @@
+# Never commit actual billing snapshots, provider credentials, caches.
+billing-*.json
+!billing-snapshot.example.json
+*.token
+*.secret
+.env
+.env.*
+__pycache__/
+*.pyc
