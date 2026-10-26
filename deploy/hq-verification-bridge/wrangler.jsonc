@@ -15,5 +15,21 @@
       "binding": "TASKS",
       "id": "2b5af79207114dec9989bc1d952c3c9d"
     }
-  ]
+  ],
+  "previews": {
+    "vars": {
+      "GITHUB_REPOSITORY": "ayahos-hq/ayahos-platform",
+      "OCTOPUS_URL": "https://ayahos.octopus.app",
+      "OCTOPUS_SPACE_ID": "Spaces-1",
+      "OCTOPUS_PROJECT": "AyahOS HQ Verification",
+      "OCTOPUS_ENVIRONMENT": "Development",
+      "STATUS_CONTEXT": "octopus/hq-operator-verified"
+    },
+    "kv_namespaces": [
+      {
+        "binding": "TASKS",
+        "id": "2b5af79207114dec9989bc1d952c3c9d"
+      }
+    ]
+  }
 }

@@ -66,6 +66,13 @@ def validate_config() -> None:
         raise ValueError("Production tasks KV must never be exposed to previews")
     if not NAMESPACE_RE.fullmatch(namespaces[0].get("id", "")):
         raise ValueError("Invalid preview namespace")
+    previews = config.get("previews", {})
+    if previews.get("vars") != config.get("vars"):
+        raise ValueError("Preview variables must be declared and isolated explicitly")
+    if previews.get("kv_namespaces") != namespaces:
+        raise ValueError("Preview TASKS must be explicitly isolated from production")
+    if "triggers" in previews:
+        raise ValueError("Preview must not execute the production verification cron")
     if not (CONFIG.parent / EXPECTED_SOURCE).is_file():
         raise ValueError("Reviewed worker source is missing")
 

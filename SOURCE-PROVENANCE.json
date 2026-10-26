@@ -47,11 +47,11 @@
       "mode": "100644"
     },
     "deploy/hq-verification-bridge/BUILD_COMMANDS.md": {
-      "sha": "cb569e8f14ba17a401270af1aff50ba56ea6f9d2",
+      "sha": "9f55a7fcdc4e070f56431823e6539e966d1d71e4",
       "mode": "100644"
     },
     "deploy/hq-verification-bridge/wrangler.jsonc": {
-      "sha": "c8f401983801e63700d82fb0a4ece2ab4c496bfc",
+      "sha": "44c35350123f3e25781a6367cdf8402a2b99d0cc",
       "mode": "100644"
     },
     "deploy/node-001/llama-swap-undermind.yaml": {
@@ -211,7 +211,7 @@
       "mode": "100755"
     },
     "scripts/ci/check_hq_worker_build.py": {
-      "sha": "568a52082235f97568685d5c1e59795da1454b37",
+      "sha": "02327524d87cf924e4406bc9bd2310a06b0c5310",
       "mode": "100644"
     },
     "scripts/ci/container-smoke.sh": {

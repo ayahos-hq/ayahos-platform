@@ -29,6 +29,8 @@ build variables.
 
 ## Safety
 
+- The Wrangler 4.152 Worker Previews configuration explicitly declares preview
+  variables and KV; omitting `previews` causes Wrangler to reject preview builds.
 - The committed KV ID belongs to **preview only** and is physically separate
   from production TASKS. The preview config contains no Octopus/GitHub
   secrets; a preview cannot submit authenticated verification jobs.

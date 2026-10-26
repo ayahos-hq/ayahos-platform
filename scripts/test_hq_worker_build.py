@@ -42,6 +42,16 @@ class HQWorkerBuildTests(unittest.TestCase):
         self.assertNotIn("GITHUB_STATUS_TOKEN", json.dumps(config))
         self.assertTrue((config_path.parent / config["main"]).is_file())
 
+    def test_requires_explicit_isolated_worker_previews(self):
+        config_path = ROOT / "deploy" / "hq-verification-bridge" / "wrangler.jsonc"
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+        previews = config["previews"]
+        self.assertEqual(previews["vars"], config["vars"])
+        self.assertEqual(previews["kv_namespaces"], config["kv_namespaces"])
+        self.assertNotEqual(previews["kv_namespaces"][0]["id"],
+                            "49ce086dc87f4de9a5110e5771907cb3")
+        self.assertNotIn("triggers", previews)
+
     def test_ci_check_rejects_missing_production_guard(self):
         good = "a" * 40
         with self.assertRaises(ValueError):
