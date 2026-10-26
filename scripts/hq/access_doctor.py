@@ -39,8 +39,11 @@ Runner = Callable[[list[str]], CommandResult]
 
 def safe_run(args: list[str]) -> CommandResult:
     """Subprocess without a shell; stderr/stdout stay private to checks."""
-    if shutil.which(args[0]) is None:
+    # Resolve Windows npm *.CMD shims explicitly: CreateProcess does not use PATHEXT.
+    executable = shutil.which(args[0])
+    if executable is None:
         return CommandResult(127)
+    command = [executable, *args[1:]]
     try:
         env = None
         if args[0] == "wrangler":
@@ -51,7 +54,7 @@ def safe_run(args: list[str]) -> CommandResult:
             )
             env = os.environ.copy()
             env["XDG_CONFIG_HOME"] = isolated
-        proc = subprocess.run(args, capture_output=True, text=True, timeout=25,
+        proc = subprocess.run(command, capture_output=True, text=True, timeout=25,
                               shell=False, encoding="utf-8", errors="replace",
                               check=False, env=env)
         return CommandResult(proc.returncode, proc.stdout, proc.stderr)
