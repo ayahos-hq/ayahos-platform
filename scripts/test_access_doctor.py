@@ -19,7 +19,7 @@ OTHER = "b" * 32
 class AccessDoctorTests(unittest.TestCase):
     def test_cloudflare_wrong_account_fails_closed(self):
         def runner(cmd):
-            self.assertEqual(cmd, ["wrangler", "whoami", "--profile", "ayahos-hq"])
+            self.assertEqual(cmd, ["wrangler", "whoami"])
             return doctor.CommandResult(0, "Account ID: " + OTHER)
         check = doctor.check_cloudflare(runner, HQ)
         self.assertEqual(check.status, "wrong_account")
@@ -36,6 +36,20 @@ class AccessDoctorTests(unittest.TestCase):
     def test_cloudflare_missing_profile_is_not_authenticated(self):
         check = doctor.check_cloudflare(lambda _: doctor.CommandResult(1, "profile not found"), HQ)
         self.assertEqual(check.status, "not_authenticated")
+
+    def test_cloudflare_uses_separate_home_with_no_default_profile_mutation(self):
+        from unittest.mock import patch
+        with patch.object(doctor.shutil, "which", return_value="wrangler"), \\
+             patch.object(doctor.subprocess, "run") as proc, \\
+             patch.dict(doctor.os.environ, {"APPDATA": "C:\\\\test", "AYAHOS_CLOUDFLARE_CONFIG_HOME": "C:\\\\test\\\\AyahOS\\\\wrangler-hq"}):
+            proc.return_value.returncode = 0
+            proc.return_value.stdout = "Account ID: " + HQ
+            proc.return_value.stderr = ""
+            doctor.safe_run(["wrangler", "whoami"])
+            kwargs = proc.call_args.kwargs
+            self.assertEqual(kwargs["env"]["XDG_CONFIG_HOME"],
+                             "C:\\\\test\\\\AyahOS\\\\wrangler-hq")
+            self.assertFalse(kwargs["shell"])
 
     def test_github_expected_account_and_repo(self):
         cmds = []
