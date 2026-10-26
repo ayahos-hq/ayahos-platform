@@ -97,18 +97,36 @@ memory = "512mb"
             seen.append(argv)
             if "apps" in argv:
                 return json.dumps(apps)
-            if "machines" in argv:
+            if "machine" in argv:
                 return json.dumps(machines)
             return "deployment accepted"
         result = guarded_deploy(config=self.config, snapshot=self.ledger,
                                 organization="ayahos-test", now=self.now,
-                                fly_command=cmd, execute=True)
+                                fly_command=cmd, execute=True,
+                                image_digest="registry.fly.io/ayahos-core-shadow@sha256:" + "a"*64)
         self.assertTrue(result.allowed)
         deploy = [x for x in seen if "deploy" in x]
         self.assertEqual(len(deploy), 1)
         self.assertIn("--ha=false", deploy[0])
+        self.assertIn("--update-only", deploy[0])
+        self.assertIn("--image", deploy[0])
         self.assertIn("--config", deploy[0])
         self.assertIn("ayahos-core-shadow", deploy[0])
+
+
+    def test_execute_requires_pinned_image(self):
+        apps = [{"Name":"ayahos-core-shadow","Organization":"ayahos-test"}]
+        machines = [{"id":"a","config":{"guest":{"cpu_kind":"shared","cpus":1,"memory_mb":512}}}]
+        calls = []
+        def fly(args):
+            calls.append(args)
+            return json.dumps(apps if "apps" in args else machines)
+        with self.assertRaises(GateError):
+            guarded_deploy(config=self.config,snapshot=self.ledger,
+                           organization="ayahos-test",now=self.now,
+                           fly_command=fly,execute=True)
+        self.assertFalse(any("deploy" in a for a in calls))
+
 
 
 if __name__ == "__main__":

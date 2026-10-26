@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import re
 import subprocess
 import sys
 from collections.abc import Callable
@@ -47,6 +48,7 @@ def _read_json_response(value: str, label: str) -> object:
 def guarded_deploy(
     *, config: Path, snapshot: Path, organization: str,
     execute: bool = False,
+    image_digest: str | None = None,
     now: dt.datetime | None = None,
     fly_command: FlyCall = _fly_cli,
 ) -> GateDecision:
@@ -72,7 +74,7 @@ def guarded_deploy(
     )
     if target_found:
         machines = _read_json_response(
-            fly_command(["flyctl", "machines", "list", "--app", profile.app, "--json"]),
+            fly_command(["flyctl", "machine", "list", "--app", profile.app, "--json"]),
             "machine list",
         )
     else:
@@ -89,15 +91,20 @@ def guarded_deploy(
         return decision
     if not target_found:
         raise GateError("no existing Fly target app; do not create a billable app implicitly")
-    # --ha=false is essential: the CLI otherwise may create a spare Machine.
+    if (not isinstance(image_digest, str) or
+            not re.fullmatch(r"registry\.fly\.io/" + re.escape(profile.app)
+                             + r"@sha256:[0-9a-f]{64}", image_digest)):
+        raise GateError("immutable app-specific OCI image digest required")
+    # --update-only prevents implicit Machine creation; --ha=false
+    # prevents spare HA capacity. Exact image avoids unpinned local builds.
     fly_command([
         "flyctl", "deploy", "--app", profile.app, "--config", str(config),
-        "--ha=false", "--remote-only",
+        "--ha=false", "--update-only", "--image", image_digest,
     ])
     # Post-deploy validation: duplicate Machines have occurred on Fly's API,
     # so a successful deploy exit is insufficient capacity evidence.
     latest = _read_json_response(
-        fly_command(["flyctl", "machines", "list", "--app", profile.app, "--json"]),
+        fly_command(["flyctl", "machine", "list", "--app", profile.app, "--json"]),
         "post-deploy machine list",
     )
     verify_inventory(apps, latest, organization, profile.app)
@@ -110,6 +117,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--billing-snapshot", type=Path, required=True)
     parser.add_argument("--organization", required=True)
     parser.add_argument("--execute", action="store_true", help="Allow an actual Fly deploy")
+    parser.add_argument("--image-digest", help="Exact existing Fly registry image sha256 digest")
     args = parser.parse_args(argv)
     try:
         result = guarded_deploy(
@@ -117,6 +125,7 @@ def main(argv: list[str] | None = None) -> int:
             snapshot=args.billing_snapshot,
             organization=args.organization,
             execute=args.execute,
+            image_digest=args.image_digest,
         )
     except GateError as exc:
         print(json.dumps({

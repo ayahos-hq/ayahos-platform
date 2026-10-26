@@ -58,7 +58,7 @@ With an authenticated Fly CLI, a verified existing target app, a reviewed real f
 python3 fly_budget/guarded_deploy.py --fly-config /secure/staging/fly.toml --billing-snapshot /secure/billing/actual.json --organization YOUR_REAL_ORG
 ```
 
-A successful preflight is NOT a deployment. Only after the release has passed the existing Octopus gate and an explicitly approved release source has been assembled may the operator add --execute. The wrapper then calls Fly with --ha=false and rechecks Machine inventory; it will never create an app or change secrets.
+A successful preflight is NOT a deployment. Only after the release has passed the existing Octopus gate and an explicitly approved release source has been assembled may the operator add --execute and an existing immutable OCI image digest, supplied as --image-digest registry.fly.io/APP@sha256:64HEX. The wrapper then invokes Fly with --ha=false and --update-only (no implicit Machine creation), uses exactly that pinned image and rechecks Machine inventory. It will never create an app, build from unpinned working-tree source, or change secrets.
 
 If the Fly CLI is missing or unauthenticated, the command denies the operation. Post-release authenticated HTTP, policy parity and rollback verification remain mandatory. Do not call this guard a provider-enforced billing limit, continuous monitoring, or a replacement for Octopus.
 
