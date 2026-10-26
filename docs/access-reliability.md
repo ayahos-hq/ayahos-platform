@@ -38,6 +38,56 @@ in Cloudflare's secret store; never paste tokens into chat or public CI output.
 The exact failing build root cause remains unverified. Local Octopus CLI
 authentication is still absent, and production release checks remain mandatory.
 
+### Cloudflare Workers Builds misrouting (observed 2026-10-26)
+
+The authenticated Chrome account `AyahOS_HQ` exposed Worker Build
+`28089f23-2e02-4755-8bbc-138bdfea23ba` for
+`ayahos-hq-verification-bridge` (Platform PR #38,
+commit `1974930b9b5fe14c9e1b86d4d6814a755df2c8cb`).
+Its configured **build command forcibly checks out**
+`feat/pinned-hq-artifact-assembly-20261025` after Cloudflare clones the
+requested PR commit. The build therefore cannot validate that PR's exact
+source SHA. The root `/deploy/octopus-github-bridge` has
+`wrangler.jsonc` with a DIFFERENT Worker name:
+`ayahos-octopus-github-bridge`, placeholder production TASKS KV ID and
+empty Octopus environment. The preview command is
+`npx wrangler preview`. **Do not run `wrangler deploy` or repoint
+the existing Worker to this unrelated config.**
+
+Read-only desktop CLI reproduced the distinction:
+
+- `wrangler deploy --dry-run` from the committed bridge directory
+  succeeded for JS bundling, **but** explicitly reported
+  `TASKS=REPLACE_WITH_KV_NAMESPACE_ID` and empty
+  `OCTOPUS_ENVIRONMENT`. Local compilation is **not** deploy safety.
+- `GET /accounts/{account}/workers/scripts/ayahos-hq-verification-bridge`
+  returned the existing deployed script with SHA256
+  `f3162fe8598d81697a531095c63ffb98030ba16a3e37e9bd084fecc6a4130a2c`.
+  Its bytes differ from repo `deploy/octopus-github-bridge/src/worker.js`
+  SHA256 `ed448d4db14f00fca254d7dcb37864aa762b8a35ef20f100280128a17d91a98d`.
+  These hash facts prohibit replacing the deployed Worker with that repo
+  source until their code, required bindings, and authority are reconciled.
+- Local `wrangler init --from-dash` invoked Create Cloudflare and generated
+  a generic starter app; the CLI invocation ended with an error and explicitly
+  answered **no deploy**. That scaffold is neither deployed nor source
+  authority; never promote it.
+- Cloudflare Worker Builds REST log endpoint returned **403 / 12004** with
+  the otherwise authenticated Wrangler OAuth token. Read the full failure log
+  in the authenticated dashboard or obtain approved, scoped user-token
+  **Workers Builds Configuration** access, rather than escalating the
+  existing OAuth token indiscriminately.
+
+**Remediation gate:** Preserve existing deployed Worker and its secrets.
+First recover the true Worker source/config through authorized read-only
+inspection; select the verified HQ Worker-specific source directory, not
+the monorepo Octopus bridge. Remove the forced `git checkout` from the
+Workers Builds command and validate `WORKERS_CI_COMMIT_SHA` against the
+source checkout. Ensure production/preview commands name the exact
+verification Worker and that preview variables/bindings are configured
+separately; test an isolated exact-commit preview before touching a
+production deployment. Never convert a failing CI check to optional,
+disable checks or silently bypass an Octopus gate.
+
 ## Credential architecture
 
 1. **Human identity:** Use one named GitHub identity `fuaadabdullah` and an approved Cloudflare HQ membership, with MFA. An organization invitation is safer than circulating a personal account's tokens. No password or OTP is needed in a repository.
