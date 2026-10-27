@@ -114,6 +114,32 @@ memory = "512mb"
         self.assertIn("ayahos-core-shadow", deploy[0])
 
 
+    def test_real_nested_org_identity_requires_target_machine_inventory(self):
+        seen = []
+        self.ledger.write_text(json.dumps({
+            **json.loads(self.ledger.read_text()),
+            "organization": "ayahos",
+            "existing_billing_apps_count": 1,
+        }))
+        self.config.write_text(self.config.read_text().replace(
+            "ayahos-core-shadow", "ayahos-control-api"))
+        apps = [{"Name": "ayahos-control-api",
+                 "Organization": {"Slug": "ayahos", "Name": "AyahOS"}}]
+        machines = []
+        def fly(args):
+            seen.append(args)
+            if "apps" in args:
+                return json.dumps(apps)
+            return json.dumps(machines)
+        result = guarded_deploy(
+            config=self.config, snapshot=self.ledger,
+            organization="ayahos", now=self.now, fly_command=fly)
+        self.assertTrue(result.allowed)
+        self.assertIn(
+            ["flyctl", "machine", "list", "--app", "ayahos-control-api", "--json"],
+            seen)
+        self.assertFalse(any("deploy" in args for args in seen))
+
     def test_execute_requires_pinned_image(self):
         apps = [{"Name":"ayahos-core-shadow","Organization":"ayahos-test"}]
         machines = [{"id":"a","config":{"guest":{"cpu_kind":"shared","cpus":1,"memory_mb":512}}}]

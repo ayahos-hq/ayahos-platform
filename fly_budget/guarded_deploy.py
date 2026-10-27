@@ -66,12 +66,17 @@ def guarded_deploy(
     apps = _read_json_response(fly_command(apps_cmd), "apps list")
     if not isinstance(apps, list):
         raise GateError("unrecognized apps inventory")
-    target_found = any(
-        isinstance(a, dict)
-        and a.get("Name", a.get("name")) == profile.app
-        and a.get("Organization", a.get("organization")) == organization
-        for a in apps
-    )
+    # Fly CLI emits Organization as an object, while older fixtures used a slug.
+    # Verify the actual organization before deciding which Machines to query.
+    def belongs_to_target(row: object) -> bool:
+        if not isinstance(row, dict):
+            return False
+        org = row.get("Organization", row.get("organization"))
+        if isinstance(org, dict):
+            org = org.get("Slug", org.get("slug"))
+        return row.get("Name", row.get("name")) == profile.app and org == organization
+
+    target_found = any(belongs_to_target(app) for app in apps)
     if target_found:
         machines = _read_json_response(
             fly_command(["flyctl", "machine", "list", "--app", profile.app, "--json"]),

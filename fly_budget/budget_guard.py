@@ -87,9 +87,14 @@ def parse_fly(config_text: str) -> FlyProfile:
              "only isolated shadow deployment is authorized")
     web = content.get("http_service")
     _require(isinstance(web, dict), "one HTTP service required")
-    _require(set(web) == {"internal_port", "force_https", "auto_stop_machines",
-                           "auto_start_machines", "min_machines_running"},
+    base_http_keys = {"internal_port", "force_https", "auto_stop_machines",
+                      "auto_start_machines", "min_machines_running"}
+    _require(set(web) in (base_http_keys, base_http_keys | {"checks"}),
              "HTTP config includes unsafe or unmeasured resources")
+    approved_health = [{"method": "GET", "path": "/health", "interval": "30s",
+                        "timeout": "5s", "grace_period": "30s"}]
+    _require("checks" not in web or web["checks"] == approved_health,
+             "HTTP health checks must match the reviewed API probe")
     _require(type(web["internal_port"]) is int and 1024 <= web["internal_port"] <= 65535,
              "invalid internal port")
     _require(web["force_https"] is True and web["auto_stop_machines"] == "stop"
@@ -110,7 +115,12 @@ def parse_fly(config_text: str) -> FlyProfile:
     _require(isinstance(build, dict) and set(build) <= {"dockerfile"},
              "only pre-reviewed Dockerfile build permitted")
     if "dockerfile" in build:
-        _require(build["dockerfile"] == "Dockerfile", "custom Dockerfile path disallowed")
+        reviewed_core = (app == "ayahos-control-api"
+                         and build["dockerfile"] == "Dockerfile.fly"
+                         and web["internal_port"] == 8000
+                         and web.get("checks") == approved_health)
+        _require(build["dockerfile"] == "Dockerfile" or reviewed_core,
+                 "custom Dockerfile path disallowed")
     return FlyProfile(app=app, region=region, memory=vm["memory"])
 
 
@@ -207,6 +217,9 @@ def verify_inventory(
         _require(isinstance(row, dict), "bad Fly app inventory")
         name = row.get("Name", row.get("name"))
         org = row.get("Organization", row.get("organization"))
+        if isinstance(org, dict):
+            # flyctl apps list --json returns an Organization object, not a slug.
+            org = org.get("Slug", org.get("slug"))
         _require(isinstance(name, str) and _APP_PATTERN.fullmatch(name) is not None
                  and org == expected_org, "unexpected Fly billing organization")
         _require(name not in names, "duplicate Fly app inventory")

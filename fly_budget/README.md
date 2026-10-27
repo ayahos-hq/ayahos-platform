@@ -94,3 +94,36 @@ budget safety, preexisting app availability, deployed runtime health or
 Octopus approval. Continue to require fresh billing/inventory evidence,
 immutable image digests, full Octopus gates and authenticated E2E checks.
 No new Fly app may be created by this source-only change.
+
+## Live organization reconciliation checkpoint, 2026-10-27
+
+The authenticated CLI currently identifies `ayahos.dev@gmail.com` in organization
+`ayahos` (not the earlier inferred personal-org slug). Fly CLI emits app
+`Organization` as an object with `Slug`; the guard now checks this schema
+and recognizes the reviewed standalone Core `Dockerfile.fly` and its exact
+`/health` check without allowing arbitrary build paths or health endpoints.
+
+Fly inventory showed:
+- `ayahos-control-api`: app exists, no Machines or secrets reported.
+- `ayahos-admin`: suspended with one stopped 1 GB shared-CPU Machine.
+- `fly-builder-kind-voice-8348`: stopped 8-vCPU, 8 GB **remote builder**
+  with a 50 GB `machine_data` volume mounted at `/data`. This is Fly's
+  replaceable BuildKit cache, not app or database storage.
+
+The unused builder was removed after verifying its Fly `rchab` image and
+remote-cache mount. Fly CLI acknowledged deletion; this avoids ongoing
+provisioned storage at $0.15/GB/month ($7.50/month at 50 GB). Remote Fly builds
+can recreate billable builder cache; prefer reviewed local builds or immutable
+pre-built OCI images. No Admin or Control API Machine was started or deleted.
+
+The authenticated Fly Cost Explorer displayed $0.00 spend October 21-27,
+but billing can lag and there is **no Fly-enforced $5 hard ceiling**.
+The guard **still denies multiple apps** until an independently reconciled
+inventory includes stopped Admin rootfs, IPs, snapshot charges and all other
+unbilled resources. Do not invent a zero pending balance.
+
+Octopus HQ Verification Development release `0.0.19`, task
+`ServerTasks-3764`, passed all THREE configured source/offline steps
+against Platform `3625777` and Core `5f0e986`. This is NOT the missing
+five-repository/eight-lane production release gate. The protected
+`octopus/hq-operator-verified` status must remain absent until complete.
