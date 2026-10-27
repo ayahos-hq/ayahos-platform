@@ -1,7 +1,8 @@
 # Octopus gap remediation checkpoint — 2026-10-27
 
-This is an append-only task record. Findings are read-only live observations;
-the code changes in this branch have not been pushed or deployed.
+This is an append-only task record. Findings and action states below describe
+their recorded point in time. Later checkpoints supersede earlier pending states
+explicitly; read the latest checkpoint for the current publication status.
 
 ## Observations
 
@@ -89,3 +90,38 @@ this branch. Record later results below rather than replacing these findings.
   the explicit Python interpreter, with MSYS native path conversion enabled.
 - No hosted CI run, branch push, live process update or fresh Octopus execution
   was performed by this task.
+
+## Publication and hosted results: 2026-10-27
+
+After explicit user approval, branch `codex/octopus-gaps-20261027` was pushed and
+[draft PR #42](https://github.com/ayahos-hq/ayahos-platform/pull/42) opened with
+implementation commit `1b660ff7fb2a50e22c28d996c78e86ada985f7d0`. This supersedes
+the earlier unpushed/local-only publication state; it does not change the earlier
+test observations or constitute live deployment authorization.
+
+[GitHub run 40465404016](https://github.com/ayahos-hq/ayahos-platform/actions/runs/40465404016)
+completed successfully for that exact implementation commit. Its source and
+manifest checks, complete offline suites, shell syntax and mocked bridge tests
+passed. These are **hosted offline CI results**, distinct from Octopus acceptance.
+
+The separate provider check `Workers Builds: ayahos-hq-verification-bridge`
+completed with **failure**. The observed check links to
+[Cloudflare build c4f0fbbc-b4fc-4a59-94b7-e1c2ba62c8dd](https://dash.cloudflare.com/265071fc5a2ac8bbe85e2bd724361080/workers/services/view/ayahos-hq-verification-bridge/production/builds/c4f0fbbc-b4fc-4a59-94b7-e1c2ba62c8dd).
+No root cause or successful Worker deployment is established. The PR is not fully
+green. This task did not explicitly invoke a deployment or change live settings;
+the provider check appeared following publication.
+
+No commit status was observed for `1b660ff` under the protected Octopus context
+`octopus/hq-operator-verified`. A fresh exact-commit HQ Octopus verification,
+five-component source/integration coverage, artifact digests, PostgreSQL/pgvector,
+restore, authenticated smoke and rollback remain pending. No merge or Octopus
+execution was performed.
+
+The README and migration gates now link this checkpoint, document the existing
+HQ project and required status context, and distinguish the passing GitHub run
+from the failed Cloudflare check. Historical imported infrastructure/bridge docs
+remain immutable source snapshots; current HQ operating corrections belong in
+the root docs and this task record. Machine-readable candidate acceptance and
+the original source-audit JSON remain unchanged because no new acceptance or
+source audit has occurred. Later documentation commits do not inherit the named
+implementation commit's CI result.

@@ -15,3 +15,32 @@ The original monorepo is canonical until all explicit gates pass. This snapshot 
 7. **Cutover:** Separate pre-prod testing from protected production update. Require user-authorized destination and credentials steps, signed rollback plan, correct deployed SHAs, and post-deploy SSE/chat, trace, auth and failure probes. Keep Cloudflare primary, Vercel rollback and old monorepo CI until cutover is proven.
 
 **No Octopus project, external webhook, Render, Cloudflare, Vercel, DNS, secrets or Google Cloud modifications are part of this PR.**
+
+## Evidence checkpoint: 2026-10-27
+
+The separate HQ verification project exists (`Projects-21`). Its release `0.0.18`
+/ task `ServerTasks-1944` succeeded on 2026-10-24, but covers three configured
+steps using older Platform plus Core sources. Site, Admin and Workloads are
+absent from that process's source coverage. This is preliminary verification,
+not completion of gates 3, 6 or 7.
+
+[Draft PR #42](https://github.com/ayahos-hq/ayahos-platform/pull/42), implementation
+commit `1b660ff7fb2a50e22c28d996c78e86ada985f7d0`, passed
+[hosted offline verification](https://github.com/ayahos-hq/ayahos-platform/actions/runs/40465404016)
+(64 tests, 26 mocked bridge tests, source/manifest and shell checks). The separate
+`Workers Builds: ayahos-hq-verification-bridge` check failed. Its cause remains
+undiagnosed; no successful deployment is inferred.
+
+Branch protection requires `octopus/hq-operator-verified`; no status under that
+context was observed for the implementation commit. Offline CI does not satisfy
+the Octopus gate. Later documentation commits require their own CI results.
+
+The [read-only audit](scripts/audit-octopus-release.py) detects stale, partial,
+disabled or skipped source evidence, and never attests production acceptance.
+All five clean candidate repositories assembled locally. Hosted five-component
+integration, eight-lane outcomes, artifact digests, PostgreSQL/pgvector, recovery,
+authenticated smoke and rollback remain pending. Preserve the shared monorepo
+project and bridge. Do not close issues #6 or #35 based on these partial results.
+
+See the [append-only task record](docs/release-candidates/octopus-gap-remediation-20261027.md)
+for exact identities, local limitations and the order of observations.

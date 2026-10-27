@@ -1,11 +1,41 @@
 # AyahOS Platform — provisional source extraction
 
-**Status: public by owner decision, provisional source extraction, not deployed and not production authority.** This repository is a staging home for CI/CD orchestration, Octopus project definitions, deployment templates, release checks and infrastructure records. Do not connect Octopus, GitHub webhooks, Cloudflare or any production service to this repo until the migration gates are complete. Treat all repository contents as public; secrets belong exclusively in managed secret stores.
+**Status: public by owner decision, provisional source extraction with isolated HQ verification, not production authority.** This repository is a staging home for CI/CD orchestration, Octopus project definitions, deployment templates, release checks and infrastructure records. The separate HQ Octopus verification project exists; full multi-repository acceptance and production cutover remain pending. Production connections and changes require the migration gates and explicit authorization. Treat all repository contents as public; secrets belong exclusively in managed secret stores.
+
+## Current Octopus evidence (2026-10-27)
+
+[Draft PR #42](https://github.com/ayahos-hq/ayahos-platform/pull/42) contains the
+verification coverage fixes and read-only release audit. Its implementation commit
+is `1b660ff7fb2a50e22c28d996c78e86ada985f7d0`.
+
+- **Hosted GitHub checks passed** for that commit in
+  [run 40465404016](https://github.com/ayahos-hq/ayahos-platform/actions/runs/40465404016):
+  64 offline tests without skips, source/manifest validation, shell syntax and
+  26 mocked bridge tests. This establishes hosted offline verification.
+- **Separate provider check failed:** `Workers Builds: ayahos-hq-verification-bridge`.
+  Its root cause and live bridge state have not been established by this task.
+  Do not describe the PR as fully green or infer a successful Worker deployment.
+- **Live Octopus evidence:** isolated project `AyahOS HQ Verification`
+  (`Projects-21`) release `0.0.18` / task `ServerTasks-1944` passed three configured
+  steps on 2026-10-24. It selected older Platform commit
+  `f01dcced85ea294bdcdacbebb0730dc6819aaa1d` and the pinned Core revision.
+  Site, Admin and Workloads have no source steps in that process snapshot.
+- **Required GitHub context:** `octopus/hq-operator-verified`. Its older success
+  must not be reused for a newer SHA. No commit status was observed for `1b660ff`.
+- **Still pending:** five-component hosted integration, all eight required lane
+  outcomes, independent artifact digests, PostgreSQL/pgvector, isolated restore,
+  authenticated smoke and rollback. No new Octopus run or live configuration
+  change was performed by this task.
+
+See the [append-only remediation record](docs/release-candidates/octopus-gap-remediation-20261027.md)
+and [live source coverage audit](docs/release-candidates/octopus-source-coverage-20261027.json).
+Results above apply to the named implementation commit, not automatically to
+later documentation commits or future branch heads.
 
 ## Pinned import
 
 - Original: `fuaadabdullah/AyahOS_Dual_Lineage` at `a7ef41fe1ec6a680bc734a5d54890fb13972d3a3`.
-- **61 source blobs** copied exactly with original executable modes under `.octopus/`, `deploy/`, `scripts/ci/`, `docs/infrastructure/`; LICENSE and NOTICE carried over.
+- **66 source blobs** copied exactly with original executable modes under `.octopus/`, `deploy/`, `scripts/ci/`, `scripts/db/`, `docs/infrastructure/`; LICENSE and NOTICE carried over.
 - Source file identities and Git modes are recorded in `SOURCE-PROVENANCE.json`.
 - This snapshot **retains legacy monorepo-relative script paths and service references**; it is not a deployable multi-repo pipeline.
 - Existing Cloudflare Pages and Vercel rollback remain unchanged; Overmind/Undermind/Spine authority stays in the source backend.
@@ -15,14 +45,18 @@
 From this repository:
 ```sh
 python3 scripts/verify-platform.py
+python3 scripts/verify-release-manifest.py
+python3 scripts/run-hq-offline-tests.py
 node --test deploy/octopus-github-bridge/test/worker.test.js
-find scripts/ci -type f -name '*.sh' -exec bash -n '{}' \;
+while IFS= read -r -d '' script; do
+  bash -n "$script" || exit 1
+done < <(find scripts/ci scripts/octopus -type f -name '*.sh' -print0)
 ```
 These inspect source identity, CI topology and the webhook bridge's local mocked behavior. They do **not** create Octopus releases, connect to GitHub status APIs, deploy containers, load secrets, test PostgreSQL, or certify the source's complete eight-lane Octopus runtime. That remains a separate authenticated integration/release gate.
 
 The upstream `deploy/octopus-github-bridge/wrangler.jsonc` still targets the original monorepo; **do not run `wrangler deploy` from here.** Even if documentation describes an existing deployed Worker, that refers to an earlier service configuration, not deployment from this new repository.
 
-## Live bridge ownership (checked 2026-10-23)
+## Monorepo bridge ownership (historical check: 2026-10-23)
 
 The existing endpoint is `https://ayahos-octopus-github-bridge.fuaadabdullah.workers.dev`.
 Its live `GITHUB_REPOSITORY` is `fuaadabdullah/AyahOS_Dual_Lineage`; its Octopus project
@@ -30,18 +64,42 @@ Its live `GITHUB_REPOSITORY` is `fuaadabdullah/AyahOS_Dual_Lineage`; its Octopus
 `OCTOPUS_API_KEY` and `GITHUB_WEBHOOK_SECRET` bindings. After rotating the webhook secret,
 pings from both the monorepo and `ayahos-hq/ayahos-platform` returned HTTP 200. A ping proves
 webhook delivery, **not** that a push was accepted or a release ran. HQ pushes are currently
-ignored by the shared Worker, and no HQ Octopus release or passing `octopus/verify` status
-was established. The copied bridge README is pinned source evidence, not current HQ operating
+ignored by the shared Worker. That historical check did not establish an HQ release.
+The separate HQ release and status context observed on 2026-10-27 are documented above.
+The copied bridge README is pinned source evidence, not current HQ operating
 instructions.
 
 Do not repoint or redeploy the shared Worker for HQ: doing so would interrupt the monorepo
-release path. HQ needs a separate Octopus project connected to this repository, checks that
+release path. HQ has a separate Octopus verification project but still needs checks that
 fetch exact manifest-pinned component SHAs rather than assuming a monorepo checkout, and a
-separate Worker with its own KV and scoped credentials. Sealed credentials cannot be copied
+a verified separate Worker integration with its own KV and scoped credentials. The
+failed HQ Workers build check does not establish its deployment or configuration.
+Sealed credentials cannot be copied
 out of the existing Worker; provision new values directly in the new secret store. Until
 those gates pass, the existing endpoint's `/status/<sha>` is not HQ release evidence. Review
-exact-SHA results manually before merge or cutover; no enforced HQ required-check gate has
-been demonstrated.
+exact-SHA results before merge or cutover. Current branch protection requires
+`octopus/hq-operator-verified`; that context is separate from the monorepo's
+`octopus/verify` and from offline GitHub Actions.
+
+## Read-only Octopus source coverage audit
+
+With the existing authenticated Octopus CLI session, run from this repository:
+
+```sh
+python3 scripts/audit-octopus-release.py \
+  --manifest release-manifest.json \
+  --platform-sha FULL_PLATFORM_COMMIT_SHA \
+  --release-id Releases-NUMBER \
+  --task-id ServerTasks-NUMBER
+```
+
+Use the exact candidate Platform SHA containing the supplied manifest, not a
+mutable branch name. The audit follows the release's immutable process snapshot,
+links deployment and task identity, checks successful source-step outcomes, and
+compares all five selected revisions. Exit `0` means source coverage only;
+exit `1` means incomplete coverage; exit `2` means invalid evidence or a failed
+read-only request. The report always keeps `production_accepted: false`.
+It performs GET requests only, prints no credentials, and posts no GitHub status.
 
 ## Operator-only three-way drift evidence (no new CI credential)
 
@@ -66,7 +124,7 @@ platform repo.
 
 After resolving a platform release candidate SHA (the **full** 40-character commit
 containing the exact `release-manifest.json`), an authorized operator can stage the
-five *private* repositories into a **new** temporary workspace using their existing
+five repositories, including the private siblings, into a **new** temporary workspace using their existing
 `gh auth login` identity. No long-lived GitHub token or extra cloud runtime is
 created:
 
@@ -84,7 +142,7 @@ A partial failure deletes its own staging tree. An atomic completed directory co
 `CANDIDATE-SOURCE-EVIDENCE.json`, which is **source identity evidence only**; it
 never claims that release packages have been built, nor that Octopus, database restore,
 authenticated chat or rollback checks have passed. Do not put private source reports
-in this public repository. This is preparation for an independent HQ Octopus project,
+in this public repository. This prepares sources for the independent HQ Octopus project,
 **not** permission to repoint the existing production bridge or deploy.
 
 ## Cross-repo PostgreSQL 16 + Ruby RAG contract (not yet attested)
@@ -126,13 +184,14 @@ Set small PG shared buffers and serial native-gem installation on memory-bound
 workers; investigate exit code 137, never waive it. The overlay evidence is
 **candidate-only**, not a passing pgvector result.
 
-For **Octopus Cloud**, create a *separate* `AyahOS HQ Verification` project
-and configure its GitHub App connection to exactly the five approved
+For **Octopus Cloud**, use the existing separate `AyahOS HQ Verification`
+project (`Projects-21`). Verify its GitHub App connection is scoped to the five approved
 `ayahos-hq` repositories under Deploy > Manage > GitHub Connections. Octopus
 GitHub connections can authenticate additional Git resources without a new PAT;
 pin Git resources to the release manifest's immutable revisions. Keep the
 existing `AyahOS` monorepo project and its Worker bridge unchanged. The HQ
-project itself still needs authenticated dashboard access and real execution:
-this repository does **not** claim it exists or has passed.
+project's existing three-step success is preliminary evidence only. Add and run
+manifest-pinned five-repository verification on an authorized worker before
+claiming full cross-repository acceptance.
 
 See `MIGRATION-GATES.md` and master [migration issue #243](https://github.com/fuaadabdullah/AyahOS_Dual_Lineage/issues/243).
