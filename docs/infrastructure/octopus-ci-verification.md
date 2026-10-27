@@ -89,10 +89,12 @@ posts nothing to GitHub, so neither pull requests nor `main` get a result on the
 [Octopus to GitHub bridge](../../deploy/octopus-github-bridge/README.md) closes that gap: a signed
 GitHub `push` webhook makes it create a release on the pushed branch and commit and deploy it to
 the verification environment, and a cron trigger records the task outcome at
-`GET /status/<sha>` on the Worker. The canonical `.github/workflows/octopus-status-relay.yml`
-polls that endpoint and publishes the `octopus/verify` commit status using GitHub's
-ephemeral `GITHUB_TOKEN`; the Worker-side `GITHUB_STATUS_TOKEN` remains an optional direct-post
-path. Require that status on `main`. Its setup steps (KV namespace, Octopus service account key,
+`GET /status/<sha>` on the Worker. The manually dispatched
+`.github/workflows/octopus-status-relay.yml` polls that endpoint and publishes the
+`octopus/verify` commit status using GitHub's ephemeral `GITHUB_TOKEN`; the Worker-side
+`GITHUB_STATUS_TOKEN` remains an optional direct-post path. It is manual-only until the deployed
+Worker is configured for this repository, and `octopus/verify` is not yet a required status on
+`main`. Its setup steps (KV namespace, Octopus service account key,
 webhook, relay workflow, and branch rule) need the owner's accounts.
 
 ## Post-deploy live verification

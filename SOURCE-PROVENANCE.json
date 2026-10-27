@@ -71,7 +71,7 @@
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/README.md": {
-      "sha": "d0b7fc776ff15eb466fb2820e64c7bd120fbb18b",
+      "sha": "2d81d28a909dc4d1bcefe9e7a9e3c651892bd734",
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/package.json": {
@@ -187,7 +187,7 @@
       "mode": "100644"
     },
     "docs/infrastructure/octopus-ci-verification.md": {
-      "sha": "37a5233819cde09f0541e6b5c340d30b36a37d3f",
+      "sha": "1be930ef7b6ee3f8abc1be8c0b4eed244728c5e6",
       "mode": "100644"
     },
     "docs/infrastructure/operational-collection.md": {
