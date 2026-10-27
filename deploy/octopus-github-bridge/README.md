@@ -17,13 +17,17 @@ branches of `GITHUB_REPOSITORY` are verified; forks, tags and branch deletions a
 passed into the Octopus process, so code on a branch under test cannot read them. A deployment
 started by hand in the Octopus UI is not reported; push again or redeliver the webhook instead.
 
-## Current state (2026-10-23)
+## Current state (verified 2026-10-27)
 
-The Worker is **deployed** at `https://ayahos-octopus-github-bridge.fuaadabdullah.workers.dev`
-for the canonical repository `ayahos-hq/ayahos-platform`. KV, the Octopus values,
-`OCTOPUS_API_KEY`, and `GITHUB_WEBHOOK_SECRET` are configured on the deployed Worker —
-production secret values live in the Worker configuration, not in this repository.
-The canonical repository `push` webhook is configured at the Worker endpoint.
+The Worker is deployed at `https://ayahos-octopus-github-bridge.fuaadabdullah.workers.dev` and
+`GET /healthz` answers `ok`. A `push` webhook for `ayahos-hq/ayahos-platform` points at it, but the
+deployed Worker is **not configured for this repository**: its answer to the delivery for commit
+`6a1b7a3` was `ignored: push is not for the configured repository`, and `GET /status/<sha>` returns
+`404 unknown commit` for every recent commit of this repository, including `main`. Until the
+Worker's `GITHUB_REPOSITORY` (and the matching Octopus project, environment and KV namespace) are
+reconfigured by the owner, the relay workflow below polls for 25 minutes and then publishes
+`octopus/verify` = `error` ("timed out"). The committed `wrangler.jsonc` still names the monorepo.
+`main` currently requires the status context `octopus/hq-operator-verified`, not `octopus/verify`.
 
 **`GITHUB_STATUS_TOKEN` is optional**. The Worker answers `ok` without it; when configured, it
 posts the `octopus/verify` status directly. Without that token, the canonical
@@ -35,8 +39,9 @@ therefore runs with `statuses: write`. Once the script is on `main`, switch the 
 base commit so PR code never runs with that token. Its local behavior is covered by
 `node --test deploy/octopus-github-bridge/test/*.test.js`; a live CI run remains separate evidence.
 
-Step 8 (requiring the status on `main`) is configured on the public repository. The relay
-workflow is the merge-gate publisher when the optional direct Worker token is absent.
+Step 8 (requiring a status on `main`) is configured for `octopus/hq-operator-verified` only.
+Making `octopus/verify` required is a separate owner decision and should wait until the relay can
+succeed for this repository.
 
 ## `GET /status/<sha>`
 
