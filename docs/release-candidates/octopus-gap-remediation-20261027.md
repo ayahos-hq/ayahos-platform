@@ -125,3 +125,40 @@ the root docs and this task record. Machine-readable candidate acceptance and
 the original source-audit JSON remain unchanged because no new acceptance or
 source audit has occurred. Later documentation commits do not inherit the named
 implementation commit's CI result.
+
+## Follow-up diagnosis and integration proof: 2026-10-27
+
+- Documentation commit `4995f0df38dcbc7ca868636489f92de5363ba92d` passed hosted
+  [GitHub verification run 40465739482](https://github.com/ayahos-hq/ayahos-platform/actions/runs/40465739482).
+  Logs confirm 53 script tests, 11 tests-directory tests, and 26 mocked bridge
+  tests passed. This supersedes the earlier pending-check state for that commit.
+- The same commit's separate Cloudflare check failed, build
+  `89b3c151-13c0-4162-8d48-2701200382a2`. The dashboard tab opened for diagnosis
+  reached Cloudflare sign-in; the current Edge browser session is unauthenticated.
+- Warden doctor confirmed native Cloudflare CLI authentication. Using that
+  existing session for GET requests returned HTTP **403** for both the HQ Worker
+  trigger endpoint and this build's log endpoint. No credential was displayed,
+  stored or transferred into another integration. Authentication and Builds API
+  authorization are distinct; this is not a general Cloudflare login failure.
+- Existing [PR #38](https://github.com/ayahos-hq/ayahos-platform/pull/38), commit
+  `84337c9bb78a36af8087faaf8ac31bd7ae6bca7c`, already contains the isolated HQ
+  Worker config, exact-SHA build guard and build-command runbook. Its prior notes
+  describe wrong checkout/root settings and the same Builds API permission gap.
+  Those notes inform the diagnosis; the current failure's raw build log remains
+  inaccessible, so that precise root cause is not re-proven here.
+- PR #38 and documentation commit `4995f0d` combine without merge conflicts into
+  temporary tree `5fd4bd9879c24da74811e9bfb64b4fbee435a5e5`. A disposable Linux
+  extraction of this tree passed immutable platform provenance (69 blobs),
+  candidate manifest validation and **80 offline tests without skips** (69 script
+  tests plus 11 tests-directory tests). An initial Windows-converted archive
+  failed on CRLF shell endings; re-export with `core.autocrlf=false` matched a
+  Linux checkout and passed. This is local integration evidence only.
+- Neither PR branch was merged or rewritten for that integration test. No
+  Cloudflare build was manually retried and no trigger, credential, Worker
+  deployment, Octopus process or permission was changed.
+
+Next action: after the operator signs into the open Cloudflare dashboard, read
+the failing build log and exact trigger settings, reconcile them against PR #38's
+runbook, and prepare the smallest reviewed correction. Do not blind-copy the
+monorepo config or bypass the red check. Applying a live correction or deploying
+a preview remains a separate Action Gateway step with explicit intent.
