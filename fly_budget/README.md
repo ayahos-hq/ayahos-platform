@@ -67,3 +67,30 @@ If the Fly CLI is missing or unauthenticated, the command denies the operation. 
 At code creation (October 26, 2026), the inspected connected Windows desktop did not expose an installed authenticated flyctl, and the five provisional HQ repositories did not identify confirmed Fly app names or deployment targets. The original Render control plane is suspended for exceeding its free-tier allowance; it is NOT the target for new AyahOS releases. The local Compact Cognition instance remains separate from the cloud deployment.
 
 **Decision for Fly activation until credentials, app identity, current billing and Octopus release authority are proven: DENY spending and DENY cloud deploy.** Keep testing on Node 001 staging meanwhile.
+
+## Read-only Fly credential preflight (staging)
+
+The HQ Octopus project now holds an independently managed **Sensitive**, Staging-scoped
+variable named `Fly_API_TOKEN`. It does not automatically provision `flyctl`,
+create a Fly application, or authorize a deployment.
+
+`fly_budget/credential_probe.py` is a deliberately separate diagnostic. On an
+approved Staging worker, the operator should securely map the sensitive Octopus
+variable into the child process environment as `FLY_API_TOKEN` using the native
+Octopus protected-variable mechanism. Never place the value in Git, command
+arguments, build logs, an unprotected Octopus variable, or a terminal transcript.
+The Python utility executes only `flyctl auth whoami`, discards provider output,
+and prints one generic `PASS` or `DENY` line. Failures are nonzero and do
+not disclose the credential or API error bodies.
+
+Run the focused offline test suite without provider credentials:
+
+```sh
+python3 -m unittest discover -s fly_budget -p 'test_*.py' -v
+```
+
+Passing this identity check does **not** establish Fly organization ownership,
+budget safety, preexisting app availability, deployed runtime health or
+Octopus approval. Continue to require fresh billing/inventory evidence,
+immutable image digests, full Octopus gates and authenticated E2E checks.
+No new Fly app may be created by this source-only change.
