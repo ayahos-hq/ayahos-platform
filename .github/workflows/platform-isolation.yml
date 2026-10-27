@@ -8,6 +8,11 @@ on:
       - ".octopus/**"
       - "deploy/**"
       - "scripts/ci/**"
+      - "scripts/octopus/**"
+      - "scripts/run-hq-offline-tests.py"
+      - "scripts/test_*.py"
+      - "scripts/audit-octopus-release.py"
+      - "tests/**"
       - "scripts/verify-platform.py"
       - "scripts/verify-release-manifest.py"
       - "scripts/audit-repo-drift.py"
@@ -44,16 +49,13 @@ jobs:
         run: python3 scripts/verify-platform.py
       - name: Verify five-repository candidate manifest
         run: python3 scripts/verify-release-manifest.py
-      - name: Test fail-closed immutable HQ source assembly (offline)
-        run: python3 -m unittest discover -s scripts -p "test_assemble_hq_workspace.py" -v
-      - name: Test isolated cross-repository Ruby RAG schema overlay (offline)
-        run: python3 -m unittest discover -s scripts -p "test_prepare_hq_rag_overlay.py" -v
-      - name: Regression-test exact-SHA five-repo workspace (offline)
-        run: python3 -m unittest discover -s scripts -p "test_verify_release_manifest.py" -v
-      - name: Unit-test three-way repository drift classifier (offline)
-        run: python3 -m unittest discover -s scripts -p "test_audit_repo_drift.py" -v
+      - name: Run the same complete offline regression suites as Octopus
+        run: python3 scripts/run-hq-offline-tests.py
       - name: Check shell syntax without running release scripts
-        run: find scripts/ci -type f -name '*.sh' -exec bash -n '{}' \;
+        run: |
+          while IFS= read -r -d '' script; do
+            bash -n "$script" || exit 1
+          done < <(find scripts/ci scripts/octopus -type f -name '*.sh' -print0)
       - name: Setup Node 22 for dependency-free bridge tests
         uses: actions/setup-node@v4
         with:

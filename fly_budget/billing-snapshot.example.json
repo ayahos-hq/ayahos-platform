@@ -1,0 +1,12 @@
+{
+  "_example_only_DO_NOT_PASS_TO_DEPLOY": true,
+  "organization": "replace-with-real-org",
+  "source": "authenticated_fly_billing_dashboard",
+  "observed_at": "REPLACE_WITH_RECENT_UTC_DATETIME",
+  "month": "REPLACE_WITH_CURRENT_YYYY-MM",
+  "spent_cents": null,
+  "pending_cents": null,
+  "other_resources_projected_cents": null,
+  "existing_billing_apps_count": null,
+  "attested_by_operator": false
+}
