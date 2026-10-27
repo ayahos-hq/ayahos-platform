@@ -9,5 +9,5 @@ if [[ $# -gt 1 ]] || { [[ $# -eq 1 ]] && [[ ! "$1" =~ ^[0-9a-fA-F]{64}$ ]]; }; t
 fi
 
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
-exec python3 "$repo_root/scripts/verify-release-manifest.py" \
+exec "${HQ_MANIFEST_PYTHON:-python3}" "$repo_root/scripts/verify-release-manifest.py" \
   --manifest "$repo_root/release-manifest.json"

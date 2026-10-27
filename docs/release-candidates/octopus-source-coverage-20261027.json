@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "evidence_level": "octopus-source-coverage-only",
+  "release_id": "Releases-532",
+  "task_id": "ServerTasks-1944",
+  "source_coverage_passed": false,
+  "production_accepted": false,
+  "expected_revisions": {
+    "ayahos-admin": "223a3b6ce6783405a4822a3cddbbbe66cc3164c2",
+    "ayahos-core": "ce43a6c99b2f80bc6f0b4903687373e2d007daff",
+    "ayahos-platform": "094328e66a90c7d4f629db8c31e1b1d0c7bca246",
+    "ayahos-site": "a1f9461881aa4068d39a91ce4adbdf1dd73069cc",
+    "ayahos-workloads": "e4de3aab568fc817816a4bd9e58eaeb0296f7a53"
+  },
+  "covered_repositories": [
+    "ayahos-core"
+  ],
+  "findings": [
+    "missing source coverage: ayahos-admin",
+    "missing source coverage: ayahos-platform",
+    "missing source coverage: ayahos-site",
+    "missing source coverage: ayahos-workloads",
+    "release revision differs: ayahos-platform"
+  ],
+  "remaining_acceptance": [
+    "required integration lane outcomes",
+    "artifact digests",
+    "PostgreSQL and pgvector",
+    "database restore",
+    "authenticated live smoke",
+    "rollback rehearsal"
+  ]
+}

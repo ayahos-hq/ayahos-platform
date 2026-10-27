@@ -2,19 +2,30 @@
 from pathlib import Path
 import os
 import subprocess
+import sys
 import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
 WRAPPER = ROOT / "scripts" / "octopus" / "verify-release-manifest.sh"
+# Windows' system bash.exe launches WSL and cannot read native Windows paths.
+# Git Bash accepts the same POSIX wrapper used by the hosted Ubuntu worker.
+GIT_BASH = Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Git/bin/bash.exe"
+BASH = str(GIT_BASH) if os.name == "nt" and GIT_BASH.is_file() else "bash"
 
 
 class ManifestShellEntrypointTests(unittest.TestCase):
     def run_wrapper(self, *args: str) -> subprocess.CompletedProcess[str]:
+        environment = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1",
+                       "HQ_MANIFEST_PYTHON": Path(sys.executable).as_posix()}
+        if os.name == "nt":
+            # Git Bash must translate /c/... arguments for native Python.
+            environment.pop("MSYS_NO_PATHCONV", None)
+            environment.pop("MSYS2_ARG_CONV_EXCL", None)
         return subprocess.run(
-            ["bash", str(WRAPPER), *args],
+            [BASH, WRAPPER.as_posix(), *args],
             cwd=ROOT,
-            env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+            env=environment,
             text=True,
             capture_output=True,
             timeout=15,
