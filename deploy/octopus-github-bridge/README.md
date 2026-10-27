@@ -28,8 +28,11 @@ The canonical repository `push` webhook is configured at the Worker endpoint.
 **`GITHUB_STATUS_TOKEN` is optional**. The Worker answers `ok` without it; when configured, it
 posts the `octopus/verify` status directly. Without that token, the canonical
 `.github/workflows/octopus-status-relay.yml` workflow publishes the same status using GitHub's
-ephemeral `GITHUB_TOKEN` after polling `GET /status/<sha>`. The relay never checks out or executes
-pull-request code. Its local behavior is covered by
+ephemeral `GITHUB_TOKEN` after polling `GET /status/<sha>`. **Bootstrap caveat:** the workflow
+currently checks out the pull-request head SHA and runs `scripts/ci/octopus_status_relay.mjs` from
+it, because that script does not exist on `main` until this change merges. Same-repository PR code
+therefore runs with `statuses: write`. Once the script is on `main`, switch the checkout to the
+base commit so PR code never runs with that token. Its local behavior is covered by
 `node --test deploy/octopus-github-bridge/test/*.test.js`; a live CI run remains separate evidence.
 
 Step 8 (requiring the status on `main`) is configured on the public repository. The relay
