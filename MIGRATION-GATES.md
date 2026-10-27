@@ -56,3 +56,13 @@ reviewed repository-root/exact-SHA command, isolated preview configuration and
 production dry-run command. Existing production version `2716f1a7` was recorded
 before changes. Fresh exact-SHA hosted results and production read-back remain
 separate evidence to record after execution. Full Octopus acceptance is pending.
+
+Subsequent hosted proof: `517e3eb97fdd100182bb38fdea7771e7d90f23bb` passed GitHub
+run `40470736902` and Cloudflare build
+`aed5b502-e18f-4da7-8b99-dff035c5dc0b`. The latter verified the exact triggering
+SHA after the existing branch preview's retained commands were corrected.
+Production and Preview Base settings alone did not update that existing preview.
+Post-build production remained version `2716f1a7`, 100% traffic, with browser
+health `ok`; preview health lacked production API/webhook credentials as intended.
+This closes the observed HQ Worker build-configuration failure only. It does
+not satisfy five-component or eight-lane Octopus release acceptance.

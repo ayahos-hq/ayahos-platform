@@ -68,6 +68,22 @@ These build checks do not establish eight-lane Octopus release acceptance.
 The append-only task record contains the production baseline and subsequent
 read-back/build results.
 
+**Verified repair:** implementation commit
+`517e3eb97fdd100182bb38fdea7771e7d90f23bb` passed both
+[GitHub verification run 40470736902](https://github.com/ayahos-hq/ayahos-platform/actions/runs/40470736902)
+and [Cloudflare build aed5b502](https://dash.cloudflare.com/265071fc5a2ac8bbe85e2bd724361080/workers/services/view/ayahos-hq-verification-bridge/production/previews/codex-octopus-gaps-20261027/builds/aed5b502-e18f-4da7-8b99-dff035c5dc0b).
+The build log emitted `HQ_WORKER_SOURCE_VERIFIED` for that exact SHA.
+Existing previews retain their own build commands: update the tracking preview's
+Settings > Builds as well as Production and Previews Base. The first post-source
+build still used retained old commands; the successful retry followed repair of
+the `codex/octopus-gaps-20261027` preview itself.
+
+After the successful preview build, production remained version `2716f1a7` at
+100% traffic and its browser `/healthz` returned `ok`. Preview health reported
+missing webhook/API credentials, confirming that production secrets were not
+copied. Direct Python HTTP probes returned 403 at the edge; those were not
+treated as application health evidence. No main merge or Octopus release was run.
+
 ## Safe independent checks
 
 From this repository:

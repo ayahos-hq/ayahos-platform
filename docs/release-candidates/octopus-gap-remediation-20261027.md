@@ -201,3 +201,42 @@ The reviewed dashboard changes replace the checkout command with exact-SHA
 validation, use repository root `/`, pin the isolated HQ preview command and
 replace the production upload command with `wrangler deploy --dry-run`.
 Hosted execution and saved-setting/production read-back results follow below.
+
+### Saved settings, retained preview override, and successful hosted retry
+
+Production and Previews Base commands/root were saved and reloaded successfully.
+The Preview Base runtime settings contained no secrets or bindings. The dashboard
+KV list independently confirmed `ayahos-hq-verification-preview-tasks` at
+`2b5af79207114dec9989bc1d952c3c9d`, separate from production TASKS.
+
+Implementation commit `517e3eb97fdd100182bb38fdea7771e7d90f23bb` was pushed and
+passed hosted GitHub run `40470736902`. Its first Cloudflare build
+`9185800f-c8a0-4ec5-8daf-d8892d1af2a4` still executed the old checkout/root
+commands. This corrects the initial assumption that Production/Previews Base
+read-back proved the active branch trigger was repaired. Existing previews keep
+independent build commands.
+
+The environment selector exposed the existing `codex/octopus-gaps-20261027`
+preview. Its own Settings > Builds still held the wrong branch checkout,
+unqualified preview command and monorepo root. Those three fields were corrected
+to the reviewed values, saved, and independently reloaded before retry.
+
+The exact same commit was retried once. Cloudflare build
+`aed5b502-e18f-4da7-8b99-dff035c5dc0b` succeeded, emitted
+`HQ_WORKER_SOURCE_VERIFIED=517e3eb97fdd100182bb38fdea7771e7d90f23bb`, checked all
+69 provenance entries and the candidate manifest, passed 26 mocked bridge tests,
+and deployed the isolated preview with Wrangler 4.152.0. GitHub reports both
+`verify` and `Workers Builds: ayahos-hq-verification-bridge` successful for that
+implementation commit. The red check was repaired, not waived or replaced.
+
+Production read-back after that successful build still showed version `2716f1a7`
+at 100% traffic. Browser health returned `ok` for production and reported missing
+`GITHUB_WEBHOOK_SECRET` / `OCTOPUS_API_KEY` for the preview. Native Python HTTP
+probes returned 403 at the edge for both URLs, so browser responses are the
+application evidence; no unsupported HTTP status claim is made from them.
+
+PR #42 title/body were rewritten around the final source/build repair. It
+remains a draft. No main merge, production Worker release, new permission,
+secret copy, monorepo bridge change or Octopus release occurred. The broader
+exact-SHA five-component/eight-lane, artifact, database, smoke and rollback gates
+remain pending. Later documentation revisions require their own hosted checks.
