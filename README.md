@@ -2,7 +2,7 @@
 
 **Status: public by owner decision, provisional source extraction with isolated HQ verification, not production authority.** This repository is a staging home for CI/CD orchestration, Octopus project definitions, deployment templates, release checks and infrastructure records. The separate HQ Octopus verification project exists; full multi-repository acceptance and production cutover remain pending. Production connections and changes require the migration gates and explicit authorization. Treat all repository contents as public; secrets belong exclusively in managed secret stores.
 
-## Current Octopus evidence (2026-10-27)
+## Observed Octopus baseline (2026-10-27; build repair below)
 
 [Draft PR #42](https://github.com/ayahos-hq/ayahos-platform/pull/42) contains the
 verification coverage fixes and read-only release audit. Its implementation commit
@@ -35,10 +35,38 @@ later documentation commits or future branch heads.
 ## Pinned import
 
 - Original: `fuaadabdullah/AyahOS_Dual_Lineage` at `a7ef41fe1ec6a680bc734a5d54890fb13972d3a3`.
-- **66 source blobs** copied exactly with original executable modes under `.octopus/`, `deploy/`, `scripts/ci/`, `scripts/db/`, `docs/infrastructure/`; LICENSE and NOTICE carried over.
+- **66 preserved source blobs plus three HQ build verification files** under `.octopus/`, `deploy/`, `scripts/ci/`, `scripts/db/`, `docs/infrastructure/`: 69 audited entries with recorded executable modes; LICENSE and NOTICE carried over.
 - Source file identities and Git modes are recorded in `SOURCE-PROVENANCE.json`.
 - This snapshot **retains legacy monorepo-relative script paths and service references**; it is not a deployable multi-repo pipeline.
 - Existing Cloudflare Pages and Vercel rollback remain unchanged; Overmind/Undermind/Spine authority stays in the source backend.
+
+## HQ Worker build repair (2026-10-27)
+
+Authenticated dashboard inspection confirmed that the failing build switched
+from its triggering commit to `feat/pinned-hq-artifact-assembly-20261025`, ran
+from `/deploy/octopus-github-bridge`, and failed because the selected config
+lacked a `previews` block. These are now confirmed observations rather than
+an inference from the older access-reliability notes.
+
+This branch integrates only the six HQ build-specific files from PR #38,
+including the isolated configuration, exact-SHA preflight, tests and provenance
+updates. The separate login/access-doctor changes are not included.
+Local validation passed 69 offline tests, 26 mocked bridge tests, immutable
+source and manifest checks, and Wrangler 4.152.0 dry-run packaging.
+
+The authorized HQ-only dashboard repair uses repository root `/`, the
+exact-SHA verification command and pinned preview command in
+[BUILD_COMMANDS.md](deploy/hq-verification-bridge/BUILD_COMMANDS.md).
+The production build command is a dry run; it does not release production code.
+The preview uses dedicated TASKS KV `2b5af79207114dec9989bc1d952c3c9d`, distinct
+from production `49ce086dc87f4de9a5110e5771907cb3`, and has no production
+secrets or cron. Preview URLs are public. A preview `/healthz` response of 503
+is expected while required API/webhook credentials remain absent.
+
+New hosted build results must be recorded against their own exact revision.
+These build checks do not establish eight-lane Octopus release acceptance.
+The append-only task record contains the production baseline and subsequent
+read-back/build results.
 
 ## Safe independent checks
 

@@ -162,3 +162,42 @@ the failing build log and exact trigger settings, reconcile them against PR #38'
 runbook, and prepare the smallest reviewed correction. Do not blind-copy the
 monorepo config or bypass the red check. Applying a live correction or deploying
 a preview remains a separate Action Gateway step with explicit intent.
+
+## Authorized HQ build repair: 2026-10-27
+
+The user requested protection of `Fly_API_TOKEN`, Cloudflare sign-in, and then
+explicitly said "Fix it" after the build failure was identified. The token's
+existing project variable was changed to `Type: Sensitive`, `IsSensitive: true`
+via the authenticated Octopus API. Live read-back confirmed the original scope
+was preserved, the value was not returned, and variable-set version became 3.
+No token value is included in this record.
+
+Cloudflare sign-in succeeded through the existing GitHub browser session.
+Authenticated build `89b3c151-13c0-4162-8d48-2701200382a2` confirmed all three
+failure causes: its build command switched to
+`feat/pinned-hq-artifact-assembly-20261025`, its root was
+`/deploy/octopus-github-bridge`, and Wrangler rejected the selected configuration
+because `previews` was missing. This supersedes the earlier inability to read
+the dashboard and the prior unproven-root-cause qualification. Native OAuth
+Builds API authorization remains distinct from working browser access.
+
+Only six files were integrated verbatim from PR #38 commit
+`84337c9bb78a36af8087faaf8ac31bd7ae6bca7c`: the HQ config/runbook, exact-SHA
+guard/test and provenance/verifier updates. Unrelated access-doctor changes
+were excluded. The resulting candidate passed 69 offline tests (58 script plus
+11 tests-directory), 26 mocked bridge tests, provenance/manifest checks and
+Wrangler 4.152.0 dry-run packaging. Provenance now audits 69 entries: the
+existing 66 plus three HQ verification files.
+
+The production active version before changes was `2716f1a7` at 100% traffic.
+The authenticated settings showed production TASKS namespace
+`49ce086dc87f4de9a5110e5771907cb3`; the reviewed preview config selects separate
+namespace `2b5af79207114dec9989bc1d952c3c9d`. No production secrets or cron are
+declared in that preview configuration. Preview URLs are public, and their
+missing-credentials health response must not be misreported as an integration
+success. Builds do not invoke Octopus acceptance or change runtime authority.
+
+The reviewed dashboard changes replace the checkout command with exact-SHA
+validation, use repository root `/`, pin the isolated HQ preview command and
+replace the production upload command with `wrangler deploy --dry-run`.
+Hosted execution and saved-setting/production read-back results follow below.

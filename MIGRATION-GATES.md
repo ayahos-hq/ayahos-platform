@@ -2,7 +2,7 @@
 
 The original monorepo is canonical until all explicit gates pass. This snapshot never modifies a live Octopus project.
 
-1. **Integrity and privacy:** Verify 66 tracked platform source blobs and their Git modes; audit any executable/script edits and scan for accidental credentials. Example .env templates have empty values. Never move existing secret values into Git.
+1. **Integrity and privacy:** Verify 69 tracked platform source entries (66 preserved blobs and three HQ build verification files) and their Git modes; audit any executable/script edits and scan for accidental credentials. Example .env templates have empty values. Never move existing secret values into Git.
 2. **Isolated verification:** Validate Octopus process syntax/structure, required steps and script paths, bash syntax, JSON service inventory, and local-only Node mocked tests for the GitHub/Octopus bridge. No live webhooks or API tokens in CI.
 3. **Cross-repository contract:** Build a version-pinned manifest for \`ayahos-core\`, \`ayahos-site\`, \`ayahos-admin\`, and \`ayahos-workloads\`; replace monorepo-relative references with checked-out artifacts from immutable SHAs. Preserve Octopus release authority and hard fail-closed gates, including PostgreSQL 16 with real pgvector, Ruby RAG/worker/control and deterministic policy tests.
    `release-manifest.json` is the candidate manifest. It binds four exact repository HEADs plus an immutable platform source parent (the manifest is stored in the platform repository, so its own commit is intentionally checked by ancestry); artifact digests and live acceptance remain explicitly pending until independently produced and verified.
@@ -14,7 +14,7 @@ The original monorepo is canonical until all explicit gates pass. This snapshot 
 6. **Real verification:** Run the exact approved Octopus revision end to end on an authorized worker, record all required step outcomes and container digests. Never silently replace pgvector with SQLite or skip critical gate failures after exit 137.
 7. **Cutover:** Separate pre-prod testing from protected production update. Require user-authorized destination and credentials steps, signed rollback plan, correct deployed SHAs, and post-deploy SSE/chat, trace, auth and failure probes. Keep Cloudflare primary, Vercel rollback and old monorepo CI until cutover is proven.
 
-**No Octopus project, external webhook, Render, Cloudflare, Vercel, DNS, secrets or Google Cloud modifications are part of this PR.**
+**The authorized follow-up repairs only the existing HQ Worker's build settings and isolated preview path. It does not authorize production runtime deployment, shared monorepo bridge changes, DNS changes, new permissions or credential migration.**
 
 ## Evidence checkpoint: 2026-10-27
 
@@ -44,3 +44,15 @@ project and bridge. Do not close issues #6 or #35 based on these partial results
 
 See the [append-only task record](docs/release-candidates/octopus-gap-remediation-20261027.md)
 for exact identities, local limitations and the order of observations.
+
+## Authorized build repair follow-up
+
+The user authorized repair after the authenticated dashboard confirmed the
+wrong-branch checkout, wrong build root and missing `previews` configuration.
+The branch now includes the narrowly selected build files from PR #38 and
+passes 69 offline tests, 26 mocked bridge tests, provenance/manifest checks and
+Wrangler dry-run packaging locally. The separate HQ Worker settings use the
+reviewed repository-root/exact-SHA command, isolated preview configuration and
+production dry-run command. Existing production version `2716f1a7` was recorded
+before changes. Fresh exact-SHA hosted results and production read-back remain
+separate evidence to record after execution. Full Octopus acceptance is pending.
