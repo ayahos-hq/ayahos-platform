@@ -12,6 +12,18 @@ Evidence date: 2026-10-28 UTC. This record documents observed state; it is NOT a
 
 Dashboard: https://app.datadoghq.com/dashboard/qkr-8e7-6jg/ayahos--runtime-and-feedback-loop
 
+## Diagnosed PostgreSQL sequence incident (read-only proof)
+
+An authenticated local FastAPI health probe inside the live Fly Machine returned HTTP 200 with overall status degraded and database healthy. The incident and performance-metric recorders both reported PostgreSQL UniqueViolation and persisted=false; the independent provider-metric recorder reported persisted=true, while the optional embedding shadow worker was unavailable.
+
+Read-only database inspection confirmed:
+- dual_lineage_incident_snapshots: MAX(incident_id)=93, row count=93, sequence last_value=29.
+- dual_lineage_performance_metrics: MAX(metric_id)=398, row count=398, sequence last_value=397.
+
+These sequences lag their table primary keys, which is consistent with the observed insert conflicts. A healthy database connection does not imply every evidence writer is durable.
+
+**Do not blindly reset sequences.** Before production repair, establish a verified backup and isolated recovery result, confirm the bound BIGSERIAL sequences using pg_get_serial_sequence, enforce a short lock_timeout and table-write exclusion, move each sequence forward only (never decrease its value), and acknowledge that PostgreSQL setval changes are not transactional. Apply only in a reviewed operator change window. Then prove newly appended rows persist across a process restart and compare row counts. This diagnosis was **read-only**; no live sequences were changed.
+
 ## Verification sequence
 
 1. Identify the currently deployed Fly image digest and source SHA from authoritative release metadata; do not infer it from a GitHub branch or a successful health probe.
