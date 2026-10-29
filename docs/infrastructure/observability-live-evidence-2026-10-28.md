@@ -24,6 +24,18 @@ These sequences lag their table primary keys, which is consistent with the obser
 
 **Do not blindly reset sequences.** Before production repair, establish a verified backup and isolated recovery result, confirm the bound BIGSERIAL sequences using pg_get_serial_sequence, enforce a short lock_timeout and table-write exclusion, move each sequence forward only (never decrease its value), and acknowledge that PostgreSQL setval changes are not transactional. Apply only in a reviewed operator change window. Then prove newly appended rows persist across a process restart and compare row counts. This diagnosis was **read-only**; no live sequences were changed.
 
+## Read-only follow-up: October 29, 2026
+
+The earlier broken sequences are synchronized **without any database changes by this investigation**:
+- Incident snapshots: MAX(incident_id)=96; sequence last_value=96; row count 96; newest record 2026-10-29 04:16:23 UTC.
+- Performance metrics: MAX(metric_id)=423; sequence last_value=423; row count 25; newest record 2026-10-29 04:16:59 UTC.
+
+The authenticated Fly health endpoint reports persisted=true and no current storage error for incident, performance, and provider-metric stores. The database is healthy. **Do not reseed synchronized sequences.** Investigate which process corrected the earlier skew, and retain restore/recurrence gates.
+
+The Fly instance reports 695 successful HTTP telemetry intake submissions and zero failures, but the connected Datadog account still has no indexed goblin.dual_lineage metrics over the preceding 24 hours. Direct credential validation from Fly against the documented Datadog GET /api/v1/validate endpoint returned HTTP 403, which Datadog documents for an invalid API key. No secret values were retrieved or printed. Verify organization, site, active credential assignment, and key rotation through an approved secret-management flow. HTTP 202 intake acceptance alone does not prove indexing.
+
+Core draft PR #49 adds a bounded exporter, shutdown flush, and independent API-key validity probe; Admin draft PR #19 surfaces credential and drop states. None of these unmerged source changes is in production. Octopus remains the release gate.
+
 ## Verification sequence
 
 1. Identify the currently deployed Fly image digest and source SHA from authoritative release metadata; do not infer it from a GitHub branch or a successful health probe.
