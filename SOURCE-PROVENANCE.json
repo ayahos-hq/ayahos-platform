@@ -285,5 +285,11 @@
     "octopus_structure": "pending CI (sync to a7ef41f)",
     "octopus_live": "not run",
     "release_cutover": "not authorized"
+  },
+  "reviewed_extensions": {
+    "docs/infrastructure/observability-live-evidence-2026-10-28.md": {
+      "sha": "acdfe3f133cac30d2db609abca1b05e526104b0a",
+      "mode": "100644"
+    }
   }
 }

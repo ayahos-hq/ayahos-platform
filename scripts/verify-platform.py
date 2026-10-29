@@ -21,15 +21,19 @@ def run() -> None:
     ):
         raise ValueError("unexpected manifest schema, state or target")
     expected = m["source_files"]
+    reviewed = m.get("reviewed_extensions", {})
+    if not isinstance(reviewed, dict) or any(p in expected for p in reviewed):
+        raise ValueError("invalid reviewed extension inventory")
+    approved = {**expected, **reviewed}
     if len(expected) != 66 or m["source_file_count"] != 66:
         raise ValueError("unexpected source footprint")
     listing = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT)
     tracked = {p for p in listing.decode().split("\0") if p}
     actual = {p for p in tracked if p.startswith(ALLOWED)}
-    if actual != set(expected):
-        raise ValueError(f"source file set differs: missing={sorted(set(expected)-actual)} "
-                         f"unexpected={sorted(actual-set(expected))}")
-    for path, record in expected.items():
+    if actual != set(approved):
+        raise ValueError(f"source file set differs: missing={sorted(set(approved)-actual)} "
+                         f"unexpected={sorted(actual-set(approved))}")
+    for path, record in approved.items():
         pure = PurePosixPath(path)
         if pure.is_absolute() or ".." in pure.parts or not path.startswith(ALLOWED) or BLOCKED.search(path):
             raise ValueError("disallowed path in provenance: " + path)
