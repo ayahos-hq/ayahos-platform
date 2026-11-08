@@ -130,7 +130,7 @@ describe("task state mapping", () => {
   it("maps every Octopus task state to a GitHub status", () => {
     assert.equal(statusForTask({ State: "Success" }).state, "success");
     assert.equal(statusForTask({ State: "Failed", ErrorMessage: "step api-postgres failed" }).state, "failure");
-    assert.match(statusForTask({ State: "Failed", ErrorMessage: "step api-postgres failed" }).description, /api-postgres/);
+    assert.doesNotMatch(statusForTask({ State: "Failed", ErrorMessage: "step api-postgres failed" }).description, /api-postgres/);
     assert.equal(statusForTask({ State: "TimedOut" }).state, "failure");
     assert.equal(statusForTask({ State: "Canceled" }).state, "error");
     for (const state of ["Queued", "Executing", "Cancelling"]) {
@@ -138,6 +138,12 @@ describe("task state mapping", () => {
     }
     assert.match(statusForTask({ State: "Executing", HasPendingInterruptions: true }).description, /manual intervention/);
   });
+  it("does not reflect secret-bearing Octopus task errors in public descriptions", () => {
+    const result = statusForTask({ State: "Failed", ErrorMessage: "password=hunter2; token=ghp_secret" });
+    assert.equal(result.state, "failure");
+    assert.doesNotMatch(result.description, /hunter2|ghp_secret|password|token/);
+  });
+
   it("keeps descriptions within GitHub's 140 characters", () => {
     assert.ok(statusForTask({ State: "Failed", ErrorMessage: "x".repeat(500) }).description.length <= 140);
   });
@@ -181,6 +187,22 @@ describe("startVerification", () => {
     assert.equal(status.pathname, STATUS_PATH);
     assert.equal(status.body.state, "error");
     assert.deepEqual(taskKeys(env), []);
+    assert.deepEqual(JSON.parse(await env.TASKS.get(`result:${SHA}`)), { state: "error" });
+  });
+
+  it("does not propagate failed Octopus API response content to GitHub or KV", async () => {
+    const env = makeEnv();
+    const calls = mockFetch({
+      ...OCTOPUS_ROUTES,
+      "POST /api/Spaces-1/releases/create/v1": {
+        status: 403,
+        json: { ErrorMessage: "private Octopus secret ghp_sensitive_123" },
+      },
+    });
+    await assert.rejects(startVerification(env, { ref: "refs/heads/feature", sha: SHA }), /403/);
+    const status = calls.find((call) => call.origin === "https://api.github.com");
+    assert.equal(status.body.state, "error");
+    assert.doesNotMatch(JSON.stringify(status.body), /ghp_sensitive_123|private Octopus secret/);
     assert.deepEqual(JSON.parse(await env.TASKS.get(`result:${SHA}`)), { state: "error" });
   });
 
@@ -236,6 +258,19 @@ describe("reconcile", () => {
     assert.deepEqual(await reconcile(env), [{ taskId: "ServerTasks-77", state: "failure" }]);
     assert.equal(calls.at(-1).body.state, "failure");
     assert.deepEqual(taskKeys(env), []);
+    assert.deepEqual(JSON.parse(await env.TASKS.get(`result:${SHA}`)), { state: "failure" });
+  });
+
+  it("does not expose task ErrorMessage to GitHub or the public KV record", async () => {
+    const env = makeEnv();
+    const calls = mockFetch({
+      "GET /api/Spaces-1/tasks/ServerTasks-77": {
+        json: { State: "Failed", ErrorMessage: "private connection password=hunter2" },
+      },
+      [`POST ${STATUS_PATH}`]: { status: 201, json: {} },
+    });
+    assert.deepEqual(await reconcile(env), [{ taskId: "ServerTasks-77", state: "failure" }]);
+    assert.doesNotMatch(JSON.stringify(calls.at(-1).body), /hunter2|private connection/);
     assert.deepEqual(JSON.parse(await env.TASKS.get(`result:${SHA}`)), { state: "failure" });
   });
 
