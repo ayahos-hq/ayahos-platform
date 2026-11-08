@@ -1,0 +1,45 @@
+{
+  // AyahOS HQ verification bridge — HQ-only deployment manifest.
+  // This config describes the Worker that already runs in the Cloudflare
+  // account "AyahOS_HQ" (deployed version 7, 2026-10-25). Values below were
+  // read back from that deployed Worker's bindings on 2026-11-07; they are
+  // the HQ values, NOT the monorepo bridge values in
+  // deploy/octopus-github-bridge/wrangler.jsonc (different repository,
+  // project, status context and KV namespace). Do not deploy the monorepo
+  // config to this account, and do not deploy this config over the monorepo
+  // Worker.
+  // Secrets (GITHUB_WEBHOOK_SECRET, GITHUB_STATUS_TOKEN, OCTOPUS_API_KEY)
+  // live only in the deployed Worker's settings and are never committed.
+  "name": "ayahos-hq-verification-bridge",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-01",
+  "vars": {
+    "GITHUB_REPOSITORY": "ayahos-hq/ayahos-platform",
+    "OCTOPUS_URL": "https://ayahos.octopus.app",
+    "OCTOPUS_SPACE_ID": "Spaces-1",
+    "OCTOPUS_PROJECT": "AyahOS HQ Verification",
+    "OCTOPUS_ENVIRONMENT": "Development",
+    "STATUS_CONTEXT": "octopus/hq-operator-verified"
+  },
+  "kv_namespaces": [
+    { "binding": "TASKS", "id": "49ce086dc87f4de9a5110e5771907cb3" }
+  ],
+  "triggers": { "crons": ["* * * * *"] },
+  // Preview deployments (Workers Builds PR previews) must never touch
+  // production resources: dedicated preview KV namespace
+  // (ayahos-hq-verification-preview-tasks) and a non-canonical status
+  // context, so a preview can never satisfy the production merge gate.
+  "previews": {
+    "vars": {
+      "GITHUB_REPOSITORY": "ayahos-hq/ayahos-platform",
+      "OCTOPUS_URL": "https://ayahos.octopus.app",
+      "OCTOPUS_SPACE_ID": "Spaces-1",
+      "OCTOPUS_PROJECT": "AyahOS HQ Verification",
+      "OCTOPUS_ENVIRONMENT": "Development",
+      "STATUS_CONTEXT": "octopus/hq-operator-verified/preview"
+    },
+    "kv_namespaces": [
+      { "binding": "TASKS", "id": "2b5af79207114dec9989bc1d952c3c9d" }
+    ]
+  }
+}

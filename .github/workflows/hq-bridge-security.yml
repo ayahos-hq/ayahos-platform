@@ -1,0 +1,25 @@
+name: HQ bridge source security tests
+
+on:
+  pull_request:
+    paths:
+      - "tools/hq-verification-bridge/**"
+      - ".github/workflows/hq-bridge-security.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-hq-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Confirm preview-only HQ manifest
+        run: python3 tools/hq-verification-bridge/check_hq_worker_build.py --preview-only
+      - name: Verify HQ source security invariants
+        run: node --test tools/hq-verification-bridge/test/*.test.mjs
