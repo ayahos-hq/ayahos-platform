@@ -24,5 +24,22 @@
   "kv_namespaces": [
     { "binding": "TASKS", "id": "49ce086dc87f4de9a5110e5771907cb3" }
   ],
-  "triggers": { "crons": ["* * * * *"] }
+  "triggers": { "crons": ["* * * * *"] },
+  // Preview deployments (Workers Builds PR previews) must never touch
+  // production resources: dedicated preview KV namespace
+  // (ayahos-hq-verification-preview-tasks) and a non-canonical status
+  // context, so a preview can never satisfy the production merge gate.
+  "previews": {
+    "vars": {
+      "GITHUB_REPOSITORY": "ayahos-hq/ayahos-platform",
+      "OCTOPUS_URL": "https://ayahos.octopus.app",
+      "OCTOPUS_SPACE_ID": "Spaces-1",
+      "OCTOPUS_PROJECT": "AyahOS HQ Verification",
+      "OCTOPUS_ENVIRONMENT": "Development",
+      "STATUS_CONTEXT": "octopus/hq-operator-verified/preview"
+    },
+    "kv_namespaces": [
+      { "binding": "TASKS", "id": "2b5af79207114dec9989bc1d952c3c9d" }
+    ]
+  }
 }

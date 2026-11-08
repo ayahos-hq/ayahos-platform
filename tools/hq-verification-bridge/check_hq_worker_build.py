@@ -35,6 +35,7 @@ EXPECTED_VARS = {
     "STATUS_CONTEXT": "octopus/hq-operator-verified",
 }
 EXPECTED_KV = {"TASKS": "49ce086dc87f4de9a5110e5771907cb3"}
+EXPECTED_PREVIEW_KV = {"TASKS": "2b5af79207114dec9989bc1d952c3c9d"}
 SECRET_SHAPED = re.compile(r"(TOKEN|SECRET|API_KEY|PASSWORD)", re.IGNORECASE)
 
 
@@ -121,6 +122,26 @@ def main(argv: list[str]) -> int:
             failures.append(
                 f"KV binding {binding} id is {actual_id!r}, expected the deployed namespace id"
             )
+
+    previews = config.get("previews")
+    if not isinstance(previews, dict):
+        failures.append("previews block missing (wrangler preview requires preview-safe bindings)")
+    else:
+        preview_kv = {
+            entry.get("binding"): entry.get("id")
+            for entry in previews.get("kv_namespaces", [])
+        }
+        for binding, expected_id in EXPECTED_PREVIEW_KV.items():
+            if preview_kv.get(binding) != expected_id:
+                failures.append(
+                    f"preview KV binding {binding} id is {preview_kv.get(binding)!r}, "
+                    "expected the dedicated preview namespace id"
+                )
+        if preview_kv.get("TASKS") == kv.get("TASKS"):
+            failures.append("preview TASKS binding must not use the production KV namespace")
+        preview_context = previews.get("vars", {}).get("STATUS_CONTEXT")
+        if preview_context == EXPECTED_VARS["STATUS_CONTEXT"]:
+            failures.append("preview STATUS_CONTEXT must differ from the canonical context")
 
     if failures:
         for failure in failures:
