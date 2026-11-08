@@ -1,7 +1,7 @@
 # AyahOS Oracle Servers: cognitive node
 
 Oracle is a separate cognitive target, not Node 1 and not the Render runtime. The
-supported deployment runs the repository node agent beside the private `goblin-core`
+supported deployment runs the repository node agent beside the private `ayah-core`
 llama.cpp service and advertises only `oracle-heavy` with the `cognitive` role.
 
 The checked-in service template is `deploy/oracle/goblin-oracle-node.service` and the
