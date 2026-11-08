@@ -63,6 +63,33 @@ test("a rejected Octopus release does not forward API response contents to GitHu
   assert.deepEqual(JSON.parse(store.get(`result:${SHA}`)), { state: "error" });
 });
 
+test("GitHub status rejection must not falsely mark an already-created Octopus task as failed", async () => {
+  const { env, store } = bridgeEnv();
+  const posts = [];
+  globalThis.fetch = async (url, options = {}) => {
+    const path = new URL(url).pathname;
+    if (path.endsWith("/releases/create/v1")) {
+      return Response.json({ ReleaseId: "Releases-42", ReleaseVersion: "1.0.42" });
+    }
+    if (path.endsWith("/deployments/create/untenanted/v1")) {
+      return Response.json({ DeploymentServerTasks: [{ ServerTaskId: "ServerTasks-42" }] });
+    }
+    if (String(url).startsWith("https://api.github.com/")) {
+      posts.push(JSON.parse(options.body));
+      return new Response("unauthorized", { status: 403 });
+    }
+    throw new Error("Unexpected external request");
+  };
+  await assert.rejects(
+    startVerification(env, { ref: "refs/heads/fixture", sha: SHA }),
+    /GitHub status.*HTTP 403/,
+  );
+  assert.equal(posts.length, 1, "a status-post failure must not trigger a false release-start error status");
+  assert.equal(posts[0].state, "pending");
+  assert.deepEqual(JSON.parse(store.get(`result:${SHA}`)), { state: "pending" });
+  assert.equal(JSON.parse(store.get("task:ServerTasks-42")).sha, SHA);
+});
+
 test("public status route returns only state, never recorded diagnostic fields", async () => {
   const { env, store } = bridgeEnv();
   store.set(`result:${SHA}`, JSON.stringify({ state: "failure", description: "private secret" }));
