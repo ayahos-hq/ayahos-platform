@@ -108,7 +108,7 @@ export function statusForTask(task) {
     case "Success":
       return { state: "success", description: "All required Octopus gates passed" };
     case "Failed":
-      return { state: "failure", description: truncate(`Octopus gates failed: ${task.ErrorMessage || "see task log"}`) };
+      return { state: "failure", description: "Octopus gates failed; see protected task log" };
     case "TimedOut":
       return { state: "failure", description: "Octopus task timed out" };
     case "Canceled":
@@ -117,7 +117,7 @@ export function statusForTask(task) {
       if (task.HasPendingInterruptions) {
         return { state: "pending", description: "Octopus task is waiting on a manual intervention" };
       }
-      return { state: "pending", description: `Octopus task ${String(task.State || "queued").toLowerCase()}` };
+      return { state: "pending", description: "Octopus verification in progress" };
   }
 }
 
@@ -131,10 +131,12 @@ async function octopus(env, method, path, body) {
     },
     body: body ? JSON.stringify(body) : undefined,
   });
-  const text = await response.text();
+  // Octopus error bodies can contain confidential diagnostic details; never echo them to
+  // GitHub, public KV, or logs. The protected Octopus task provides operator evidence.
   if (!response.ok) {
-    throw new Error(`Octopus ${method} ${path.split("?")[0]} returned ${response.status}: ${truncate(text, 300)}`);
+    throw new Error(`Octopus ${method} ${path.split("?")[0]} returned HTTP ${response.status}`);
   }
+  const text = await response.text();
   return text ? JSON.parse(text) : {};
 }
 
@@ -167,14 +169,11 @@ export async function postStatus(env, sha, { state, description, targetUrl }) {
 async function reportStatus(env, sha, status) {
   let recordError = null;
   try {
-    // Keep a short description so GET /status/<sha> can diagnose Octopus start failures
-    // without exposing task links or secrets on the unauthenticated route.
+    // Only persist the machine-readable state: KV backs an unauthenticated endpoint.
+    // Diagnostic details belong in the protected Octopus task, never here.
     await env.TASKS.put(
       `${RESULT_PREFIX}${sha}`,
-      JSON.stringify({
-        state: status.state,
-        description: truncate(status.description || "", 140),
-      }),
+      JSON.stringify({ state: status.state }),
       { expirationTtl: TASK_TTL_SECONDS },
     );
   } catch (error) {
@@ -223,7 +222,7 @@ export async function startVerification(env, { ref, sha }) {
     );
     await reportStatus(env, sha, {
       state: "pending",
-      description: `Octopus release ${release.ReleaseVersion} queued`,
+      description: "Octopus verification queued",
       targetUrl: taskUrl(env, taskId),
     });
     return { taskId, releaseVersion: release.ReleaseVersion };
@@ -231,7 +230,7 @@ export async function startVerification(env, { ref, sha }) {
     // Best effort: if GitHub itself is the failure, the original error is the one to surface.
     await reportStatus(env, sha, {
       state: "error",
-      description: truncate(`Could not start Octopus verification: ${error.message}`),
+      description: "Could not start Octopus verification; inspect protected operator logs",
     }).catch(() => {});
     throw error;
   }
@@ -310,11 +309,7 @@ async function handleStatus(env, sha) {
   if (!record || !RESULT_STATES.has(record.state)) {
     return new Response("unknown commit\n", { status: 404, headers: NO_STORE });
   }
-  const body = { sha, state: record.state };
-  if (typeof record.description === "string" && record.description) {
-    body.description = truncate(record.description, 140);
-  }
-  return Response.json(body, { headers: NO_STORE });
+  return Response.json({ sha, state: record.state }, { headers: NO_STORE });
 }
 
 export default {
