@@ -187,6 +187,8 @@ async function reportStatus(env, sha, status) {
 // record the task so the cron trigger can report its outcome.
 export async function startVerification(env, { ref, sha }) {
   const space = env.OCTOPUS_SPACE_ID;
+  let taskId;
+  let releaseVersion;
   try {
     const release = await octopus(env, "POST", `/api/${space}/releases/create/v1`, {
       spaceId: space,
@@ -209,27 +211,33 @@ export async function startVerification(env, { ref, sha }) {
       // A failed gate must fail the task, not park it waiting for someone to click retry.
       useGuidedFailure: false,
     });
-    const taskId = deployment.DeploymentServerTasks?.[0]?.ServerTaskId;
+    taskId = deployment.DeploymentServerTasks?.[0]?.ServerTaskId;
     if (!taskId) throw new Error("Octopus deployment response had no server task");
+    releaseVersion = release.ReleaseVersion;
     await env.TASKS.put(
       `${TASK_PREFIX}${taskId}`,
       JSON.stringify({ sha, ref, releaseVersion: release.ReleaseVersion, state: "pending" }),
       { expirationTtl: TASK_TTL_SECONDS },
     );
-    await reportStatus(env, sha, {
-      state: "pending",
-      description: "Octopus verification queued",
-      targetUrl: taskUrl(env, taskId),
-    });
-    return { taskId, releaseVersion: release.ReleaseVersion };
   } catch (error) {
-    // Best effort: if GitHub itself is the failure, the original error is the one to surface.
+    // Only an actual Octopus release/deployment or task-recording failure means
+    // verification could not start. GitHub posting is handled separately.
     await reportStatus(env, sha, {
       state: "error",
       description: "Could not start Octopus verification; inspect protected operator logs",
     }).catch(() => {});
     throw error;
   }
+
+  // The Octopus task already exists. A missing/expired GitHub status token must
+  // not overwrite it with a false "could not start" error. The task remains in
+  // KV and the scheduled reconciler can retry reporting on the next tick.
+  await reportStatus(env, sha, {
+    state: "pending",
+    description: "Octopus verification queued",
+    targetUrl: taskUrl(env, taskId),
+  });
+  return { taskId, releaseVersion };
 }
 
 // One cron tick: report every recorded task whose state changed; forget finished ones.
