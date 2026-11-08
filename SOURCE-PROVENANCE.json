@@ -95,11 +95,11 @@
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/src/worker.js": {
-      "sha": "da3265bc0d3d45a69022d4d31ca5d68ff29f6a35",
+      "sha": "c362087afc515b483ac10706973dfb6f674f1cdf",
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/test/status-relay.test.js": {
-      "sha": "0e96b79327bfcd12e46a379da4ecc1e26ebe11d5",
+      "sha": "8ff8b9eea237fd101acb684256e35b7ed65ce20c",
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/test/worker.test.js": {
@@ -251,7 +251,7 @@
       "mode": "100644"
     },
     "scripts/ci/octopus_status_relay.mjs": {
-      "sha": "9ed8a531e3ff208e3bd4bfea54a2ff0871b8d1f1",
+      "sha": "6813523e6189f08d016b8a4c9178583a77a24ef7",
       "mode": "100644"
     },
     "scripts/ci/octopus_verify.sh": {

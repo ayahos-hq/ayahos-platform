@@ -167,9 +167,16 @@ export async function postStatus(env, sha, { state, description, targetUrl }) {
 async function reportStatus(env, sha, status) {
   let recordError = null;
   try {
-    await env.TASKS.put(`${RESULT_PREFIX}${sha}`, JSON.stringify({ state: status.state }), {
-      expirationTtl: TASK_TTL_SECONDS,
-    });
+    // Keep a short description so GET /status/<sha> can diagnose Octopus start failures
+    // without exposing task links or secrets on the unauthenticated route.
+    await env.TASKS.put(
+      `${RESULT_PREFIX}${sha}`,
+      JSON.stringify({
+        state: status.state,
+        description: truncate(status.description || "", 140),
+      }),
+      { expirationTtl: TASK_TTL_SECONDS },
+    );
   } catch (error) {
     recordError = error;
   }
@@ -303,7 +310,11 @@ async function handleStatus(env, sha) {
   if (!record || !RESULT_STATES.has(record.state)) {
     return new Response("unknown commit\n", { status: 404, headers: NO_STORE });
   }
-  return Response.json({ sha, state: record.state }, { headers: NO_STORE });
+  const body = { sha, state: record.state };
+  if (typeof record.description === "string" && record.description) {
+    body.description = truncate(record.description, 140);
+  }
+  return Response.json(body, { headers: NO_STORE });
 }
 
 export default {

@@ -2,14 +2,15 @@ import { readFile } from "node:fs/promises";
 
 const FINAL_STATES = new Set(["success", "failure", "error"]);
 const SHA = /^[0-9a-f]{40}$/;
-const DEFAULT_STATUS_URL = "https://ayahos-octopus-github-bridge.fuaadabdullah.workers.dev";
+const DEFAULT_STATUS_URL = "https://ayahos-hq-verification-bridge.ayahos-hq.workers.dev";
+const DEFAULT_STATUS_CONTEXT = "octopus/hq-operator-verified";
 const DEFAULT_TIMEOUT_MS = 25 * 60 * 1000;
 const DEFAULT_POLL_MS = 20 * 1000;
 
-export function statusPayload(state, description, targetUrl) {
+export function statusPayload(state, description, targetUrl, context = DEFAULT_STATUS_CONTEXT) {
   return {
     state,
-    context: "octopus/verify",
+    context,
     description: description.slice(0, 140),
     target_url: targetUrl,
   };
@@ -58,6 +59,7 @@ export async function runRelay({
   repository,
   sha,
   statusBaseUrl = DEFAULT_STATUS_URL,
+  statusContext = DEFAULT_STATUS_CONTEXT,
   event,
   timeoutMs = DEFAULT_TIMEOUT_MS,
   pollMs = DEFAULT_POLL_MS,
@@ -71,12 +73,13 @@ export async function runRelay({
   if (!SHA.test(sha ?? "")) throw new Error("GITHUB_SHA must be a 40-character lowercase commit SHA");
 
   const statusUrl = `${statusBaseUrl.replace(/\/+$/, "")}/status/${sha}`;
+  const context = statusContext || DEFAULT_STATUS_CONTEXT;
   if (!isCanonicalRepository(event, repository)) {
     await postStatus({
       token,
       repository,
       sha,
-      payload: statusPayload("error", "Fork pushes are not verified by the Octopus bridge", statusUrl),
+      payload: statusPayload("error", "Fork pushes are not verified by the Octopus bridge", statusUrl, context),
     });
     return "error";
   }
@@ -85,7 +88,7 @@ export async function runRelay({
     token,
     repository,
     sha,
-    payload: statusPayload("pending", "Waiting for Octopus verification", statusUrl),
+    payload: statusPayload("pending", "Waiting for Octopus verification", statusUrl, context),
   });
 
   const deadline = now() + timeoutMs;
@@ -96,7 +99,7 @@ export async function runRelay({
         token,
         repository,
         sha,
-        payload: statusPayload(state, `Octopus verification ${state}`, statusUrl),
+        payload: statusPayload(state, `Octopus verification ${state}`, statusUrl, context),
       });
       return state;
     }
@@ -107,7 +110,7 @@ export async function runRelay({
     token,
     repository,
     sha,
-    payload: statusPayload("error", "Octopus verification timed out", statusUrl),
+    payload: statusPayload("error", "Octopus verification timed out", statusUrl, context),
   });
   return "error";
 }
@@ -121,6 +124,7 @@ async function main() {
     repository: process.env.GITHUB_REPOSITORY,
     sha: process.env.GITHUB_SHA,
     statusBaseUrl: process.env.OCTOPUS_STATUS_URL,
+    statusContext: process.env.OCTOPUS_STATUS_CONTEXT,
     event,
   });
   if (result !== "success") process.exitCode = 1;

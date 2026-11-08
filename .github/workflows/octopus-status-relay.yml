@@ -1,15 +1,12 @@
 name: Octopus status relay
 
-# Manual only, for now. The live Octopus bridge Worker is not configured for this repository (it
-# answers every push with "ignored: push is not for the configured repository" and
-# GET /status/<sha> returns 404), so an automatic pull_request trigger would poll for 25 minutes on
-# every PR and then publish octopus/verify=error. Restore the pull_request trigger only after the
-# owner has reconfigured the Worker; see deploy/octopus-github-bridge/README.md.
+# Manual only until AyahOS HQ Verification runs reliably on branch pushes.
+# Polls the HQ bridge and publishes octopus/hq-operator-verified (not the monorepo octopus/verify).
 on:
   workflow_dispatch:
     inputs:
       sha:
-        description: Full 40-character commit SHA to publish octopus/verify for (default is the dispatched ref's head)
+        description: Full 40-character commit SHA to publish octopus/hq-operator-verified for (default is the dispatched ref's head)
         required: false
         type: string
 
@@ -37,5 +34,6 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_SHA: ${{ inputs.sha || github.sha }}
           GITHUB_EVENT_PATH: ${{ github.event_path }}
-          OCTOPUS_STATUS_URL: https://ayahos-octopus-github-bridge.fuaadabdullah.workers.dev
+          OCTOPUS_STATUS_URL: https://ayahos-hq-verification-bridge.ayahos-hq.workers.dev
+          OCTOPUS_STATUS_CONTEXT: octopus/hq-operator-verified
         run: node scripts/ci/octopus_status_relay.mjs

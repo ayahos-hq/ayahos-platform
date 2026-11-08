@@ -7,7 +7,7 @@ const SHA = "a".repeat(40);
 test("builds a bounded GitHub status payload", () => {
   const payload = statusPayload("success", "x".repeat(300), "https://bridge.example/status/sha");
   assert.equal(payload.state, "success");
-  assert.equal(payload.context, "octopus/verify");
+  assert.equal(payload.context, "octopus/hq-operator-verified");
   assert.equal(payload.description.length, 140);
 });
 
