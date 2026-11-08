@@ -103,7 +103,7 @@
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/test/worker.test.js": {
-      "sha": "98536134f1cee830044ea0491857ff207817cfc5",
+      "sha": "ae2336997e4971e6effcf86eb4d2ceca0ca729cb",
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/wrangler.jsonc": {
