@@ -87,7 +87,7 @@
       "mode": "100644"
     },
     "deploy/oracle/goblin-oracle-node.service": {
-      "sha": "4c47ae617c7a7a507f3bb1ad03d9d258d6e028a4",
+      "sha": "9eb8bb769e1835fe3ee54ae4b640483d2a66f81f",
       "mode": "100644"
     },
     "deploy/oracle/goblin-workflow-scheduler.service": {
@@ -103,7 +103,7 @@
       "mode": "100644"
     },
     "deploy/oracle/oracle-node.env.example": {
-      "sha": "93ca8b4d3308054e0f33e3cd80db586fc55fbf11",
+      "sha": "d086ab7e9dae2a5658d9e1eee26a8d1b9b1d3e38",
       "mode": "100644"
     },
     "deploy/oracle/workflow.env.example": {
@@ -183,7 +183,7 @@
       "mode": "100644"
     },
     "docs/infrastructure/oracle-node-agent.md": {
-      "sha": "927eb590efc99daf1100e8043c3e840760012879",
+      "sha": "9acc1118ee9394cde3ab66eb757b1fadbab527e4",
       "mode": "100644"
     },
     "docs/infrastructure/render-service-inventory.md": {
@@ -276,7 +276,8 @@
     "Includes current monorepo Octopus definitions for reference, not a functional multi-repository pipeline",
     "Octopus project, webhook bridge, Cloudflare, Vercel, Render and Oracle integrations remain attached to original source until explicit cutover",
     "No actual secrets or provider credentials intentionally transferred",
-    "Documentation claiming a live bridge is historical, not verified by this extraction"
+    "Documentation claiming a live bridge is historical, not verified by this extraction",
+    "2026-11-07: renamed Oracle systemd dependency goblin-core -> ayah-core in service/docs/env example; HQ-canonical README status."
   ],
   "verification": {
     "source_tree_sha": "verified",
