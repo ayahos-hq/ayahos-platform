@@ -275,7 +275,7 @@
       "mode": "100644"
     },
     "deploy/model-reconciler/wrangler.jsonc": {
-      "sha": "5e5681f4a8e13f17ef6c0ea7ecc24d09abb06339",
+      "sha": "776574a6ab1badc4bf8c0bc01e6e5a311d36a282",
       "mode": "100644"
     },
     "deploy/model-reconciler/src/worker.js": {
@@ -294,7 +294,8 @@
     "No actual secrets or provider credentials intentionally transferred",
     "Documentation claiming a live bridge is historical, not verified by this extraction",
     "2026-11-07: renamed Oracle systemd dependency goblin-core -> ayah-core in service/docs/env example; HQ-canonical README status.",
-    "2026-11-07: add deploy/model-reconciler Cloudflare Cron worker (issue #6 narrow model/health reconciler); HQ-owned, not Dual_Lineage import."
+    "2026-11-07: add deploy/model-reconciler Cloudflare Cron worker (issue #6 narrow model/health reconciler); HQ-owned, not Dual_Lineage import.",
+    "2026-11-08: re-pin model-reconciler wrangler.jsonc after env-structure correction commits."
   ],
   "verification": {
     "source_tree_sha": "verified",
