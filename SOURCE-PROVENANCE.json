@@ -95,7 +95,7 @@
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/src/worker.js": {
-      "sha": "c362087afc515b483ac10706973dfb6f674f1cdf",
+      "sha": "36646ec0a4327d7f411ea061d0100b35a909d0c5",
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/test/status-relay.test.js": {
