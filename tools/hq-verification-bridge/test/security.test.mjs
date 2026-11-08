@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
-import worker, { startVerification, statusForTask } from "../src/worker.js";
+import worker, { reconcile, startVerification, statusForTask } from "../src/worker.js";
 
 const SHA = "a".repeat(40);
 const originalFetch = globalThis.fetch;
@@ -22,6 +22,10 @@ function bridgeEnv() {
       TASKS: {
         get: async (key) => store.get(key) ?? null,
         put: async (key, value) => store.set(key, value),
+        delete: async (key) => store.delete(key),
+        list: async ({ prefix, limit }) => ({
+          keys: [...store.keys()].filter((key) => key.startsWith(prefix)).slice(0, limit).map((name) => ({ name })),
+        }),
       },
     },
     store,
@@ -88,6 +92,39 @@ test("GitHub status rejection must not falsely mark an already-created Octopus t
   assert.equal(posts[0].state, "pending");
   assert.deepEqual(JSON.parse(store.get(`result:${SHA}`)), { state: "pending" });
   assert.equal(JSON.parse(store.get("task:ServerTasks-42")).sha, SHA);
+});
+
+test("reconciler publishes success only after Octopus task success when GitHub status posting recovers", async () => {
+  const { env, store } = bridgeEnv();
+  const statusPosts = [];
+  let githubAvailable = false;
+  globalThis.fetch = async (url, options = {}) => {
+    const path = new URL(url).pathname;
+    if (path.endsWith("/releases/create/v1")) {
+      return Response.json({ ReleaseId: "Releases-43", ReleaseVersion: "1.0.43" });
+    }
+    if (path.endsWith("/deployments/create/untenanted/v1")) {
+      return Response.json({ DeploymentServerTasks: [{ ServerTaskId: "ServerTasks-43" }] });
+    }
+    if (path.endsWith("/tasks/ServerTasks-43")) {
+      return Response.json({ State: "Success" });
+    }
+    if (String(url).startsWith("https://api.github.com/")) {
+      statusPosts.push(JSON.parse(options.body));
+      return new Response("{}", { status: githubAvailable ? 201 : 403 });
+    }
+    throw new Error("Unexpected external request");
+  };
+  await assert.rejects(startVerification(env, { ref: "refs/heads/fixture", sha: SHA }), /HTTP 403/);
+  assert.equal(JSON.parse(store.get(`result:${SHA}`)).state, "pending");
+  assert.ok(store.has("task:ServerTasks-43"));
+
+  githubAvailable = true;
+  assert.deepEqual(await reconcile(env), [{ taskId: "ServerTasks-43", state: "success" }]);
+  assert.deepEqual(statusPosts.map((post) => post.state), ["pending", "success"]);
+  assert.equal(statusPosts[1].context, "octopus/hq-operator-verified/preview");
+  assert.deepEqual(JSON.parse(store.get(`result:${SHA}`)), { state: "success" });
+  assert.equal(store.has("task:ServerTasks-43"), false);
 });
 
 test("public status route returns only state, never recorded diagnostic fields", async () => {
