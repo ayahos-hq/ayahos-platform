@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "kind": "observed-heads-refresh",
+  "snapshot_utc": "2026-11-08T03:20:00Z",
+  "note": "Source-only SHA inventory. Not a path-level drift audit and not release acceptance. Artifacts remain null. Octopus/hq-operator-verified still pending. No cutover.",
+  "cloudflare": {
+    "ayahos_hq_account_id": "265071fc5a2ac8bbe85e2bd724361080",
+    "workers": [
+      "ayahos-hq-verification-bridge",
+      "ayahos-model-reconciler"
+    ],
+    "forge_tm_ayahos_workers": "deleted",
+    "forge_tm_remaining_non_ayahos": [
+      "goblin-assistant-edge",
+      "goblin-assistant-edge-production",
+      "goblin-emergency-fallback"
+    ]
+  },
+  "repositories": {
+    "ayahos-site": {
+      "ref": "main",
+      "git_sha": "73b24e44cf006ac80cfc4e0abd618882f3b853b1"
+    },
+    "ayahos-core": {
+      "ref": "main",
+      "git_sha": "ed01c0514a00e854ee149a90e2979f9068d23ce8"
+    },
+    "ayahos-admin": {
+      "ref": "main",
+      "git_sha": "5d9b269aa052127d4d911d4cef82a118121dc302"
+    },
+    "ayahos-platform": {
+      "ref": "docs/hq-canonical",
+      "git_sha": "09a5321cd0122af34b585cf77b6ec2ec0161731c",
+      "main_git_sha": "094328e66a90c7d4f629db8c31e1b1d0c7bca246",
+      "note": "main behind open PR #50 (verify + Workers Builds green; merge blocked on octopus/hq-operator-verified)"
+    },
+    "ayahos-workloads": {
+      "ref": "main",
+      "git_sha": "f9d3d5d30c14c09205e8efba8faff5446eef1f21",
+      "core_schema_pin_commit": "ed01c0514a00e854ee149a90e2979f9068d23ce8",
+      "core_schema_sql_blobs": "unchanged-through-023",
+      "core_schema_pin_pr": "https://github.com/ayahos-hq/ayahos-workloads/pull/24"
+    },
+    "AyahOS_Dual_Lineage": {
+      "ref": "main",
+      "git_sha": "97ad888059095ffb123810af57b35b3075306750",
+      "role": "historical-provenance-only"
+    }
+  },
+  "local_checkout_notes": {
+    "ayahos-core": "local WIP on feat/dye-practical-criteria preserved; not reset",
+    "ayahos-workloads": "local-only weight-inventory commit parked on backup/local-qwen7b-weight-inventory; main reset to origin/main",
+    "ayahos-site": "fast-forwarded to origin/main",
+    "ayahos-admin": "fast-forwarded to origin/main",
+    "ayahos-platform": "on docs/hq-canonical PR tip"
+  },
+  "path_level_drift_audit": {
+    "status": "stale-snapshot-retained",
+    "path": "docs/release-candidates/hq-drift-20261024-linux-source-refresh.json",
+    "summary": {
+      "monorepo_only": 75,
+      "hq_only": 47,
+      "both_diverged": 13,
+      "changed_paths": 135
+    },
+    "note": "Full path re-audit not regenerated in this refresh; use observed heads + per-component review for cutover gating."
+  }
+}
