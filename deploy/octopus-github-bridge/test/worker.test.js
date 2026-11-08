@@ -182,7 +182,7 @@ describe("startVerification", () => {
       ...OCTOPUS_ROUTES,
       "POST /api/Spaces-1/releases/create/v1": { status: 400, json: { ErrorMessage: "channel rule" } },
     });
-    await assert.rejects(startVerification(env, { ref: "refs/heads/feature", sha: SHA }), /returned 400/);
+    await assert.rejects(startVerification(env, { ref: "refs/heads/feature", sha: SHA }), /returned HTTP 400/);
     const status = calls.at(-1);
     assert.equal(status.pathname, STATUS_PATH);
     assert.equal(status.body.state, "error");
@@ -262,7 +262,7 @@ describe("reconcile", () => {
   });
 
   it("does not expose task ErrorMessage to GitHub or the public KV record", async () => {
-    const env = makeEnv();
+    // Use the task seeded by reconcile.beforeEach so this exercises an actual completion.
     const calls = mockFetch({
       "GET /api/Spaces-1/tasks/ServerTasks-77": {
         json: { State: "Failed", ErrorMessage: "private connection password=hunter2" },
