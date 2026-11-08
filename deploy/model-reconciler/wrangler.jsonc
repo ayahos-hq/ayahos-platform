@@ -1,1 +1,1 @@
-{"name": "ayahos-model-reconciler", "main": "src/worker.js", "compatibility_date": "2026-10-01", "vars": {"CORE_API_URL": "https://api.ayahos.app"}, "env": {"production": {"CORE_API_KEY": "${CORE_API_KEY}"}}, "triggers": {"crons": ["*/5 * * * *"]}}
+{"name": "ayahos-model-reconciler", "main": "src/worker.js", "compatibility_date": "2026-10-01", "vars": {"CORE_API_URL": "https://api.ayahos.app"}, "env": {"production": {"vars": {"CORE_API_KEY": "${CORE_API_KEY}"}}}, "triggers": {"crons": ["*/5 * * * *"]}}
