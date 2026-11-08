@@ -4,7 +4,7 @@
   "source_repository": "fuaadabdullah/AyahOS_Dual_Lineage",
   "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
   "target_repository": "ayahos-hq/ayahos-platform",
-  "source_file_count": 70,
+  "source_file_count": 75,
   "source_files": {
     ".octopus/deployment_process.ocl": {
       "sha": "10f95921f4199a69c09e40fe313fa46bcbd579cd",
@@ -46,6 +46,30 @@
       "sha": "4300ac78982d0fda011d5ee10c2521ebb78798d2",
       "mode": "100644"
     },
+    "deploy/hq-verification-bridge/BUILD_COMMANDS.md": {
+      "sha": "0592099e0d7b6d1406b1c92f5ad27bcd1eef9136",
+      "mode": "100644"
+    },
+    "deploy/hq-verification-bridge/wrangler.jsonc": {
+      "sha": "11ce287542b9d3b9a5f307c5a1ce106730d439de",
+      "mode": "100644"
+    },
+    "deploy/model-reconciler/README.md": {
+      "sha": "c2d6f2e21c9b6bf4860dba4d96774c6d65253434",
+      "mode": "100644"
+    },
+    "deploy/model-reconciler/src/worker.js": {
+      "sha": "0a8bf4add25bc49bc69ff7beaad2561de418201d",
+      "mode": "100644"
+    },
+    "deploy/model-reconciler/test/worker.test.js": {
+      "sha": "885f8e70bb4a03dfad06cd6ca2c11dfa3c177058",
+      "mode": "100644"
+    },
+    "deploy/model-reconciler/wrangler.jsonc": {
+      "sha": "997ad10f82be9fc67d0d2c0694fb69000f5d1819",
+      "mode": "100644"
+    },
     "deploy/node-001/llama-swap-undermind.yaml": {
       "sha": "76dc2689ef3d3e4b195618b318b2a974599b045a",
       "mode": "100644"
@@ -63,7 +87,7 @@
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/README.md": {
-      "sha": "0fc056fd3e9d6622abbdf070236004f37984aa76",
+      "sha": "2d81d28a909dc4d1bcefe9e7a9e3c651892bd734",
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/package.json": {
@@ -72,6 +96,10 @@
     },
     "deploy/octopus-github-bridge/src/worker.js": {
       "sha": "da3265bc0d3d45a69022d4d31ca5d68ff29f6a35",
+      "mode": "100644"
+    },
+    "deploy/octopus-github-bridge/test/status-relay.test.js": {
+      "sha": "0e96b79327bfcd12e46a379da4ecc1e26ebe11d5",
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/test/worker.test.js": {
@@ -175,7 +203,7 @@
       "mode": "100644"
     },
     "docs/infrastructure/octopus-ci-verification.md": {
-      "sha": "4c4904bf8925c65d6a2334c0b2aabed6657dbe40",
+      "sha": "1be930ef7b6ee3f8abc1be8c0b4eed244728c5e6",
       "mode": "100644"
     },
     "docs/infrastructure/operational-collection.md": {
@@ -202,6 +230,10 @@
       "sha": "dd41fd198a830779a7b69676aec24a20148baa58",
       "mode": "100755"
     },
+    "scripts/ci/check_hq_worker_build.py": {
+      "sha": "02327524d87cf924e4406bc9bd2310a06b0c5310",
+      "mode": "100644"
+    },
     "scripts/ci/container-smoke.sh": {
       "sha": "f4fdaec1a49349dc9fc5221a5d91937a923b9565",
       "mode": "100644"
@@ -216,6 +248,10 @@
     },
     "scripts/ci/minilm-train.sh": {
       "sha": "1ea4147e23e9243f0e68e40f4e0c2b704228c63a",
+      "mode": "100644"
+    },
+    "scripts/ci/octopus_status_relay.mjs": {
+      "sha": "9ed8a531e3ff208e3bd4bfea54a2ff0871b8d1f1",
       "mode": "100644"
     },
     "scripts/ci/octopus_verify.sh": {
@@ -269,22 +305,6 @@
     "scripts/db/test_rehearse_recovery.py": {
       "sha": "ba7fca942f7f9e9cf1ad3106eef772ca11a5b6aa",
       "mode": "100644"
-    },
-    "deploy/model-reconciler/README.md": {
-      "sha": "c2d6f2e21c9b6bf4860dba4d96774c6d65253434",
-      "mode": "100644"
-    },
-    "deploy/model-reconciler/wrangler.jsonc": {
-      "sha": "776574a6ab1badc4bf8c0bc01e6e5a311d36a282",
-      "mode": "100644"
-    },
-    "deploy/model-reconciler/src/worker.js": {
-      "sha": "0a8bf4add25bc49bc69ff7beaad2561de418201d",
-      "mode": "100644"
-    },
-    "deploy/model-reconciler/test/worker.test.js": {
-      "sha": "885f8e70bb4a03dfad06cd6ca2c11dfa3c177058",
-      "mode": "100644"
     }
   },
   "notes": [
@@ -295,7 +315,8 @@
     "Documentation claiming a live bridge is historical, not verified by this extraction",
     "2026-11-07: renamed Oracle systemd dependency goblin-core -> ayah-core in service/docs/env example; HQ-canonical README status.",
     "2026-11-07: add deploy/model-reconciler Cloudflare Cron worker (issue #6 narrow model/health reconciler); HQ-owned, not Dual_Lineage import.",
-    "2026-11-08: re-pin model-reconciler wrangler.jsonc after env-structure correction commits."
+    "2026-11-08: re-pin model-reconciler wrangler.jsonc after env-structure correction commits.",
+    "2026-11-08: migrate HQ Workers to Cloudflare AyahOS_HQ (265071fc\u2026); add deploy/hq-verification-bridge; remove AyahOS resources from deprecated GoblinOS/ForgeTM."
   ],
   "verification": {
     "source_tree_sha": "verified",
