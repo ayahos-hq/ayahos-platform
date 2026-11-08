@@ -37,10 +37,10 @@
     },
     "ayahos-workloads": {
       "ref": "main",
-      "git_sha": "f9d3d5d30c14c09205e8efba8faff5446eef1f21",
+      "git_sha": "a2ebf7ce02181ca5225886ead50e7258137d0457",
       "core_schema_pin_commit": "ed01c0514a00e854ee149a90e2979f9068d23ce8",
       "core_schema_sql_blobs": "unchanged-through-023",
-      "core_schema_pin_pr": "https://github.com/ayahos-hq/ayahos-workloads/pull/24"
+      "core_schema_pin_pr": "https://github.com/ayahos-hq/ayahos-workloads/pull/24 (merged)"
     },
     "AyahOS_Dual_Lineage": {
       "ref": "main",
