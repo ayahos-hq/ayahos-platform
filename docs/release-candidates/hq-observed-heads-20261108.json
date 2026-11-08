@@ -31,7 +31,7 @@
     },
     "ayahos-platform": {
       "ref": "docs/hq-canonical",
-      "git_sha": "09a5321cd0122af34b585cf77b6ec2ec0161731c",
+      "git_sha": "d349dc3f1ff1d9b55acec0040bca7e1d5f0dec53",
       "main_git_sha": "094328e66a90c7d4f629db8c31e1b1d0c7bca246",
       "note": "main behind open PR #50 (verify + Workers Builds green; merge blocked on octopus/hq-operator-verified)"
     },
