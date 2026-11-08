@@ -103,7 +103,7 @@
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/test/worker.test.js": {
-      "sha": "c83bc96ad976f043e7479f79213b1bf9ff8f2db6",
+      "sha": "98536134f1cee830044ea0491857ff207817cfc5",
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/wrangler.jsonc": {
@@ -316,7 +316,7 @@
     "2026-11-07: renamed Oracle systemd dependency goblin-core -> ayah-core in service/docs/env example; HQ-canonical README status.",
     "2026-11-07: add deploy/model-reconciler Cloudflare Cron worker (issue #6 narrow model/health reconciler); HQ-owned, not Dual_Lineage import.",
     "2026-11-08: re-pin model-reconciler wrangler.jsonc after env-structure correction commits.",
-    "2026-11-08: migrate HQ Workers to Cloudflare AyahOS_HQ (265071fc\u2026); add deploy/hq-verification-bridge; remove AyahOS resources from deprecated GoblinOS/ForgeTM."
+    "2026-11-08: migrate HQ Workers to Cloudflare AyahOS_HQ (265071fc…); add deploy/hq-verification-bridge; remove AyahOS resources from deprecated GoblinOS/ForgeTM."
   ],
   "verification": {
     "source_tree_sha": "verified",
