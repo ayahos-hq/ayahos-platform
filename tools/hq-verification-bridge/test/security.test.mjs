@@ -59,7 +59,7 @@ test("a rejected Octopus release does not forward API response contents to GitHu
   assert.equal(posts.length, 1);
   assert.equal(posts[0].state, "error");
   assert.equal(posts[0].context, "octopus/hq-operator-verified/preview");
-  assert.doesNotMatch(JSON.stringify(posts[0]), /sensitive_password_value_456/);
+  assert.doesNotMatch(JSON.stringify(posts[0]), /sensitive_password|ErrorMessage/);
   assert.deepEqual(JSON.parse(store.get(`result:${SHA}`)), { state: "error" });
 });
 
