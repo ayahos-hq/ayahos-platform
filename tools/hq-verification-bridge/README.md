@@ -5,14 +5,18 @@ Worker in the **AyahOS_HQ** Cloudflare account. It is the Octopus/GitHub
 verification bridge for the five `ayahos-hq` repositories, posting the
 `octopus/hq-operator-verified` commit status. The canonical status context,
 Octopus project, and repository values are in `wrangler.jsonc` and are
-guarded by `scripts/ci/check_hq_worker_build.py`.
+guarded by the `check_hq_worker_build.py` next to it.
 
-This directory exists because the Workers Builds trigger for this Worker
+This directory lives under `tools/` on purpose. The platform repository's
+`deploy/` and `scripts/` trees are a pinned extraction
+(`SOURCE-PROVENANCE.json`: exactly 66 files from the monorepo source
+commit, enforced by `scripts/verify-platform.py`), so HQ-only build inputs
+must not be added there. The Workers Builds trigger for this Worker
 (build + deploy dry-run on every push to `main` of `ayahos-hq/ayahos-platform`)
-references this manifest. The trigger was configured on 2026-10-25 but the
-referenced files were never committed, so every triggered build failed at
-the first command (`scripts/ci/check_hq_worker_build.py` missing). See
-ayahos-hq/ayahos-platform issue #47.
+was originally configured on 2026-10-25 pointing into the pinned tree at
+files that were never committed, so every triggered build failed at the
+first command; the trigger was corrected on 2026-11-07 to reference this
+directory instead. See ayahos-hq/ayahos-platform issue #47.
 
 Boundaries:
 

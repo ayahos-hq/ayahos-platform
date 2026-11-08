@@ -22,7 +22,7 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-BRIDGE_DIR = REPO_ROOT / "deploy" / "hq-verification-bridge"
+BRIDGE_DIR = Path(__file__).resolve().parent
 MANIFEST = BRIDGE_DIR / "wrangler.jsonc"
 
 EXPECTED_NAME = "ayahos-hq-verification-bridge"
@@ -98,7 +98,9 @@ def main(argv: list[str]) -> int:
 
     main_rel = config.get("main", "")
     if not main_rel or not (BRIDGE_DIR / main_rel).is_file():
-        failures.append(f"main module missing: deploy/hq-verification-bridge/{main_rel}")
+        failures.append(
+            f"main module missing: {BRIDGE_DIR.relative_to(REPO_ROOT)}/{main_rel}"
+        )
 
     if not config.get("compatibility_date"):
         failures.append("compatibility_date missing")
