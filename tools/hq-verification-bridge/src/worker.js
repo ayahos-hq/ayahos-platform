@@ -108,7 +108,7 @@ export function statusForTask(task) {
     case "Success":
       return { state: "success", description: "All required Octopus gates passed" };
     case "Failed":
-      return { state: "failure", description: truncate(`Octopus gates failed: ${task.ErrorMessage || "see task log"}`) };
+      return { state: "failure", description: "Octopus gates failed; see protected task log" };
     case "TimedOut":
       return { state: "failure", description: "Octopus task timed out" };
     case "Canceled":
@@ -117,7 +117,7 @@ export function statusForTask(task) {
       if (task.HasPendingInterruptions) {
         return { state: "pending", description: "Octopus task is waiting on a manual intervention" };
       }
-      return { state: "pending", description: `Octopus task ${String(task.State || "queued").toLowerCase()}` };
+      return { state: "pending", description: "Octopus verification in progress" };
   }
 }
 
@@ -131,10 +131,12 @@ async function octopus(env, method, path, body) {
     },
     body: body ? JSON.stringify(body) : undefined,
   });
-  const text = await response.text();
+  // Octopus response bodies can contain confidential operator diagnostics.
+  // Do not include them in public GitHub statuses or logged errors.
   if (!response.ok) {
-    throw new Error(`Octopus ${method} ${path.split("?")[0]} returned ${response.status}: ${truncate(text, 300)}`);
+    throw new Error(`Octopus ${method} ${path.split("?")[0]} returned HTTP ${response.status}`);
   }
+  const text = await response.text();
   return text ? JSON.parse(text) : {};
 }
 
@@ -156,7 +158,7 @@ export async function postStatus(env, sha, { state, description, targetUrl }) {
     }),
   });
   if (!response.ok) {
-    throw new Error(`GitHub status for ${sha} returned ${response.status}: ${truncate(await response.text(), 300)}`);
+    throw new Error(`GitHub status for ${sha} returned HTTP ${response.status}`);
   }
 }
 
@@ -216,7 +218,7 @@ export async function startVerification(env, { ref, sha }) {
     );
     await reportStatus(env, sha, {
       state: "pending",
-      description: `Octopus release ${release.ReleaseVersion} queued`,
+      description: "Octopus verification queued",
       targetUrl: taskUrl(env, taskId),
     });
     return { taskId, releaseVersion: release.ReleaseVersion };
@@ -224,7 +226,7 @@ export async function startVerification(env, { ref, sha }) {
     // Best effort: if GitHub itself is the failure, the original error is the one to surface.
     await reportStatus(env, sha, {
       state: "error",
-      description: truncate(`Could not start Octopus verification: ${error.message}`),
+      description: "Could not start Octopus verification; inspect protected operator logs",
     }).catch(() => {});
     throw error;
   }
