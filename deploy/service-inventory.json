@@ -80,7 +80,8 @@
       "environment_contract": [
         "OCI_CONFIG_B64",
         "OCI_PRIVATE_KEY_B64",
-        "ORACLE_MCP_BEARER_TOKEN"
+        "ORACLE_MCP_BEARER_TOKEN",
+        "DUAL_LINEAGE_RAG_ENABLED"
       ],
       "managed_by": "oracle-mcp-requirements.txt"
     },
@@ -93,7 +94,8 @@
       "health_path": "/health",
       "environment_contract": [
         "SILICONFLOW_API_KEY",
-        "SILICONFLOW_MCP_BEARER_TOKEN"
+        "SILICONFLOW_MCP_BEARER_TOKEN",
+        "DUAL_LINEAGE_RAG_ENABLED"
       ],
       "managed_by": "integrations/siliconflow-mcp/requirements.txt"
     }

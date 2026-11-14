@@ -1,0 +1,13 @@
+{
+  "$schema": "https://unpkg.com/wrangler/config-schema.json",
+  "name": "ayahos-node001-rag-gateway",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-10-23",
+  "workers_dev": false,
+  "vpc_services": [
+    {
+      "binding": "PRIVATE_EMBEDDER",
+      "service_id": "01a167d6-2244-7191-9c3b-62b229f6bd1a"
+    }
+  ]
+}

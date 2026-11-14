@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
-"""Rehearse recovery of a private R2 ciphertext in an operator-provided local DB."""
+"""Rehearse recovery of a private R2 ciphertext in an operator-provided local DB.
 
+Caller independently provisions an empty disposable PG17 database and retrieves
+the age decrypt identity from separate secure escrow. No plaintext dump files,
+database creation/deletion or writes to production are performed.
+"""
 from __future__ import annotations
 
 import hashlib
@@ -18,7 +22,7 @@ from restore_verify import target_environment, verify_restore
 
 
 class RehearsalError(RuntimeError):
-    """Error safe for operator logs; credentials are never included."""
+    """Error safe for operator logs (never includes a credential or full URI)."""
 
 
 def _required(env: dict[str, str], name: str) -> str:
@@ -38,17 +42,20 @@ def rehearse(env: dict[str, str]) -> dict[str, object]:
     identity = Path(_required(env, "AYAHOS_RESTORE_AGE_IDENTITY_FILE"))
     target = _required(env, "AYAHOS_RESTORE_DATABASE_URL")
     if not re.fullmatch(r"[a-z]{20}", project):
-        raise RehearsalError("invalid expected project reference")
+        raise RehearsalError("invalid expected Supabase project reference")
     if not re.fullmatch(
-        r"[a-zA-Z0-9][a-zA-Z0-9_-]*:[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*", remote
+        r"[a-zA-Z0-9][a-zA-Z0-9_-]*:[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*",
+        remote,
     ):
         raise RehearsalError("require an explicit nonlocal rclone remote:bucket/path")
-    if remote.split(":", 1)[0].lower() in {"local", "file", "ftp", "sftp"} or any(
-        part in {".", ".."} for part in remote.split(":", 1)[1].split("/")
+    if (
+        remote.split(":", 1)[0].lower() in {"local", "file", "ftp", "sftp"}
+        or any(segment in {".", ".."} for segment in remote.split(":", 1)[1].split("/"))
     ):
         raise RehearsalError("encrypted archive source must be approved private object storage")
     match = re.fullmatch(
-        r"ayahos-([a-z]{20})-(\d{8}T\d{6}Z)-([0-9a-f]{8})\.dump\.age", archive
+        r"ayahos-([a-z]{20})-(\d{8}T\d{6}Z)-([0-9a-f]{8})\.dump\.age",
+        archive,
     )
     if not match or match.group(1) != project:
         raise RehearsalError("encrypted backup filename does not match expected project")
@@ -65,17 +72,23 @@ def rehearse(env: dict[str, str]) -> dict[str, object]:
     if (
         not identity.is_file()
         or identity.is_symlink()
-        or stat.S_IMODE(identity.stat().st_mode) & 0o077
+        or (stat.S_IMODE(identity.stat().st_mode) & 0o077)
     ):
         raise RehearsalError("private age identity must be a local owner-only regular file")
 
+    # Secrets are injected via operator-controlled environment/rclone config,
+    # never through shell commands, process arguments, or diagnostics.
     with tempfile.TemporaryDirectory(prefix="ayahos-rehearsal-") as temporary:
         os.chmod(temporary, 0o700)
         encrypted = Path(temporary) / archive
+        # Build a minimal child environment instead of forwarding provider
+        # credentials, database secrets, or age identities to rclone.
+        # Permit RCLONE_* configuration and AWS_* / R2_* if an explicitly
+        # configured R2 backend uses environment-provided object credentials.
         permitted = {
             "PATH", "HOME", "USER", "LOGNAME", "TMPDIR", "TMP", "TEMP",
-            "XDG_CONFIG_HOME", "LANG", "LC_ALL", "SSL_CERT_FILE", "SSL_CERT_DIR",
-            "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY",
+            "XDG_CONFIG_HOME", "LANG", "LC_ALL", "SSL_CERT_FILE",
+            "SSL_CERT_DIR", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY",
         }
         transfer_env = {
             key: value
@@ -84,11 +97,8 @@ def rehearse(env: dict[str, str]) -> dict[str, object]:
         }
         result = subprocess.run(
             ["rclone", "copyto", f"{remote}/{archive}", str(encrypted)],
-            env=transfer_env,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            check=False,
-            timeout=180,
+            env=transfer_env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            check=False, timeout=180,
         )
         if result.returncode != 0 or not encrypted.is_file() or encrypted.is_symlink():
             raise RehearsalError("encrypted object download failed")

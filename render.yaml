@@ -1,0 +1,491 @@
+services:
+  # Render hosts the lightweight control plane only. Model execution and
+  # durable background workers belong on Node 1 or separately managed cloud
+  # infrastructure; see deploy/oracle/ for the workflow service units.
+  - type: web
+    name: goblin-dual-lineage-api
+    # Octopus exact-SHA verification is required before any production rollout.
+    # Manual deployment only; never ship a PR or commit directly to Render.
+    autoDeployTrigger: 'off'
+    runtime: docker
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: virginia
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      # Cutover completed 2026-10-23: migration gate passed (schema 22 applied to
+      # supabase-copper-island and verified in-database); durable mode is postgres.
+      - key: DUAL_LINEAGE_DATABASE_MODE
+        value: postgres
+      # Optional startup retention remains disabled until off-site recovery is verified.
+      # Use a separately scheduled, bounded retention job after the cutover.
+      - key: DUAL_LINEAGE_SPINE_RETENTION_ON_START
+        value: "false"
+      - key: DUAL_LINEAGE_RUNTIME_API_KEY
+        sync: false
+      # Registry rollout switches remain explicitly disabled until each staged
+      # promotion has its own authenticated evidence and rollback proof.
+      - key: DUAL_LINEAGE_REGISTRY_DISCOVERY_ENABLED
+        value: "false"
+      - key: DUAL_LINEAGE_REGISTRY_PUBLISHING_ENABLED
+        value: "false"
+      - key: DUAL_LINEAGE_REGISTRY_ROUTING_ENABLED
+        value: "false"
+      - key: DUAL_LINEAGE_REGISTRY_EXECUTION_ENABLED
+        value: "false"
+      - key: DUAL_LINEAGE_SITE_API_KEY
+        sync: false
+      - key: DUAL_LINEAGE_SITE_API_KEY_SECONDARY
+        sync: false
+      - key: DUAL_LINEAGE_ENV
+        value: production
+      - key: DUAL_LINEAGE_ALLOW_UNAUTHENTICATED_LOCAL
+        value: "false"
+      - key: DD_API_KEY
+        sync: false
+      - key: DD_SITE
+        value: datadoghq.com
+      - key: DD_ENV
+        value: production
+      - key: DD_SERVICE
+        value: goblin-dual-lineage-api
+      - key: DUAL_LINEAGE_RATE_LIMIT_ENABLED
+        value: "true"
+      - key: DUAL_LINEAGE_RATE_LIMIT_WINDOW_SECONDS
+        value: "60"
+      - key: DUAL_LINEAGE_RATE_LIMIT_COGNITION_PER_WINDOW
+        value: "30"
+      - key: DUAL_LINEAGE_RATE_LIMIT_OPERATOR_PER_WINDOW
+        value: "60"
+      - key: DUAL_LINEAGE_RATE_LIMIT_PROVIDER_COST_PER_WINDOW
+        value: "30"
+      - key: DUAL_LINEAGE_RATE_LIMIT_FAILURES_PER_WINDOW
+        value: "5"
+      - key: DUAL_LINEAGE_RATE_LIMIT_MUTATION_PER_WINDOW
+        value: "120"
+      - key: DUAL_LINEAGE_RATE_LIMIT_READ_PER_WINDOW
+        value: "600"
+      - key: DUAL_LINEAGE_RATE_LIMIT_HEARTBEAT_PER_WINDOW
+        value: "240"
+      - key: DUAL_LINEAGE_RATE_LIMIT_MAX_BUCKETS
+        value: "10000"
+      - key: DUAL_LINEAGE_RATE_LIMIT_TRUST_FORWARDED_FOR
+        value: "false"
+      - key: PUBLIC_CHAT_RATE_LIMIT_PER_MINUTE
+        value: "10"
+      - key: PUBLIC_CHAT_DEADLINE_MS
+        value: "270000"
+      # The control proxy holds one Puma thread and one pooled API connection per open stream
+      # for its whole length; answers can now stream for minutes, so allow 16 at once.
+      - key: PUMA_MAX_THREADS
+        value: "16"
+      - key: DUAL_LINEAGE_CORE_CONNECTION_POOL_SIZE
+        value: "16"
+      - key: DUAL_LINEAGE_SSE_HEARTBEAT_SECONDS
+        value: "15"
+      - key: DUAL_LINEAGE_HEALTH_PROBE_TIMEOUT_SECONDS
+        value: "2"
+      - key: DUAL_LINEAGE_INCIDENT_BUFFER_SIZE
+        value: "100"
+      - key: DUAL_LINEAGE_INCIDENT_RETENTION_DAYS
+        value: "30"
+      - key: DUAL_LINEAGE_PROVIDER_METRICS_MAX_ENTRIES
+        value: "50000"
+      - key: DUAL_LINEAGE_PROVIDER_METRICS_RETENTION_HOURS
+        value: "168"
+      - key: DUAL_LINEAGE_PERFORMANCE_METRICS_MAX_ENTRIES
+        value: "10000"
+      - key: DUAL_LINEAGE_PERFORMANCE_METRICS_RETENTION_HOURS
+        value: "168"
+      - key: DUAL_LINEAGE_NODE_OPERATOR_SECRET
+        sync: false
+      # Shared with the mounted Ruby ingestion/webhook gateway; the gateway
+      # falls back to DUAL_LINEAGE_NODE_OPERATOR_SECRET when this alias is unset.
+      - key: GITHUB_WEBHOOK_SECRET
+        sync: false
+      - key: GOBLIN_PROVIDER_WEBHOOK_SECRET
+        sync: false
+      - key: GOBLIN_PAYMENT_WEBHOOK_SECRET
+        sync: false
+      - key: GOBLIN_MONITORING_WEBHOOK_SECRET
+        sync: false
+      - key: GOBLIN_INGESTION_WEBHOOK_SECRET
+        sync: false
+      - key: GOBLIN_DEPLOYMENT_WEBHOOK_SECRET
+        sync: false
+      - key: DUAL_LINEAGE_CRITIC_USE_COMPUTE
+        value: "true"
+      - key: DUAL_LINEAGE_OPERATIONAL_SALT
+        sync: false
+      - key: DUAL_LINEAGE_OPERATIONAL_REVIEW_SECRET
+        sync: false
+      - key: DUAL_LINEAGE_OPERATIONAL_LEARNING_ENABLED
+        value: "true"
+      - key: DUAL_LINEAGE_SHADOW_ENABLED
+        value: "true"
+      # Free local baseline, no outbound MiniLM embedding requests or new cloud costs.
+      - key: DUAL_LINEAGE_SHADOW_BACKEND
+        value: bootstrap
+      - key: DUAL_LINEAGE_SHADOW_REMOTE_URL
+        sync: false
+      - key: DUAL_LINEAGE_SHADOW_REMOTE_SECRET
+        sync: false
+      - key: DUAL_LINEAGE_SHADOW_REMOTE_TIMEOUT_SECONDS
+        value: "8"
+      # Jev: real Jev inference stays off until the owner verifies Vercel AI Gateway
+      # free-credit eligibility and creates the dedicated budgeted key per
+      # docs/operations/jev-vercel-free-credits.md; flipping the two flags below
+      # to "true" + setting AI_GATEWAY_API_KEY is the whole activation.
+      # No-network audit hook; records content-free status=off Jev evidence in
+      # the Shared Spine; zero spend, zero egress.
+      - key: DUAL_LINEAGE_JEV_AUDIT_OFF_ENABLED
+        value: "true"
+      - key: DUAL_LINEAGE_JEV_VERCEL_ENABLED
+        value: "false"
+      - key: DUAL_LINEAGE_JEV_VERCEL_FREE_CREDITS_VERIFIED
+        value: "false"
+      - key: AI_GATEWAY_API_KEY
+        sync: false
+      # Free OpenCode Zen route: jev-1.13-free is a limited-time free promo on
+      # the Zen systemone endpoint; content-free metadata only, $0, and the
+      # runtime prefers this route when enabled. Kill switch is this flag.
+      - key: DUAL_LINEAGE_JEV_ZEN_ENABLED
+        value: "true"
+      - key: DUAL_LINEAGE_JEV_ZEN_API_KEY
+        sync: false
+      - key: DUAL_LINEAGE_RAG_ENABLED
+        value: "true"
+      # Single Render free API instance. For a multi-replica rollout set this
+      # above 1; the Python runtime then disables stale process-local RAG search.
+      - key: DUAL_LINEAGE_RAG_REPLICA_COUNT
+        value: "1"
+      - key: DUAL_LINEAGE_RAG_URL
+        value: http://127.0.0.1:8102
+      - key: DUAL_LINEAGE_RAG_SERVICE_TOKEN
+        generateValue: true
+      - key: DUAL_LINEAGE_RAG_DATABASE_URL
+        sync: false
+      - key: DUAL_LINEAGE_RAG_TOP_K
+        value: "4"
+      - key: DUAL_LINEAGE_RAG_CONFIDENCE_THRESHOLD
+        value: "0.2"
+      # Stay lexical by default: DashScope text-embedding-v4 can incur charges
+      # independently of Qwen chat free quotas. Enable the aliyun backend only
+      # after explicit spending authorization; see docs/operations/aliyun-recovery.md.
+      - key: DUAL_LINEAGE_RAG_EMBEDDING_BACKEND
+        value: none
+      - key: DUAL_LINEAGE_RAG_EMBEDDING_MODEL
+        value: text-embedding-v4
+      # Read by both the Python embedder and the Ruby service's pgvector column. Changing the
+      # model or size means re-ingesting documents.
+      - key: DUAL_LINEAGE_RAG_EMBEDDING_DIMENSIONS
+        value: "1024"
+      - key: DUAL_LINEAGE_RAG_PGVECTOR
+        value: auto
+      - key: DUAL_LINEAGE_ALLOW_CLOUD
+        value: "true"
+      - key: DUAL_LINEAGE_COMPUTE_ENABLED
+        value: "true"
+      - key: DUAL_LINEAGE_NODE001_REGISTRATION_SECRET
+        sync: false
+      - key: DUAL_LINEAGE_NODE_REGISTRATION_SECRET
+        sync: false
+      - key: DUAL_LINEAGE_NODE_INFERENCE_SECRET
+        sync: false
+      - key: DUAL_LINEAGE_NODE_ENDPOINT_ALLOWLIST
+        sync: false
+      - key: DUAL_LINEAGE_NODE_HEARTBEAT_TTL
+        value: "90"
+      - key: AWS_REGION
+        value: us-east-1
+      - key: AWS_BEDROCK_API_KEY
+        sync: false
+      - key: DUAL_LINEAGE_AWS_BEDROCK_OVERMIND_MODEL
+        value: openai.gpt-oss-20b-1:0
+      - key: DUAL_LINEAGE_AWS_BEDROCK_OVERMIND_CONTEXT
+        value: "128000"
+      - key: DUAL_LINEAGE_AWS_BEDROCK_OVERMIND_INPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_AWS_BEDROCK_OVERMIND_OUTPUT_USD_PER_M
+        sync: false
+      # Optional external provider credentials. Keep values in Render secrets;
+      # routes remain fail-closed until key, model, and token pricing are set.
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GOOGLE_AI_API_KEY
+        sync: false
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: SILICONFLOW_API_KEY
+        sync: false
+      - key: DASHSCOPE_API_KEY
+        sync: false
+      - key: TOGETHER_API_KEY
+        sync: false
+      - key: HUGGINGFACE_API_KEY
+        sync: false
+      - key: COHERE_API_KEY
+        sync: false
+      - key: OPENAI_ENDPOINT
+        sync: false
+      - key: ANTHROPIC_ENDPOINT
+        sync: false
+      - key: GEMINI_ENDPOINT
+        sync: false
+      - key: DEEPSEEK_ENDPOINT
+        sync: false
+      - key: GROQ_ENDPOINT
+        sync: false
+      - key: SILICONFLOW_ENDPOINT
+        sync: false
+      # Must match the key's region; a key and base URL from different billing plans fail with 401.
+      # Leave unset for a Singapore pay-as-you-go key (dashscope-intl default); a Beijing key needs
+      # https://dashscope.aliyuncs.com/compatible-mode/v1. Token Plan and Coding Plan keys are not
+      # for backend services.
+      - key: DASHSCOPE_ENDPOINT
+        sync: false
+      - key: TOGETHER_ENDPOINT
+        sync: false
+      - key: HUGGINGFACE_ENDPOINT
+        sync: false
+      - key: COHERE_ENDPOINT
+        sync: false
+      # A cloud route also requires an explicit model and token pricing.
+      - key: DUAL_LINEAGE_OPENAI_OVERMIND_MODEL
+        sync: false
+      - key: DUAL_LINEAGE_OPENAI_OVERMIND_INPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_OPENAI_OVERMIND_OUTPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_OPENAI_UNDERMIND_MODEL
+        sync: false
+      - key: DUAL_LINEAGE_OPENAI_UNDERMIND_INPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_OPENAI_UNDERMIND_OUTPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_ANTHROPIC_OVERMIND_MODEL
+        sync: false
+      - key: DUAL_LINEAGE_ANTHROPIC_OVERMIND_INPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_ANTHROPIC_OVERMIND_OUTPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_ANTHROPIC_UNDERMIND_MODEL
+        sync: false
+      - key: DUAL_LINEAGE_ANTHROPIC_UNDERMIND_INPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_ANTHROPIC_UNDERMIND_OUTPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_GEMINI_OVERMIND_MODEL
+        sync: false
+      - key: DUAL_LINEAGE_GEMINI_OVERMIND_INPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_GEMINI_OVERMIND_OUTPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_GEMINI_UNDERMIND_MODEL
+        sync: false
+      - key: DUAL_LINEAGE_GEMINI_UNDERMIND_INPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_GEMINI_UNDERMIND_OUTPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_DEEPSEEK_OVERMIND_MODEL
+        sync: false
+      - key: DUAL_LINEAGE_DEEPSEEK_OVERMIND_INPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_DEEPSEEK_OVERMIND_OUTPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_DEEPSEEK_UNDERMIND_MODEL
+        sync: false
+      - key: DUAL_LINEAGE_DEEPSEEK_UNDERMIND_INPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_DEEPSEEK_UNDERMIND_OUTPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_GROQ_OVERMIND_MODEL
+        sync: false
+      - key: DUAL_LINEAGE_GROQ_OVERMIND_INPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_GROQ_OVERMIND_OUTPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_GROQ_UNDERMIND_MODEL
+        sync: false
+      - key: DUAL_LINEAGE_GROQ_UNDERMIND_INPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_GROQ_UNDERMIND_OUTPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_SILICONFLOW_OVERMIND_MODEL
+        sync: false
+      - key: DUAL_LINEAGE_SILICONFLOW_OVERMIND_INPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_SILICONFLOW_OVERMIND_OUTPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_SILICONFLOW_UNDERMIND_MODEL
+        sync: false
+      - key: DUAL_LINEAGE_SILICONFLOW_UNDERMIND_INPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_SILICONFLOW_UNDERMIND_OUTPUT_USD_PER_M
+        sync: false
+      # Required for Aliyun embeddings: the aliyun-overmind chat route registers only with a model
+      # and input/output pricing. The model is a chat-model choice; the pricing applies to chat
+      # calls, not embeddings.
+      - key: DUAL_LINEAGE_ALIYUN_OVERMIND_MODEL
+        sync: false
+      - key: DUAL_LINEAGE_ALIYUN_OVERMIND_INPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_ALIYUN_OVERMIND_OUTPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_ALIYUN_UNDERMIND_MODEL
+        sync: false
+      - key: DUAL_LINEAGE_ALIYUN_UNDERMIND_INPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_ALIYUN_UNDERMIND_OUTPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_TOGETHER_OVERMIND_MODEL
+        sync: false
+      - key: DUAL_LINEAGE_TOGETHER_OVERMIND_INPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_TOGETHER_OVERMIND_OUTPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_TOGETHER_UNDERMIND_MODEL
+        sync: false
+      - key: DUAL_LINEAGE_TOGETHER_UNDERMIND_INPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_TOGETHER_UNDERMIND_OUTPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_HUGGINGFACE_OVERMIND_MODEL
+        sync: false
+      - key: DUAL_LINEAGE_HUGGINGFACE_OVERMIND_INPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_HUGGINGFACE_OVERMIND_OUTPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_HUGGINGFACE_UNDERMIND_MODEL
+        sync: false
+      - key: DUAL_LINEAGE_HUGGINGFACE_UNDERMIND_INPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_HUGGINGFACE_UNDERMIND_OUTPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_COHERE_OVERMIND_MODEL
+        sync: false
+      - key: DUAL_LINEAGE_COHERE_OVERMIND_INPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_COHERE_OVERMIND_OUTPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_COHERE_UNDERMIND_MODEL
+        sync: false
+      - key: DUAL_LINEAGE_COHERE_UNDERMIND_INPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_COHERE_UNDERMIND_OUTPUT_USD_PER_M
+        sync: false
+      - key: DUAL_LINEAGE_ALLOW_WRITES
+        value: "false"
+      - key: DUAL_LINEAGE_ALLOWED_TOOLS
+        value: rag.search,file.inspect
+      - key: DUAL_LINEAGE_FILE_INSPECTION_ROOTS
+        value: /app
+      - key: DUAL_LINEAGE_ALLOW_EXEC
+        value: "false"
+      # Dedicated sandbox worker VM; unset keeps sandbox.python unregistered.
+      - key: DUAL_LINEAGE_SANDBOX_WORKER_URL
+        sync: false
+      - key: DUAL_LINEAGE_SANDBOX_WORKER_SECRET
+        sync: false
+      - key: DUAL_LINEAGE_ALLOW_NETWORK
+        value: "false"
+      - key: DUAL_LINEAGE_MAX_TOKENS
+        value: "4096"
+      # Covers a full public-chat answer (site deadline 270 s minus a 5 s grace). A request
+      # that sets requested_runtime_ms keeps the smaller of the two; one that does not gets this.
+      - key: DUAL_LINEAGE_MAX_RUNTIME_MS
+        value: "270000"
+      - key: DUAL_LINEAGE_MAX_PLAN_STEPS
+        value: "32"
+      - key: DUAL_LINEAGE_MAX_PLAN_DEPTH
+        value: "8"
+      # 1000 ms capped the whole local dispatch (connect + inference) and
+      # cancelled every local attempt before failure bookkeeping could run;
+      # 30000 is the value proven live on 2026-10-22.
+      - key: DUAL_LINEAGE_LOCAL_DISPATCH_TIMEOUT_MS
+        value: "30000"
+      - key: DUAL_LINEAGE_HEAVY_CLOUD_PROVIDERS
+        value: aws-bedrock,aliyun
+      - key: DUAL_LINEAGE_HEAVY_TOKEN_THRESHOLD
+        value: "1024"
+      - key: DUAL_LINEAGE_HEAVY_PROMPT_BYTES
+        value: "12000"
+      - key: DUAL_LINEAGE_RAG_MAX_CONTEXT_CHARS
+        value: "12000"
+      - key: DUAL_LINEAGE_RAG_MIN_CONTEXT_SCORE
+        value: "0.2"
+      # Routing rollout stage (docs/operations/routing-rollout.md). Raise the fallback
+      # percentage only in a reviewed change; 100 preserves existing failover eligibility.
+      - key: DUAL_LINEAGE_ROUTING_MODE
+        value: observe
+      - key: DUAL_LINEAGE_FALLBACK_PERCENT
+        value: "100"
+      - key: DUAL_LINEAGE_FALLBACK_MAX_ATTEMPTS
+        value: "1"
+
+  - type: web
+    name: goblin-dual-lineage-web-live
+    # Octopus exact-SHA verification is required before any production rollout.
+    # Manual deployment only; never ship a PR or commit directly to Render.
+    autoDeployTrigger: 'off'
+    runtime: node
+    branch: main
+    plan: free
+    region: virginia
+    buildCommand: corepack pnpm install --frozen-lockfile && corepack pnpm --filter @goblinos-dual-lineage/web build
+    startCommand: corepack pnpm --filter @goblinos-dual-lineage/web exec next start -p $PORT
+    healthCheckPath: /api/build
+    envVars:
+      - key: GOBLIN_DEPLOYMENT_ROLE
+        value: admin
+      - key: NEXT_PUBLIC_GOBLIN_DEPLOYMENT_ROLE
+        value: admin
+      # Human administrator login is staged until Google OAuth setup is complete.
+      - key: AYAHOS_ADMIN_GOOGLE_EMAILS
+        value: fuaadabdullah@gmail.com,ayahos.dev@gmail.com
+      - key: AYAHOS_ADMIN_PUBLIC_ORIGIN
+        value: https://goblin-dual-lineage-web-live.onrender.com
+      - key: AYAHOS_ADMIN_AUTH_PROVIDER
+        value: google
+      # Existing free-tier Supabase project, not a new billable instance.
+      # Switch provider only after real auth-email delivery and identity tests.
+      - key: AYAHOS_SUPABASE_URL
+        value: https://xgomhbuzawoqnwlzvavx.supabase.co
+      - key: AYAHOS_SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: AYAHOS_ADMIN_AUTH_ENFORCED
+        sync: false
+      - key: AUTH_SECRET
+        sync: false
+      - key: AUTH_GOOGLE_ID
+        sync: false
+      - key: AUTH_GOOGLE_SECRET
+        sync: false
+      # Literal public URL, not fromService property:host — host resolves to the
+      # bare internal hostname, which the web proxy cannot resolve publicly; a
+      # blueprint sync re-applied it on 2026-10-23 and revived the /api/runtime
+      # 502 that a dashboard fix had cleared. The API's public hostname is stable.
+      - key: GOBLIN_API_BASE_URL
+        value: https://goblin-dual-lineage-api.onrender.com
+      - key: GOBLIN_API_KEY
+        fromService:
+          type: web
+          name: goblin-dual-lineage-api
+          envVarKey: DUAL_LINEAGE_RUNTIME_API_KEY
+      - key: GOBLIN_REVIEW_ACCESS_TOKEN
+        sync: false
+      - key: GOBLIN_OPERATOR_SECRET
+        fromService:
+          type: web
+          name: goblin-dual-lineage-api
+          envVarKey: DUAL_LINEAGE_NODE_OPERATOR_SECRET
+      - key: GOBLIN_CONTROL_MUTATIONS_ENABLED
+        value: "false"

@@ -1,0 +1,8 @@
+{
+  "name": "ayahos-esa-runtime",
+  "description": "AyahOS independent free Alibaba ESA read-only probe runtime",
+  "entry": "./src/index.mjs",
+  "dev": {
+    "port": 18080
+  }
+}

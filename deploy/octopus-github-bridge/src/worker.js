@@ -8,7 +8,7 @@
 //      .octopus/deployment_process.ocl. The commit gets a `pending` status linking the task.
 //   2. A cron trigger polls each task it started and posts `success`, `failure` or `error`.
 //
-// The latest state per commit is also kept in KV and served read-only at GET /status/<sha>, so a
+// The latest state per commit is kept in the selected state store (KV or D1) at GET /status/<sha>, so a
 // consumer (see README.md) can read the outcome without any GitHub token in the Worker.
 // GITHUB_STATUS_TOKEN is optional: when it is set the Worker also posts commit statuses itself,
 // and that post never depends on the KV write succeeding.
@@ -17,12 +17,22 @@
 // so code on a branch under test cannot read them. Pushes from other repositories, tag pushes and
 // branch deletions are ignored.
 
+import { stagePush, flushBranchQueue, shouldProcessBranchTick } from "./branch_queue.js";
+import { stateStoreEnv } from "./d1_state.js";
+
 const GITHUB_API = "https://api.github.com";
 const TASK_PREFIX = "task:";
 const RESULT_PREFIX = "result:";
+const RECONCILE_CURSOR_KEY = "meta:reconcile_cursor";
 const TASK_TTL_SECONDS = 7 * 24 * 60 * 60;
 // Two subrequests per task (Octopus read + GitHub write) stay under the Workers free-plan cap.
 const MAX_TASKS_PER_TICK = 20;
+// D1 Free allows 50 queries per Worker invocation. Each terminal task can
+// require a read, result write, acknowledgement and delete. The queue path
+// also needs its own query headroom, so run a smaller batch when enabled.
+const MAX_D1_TASKS_PER_TICK = 10;
+const MAX_D1_TASKS_WITH_QUEUE = 4;
+const MAX_D1_QUEUE_ENTRIES = 4;
 const SHA = /^[0-9a-f]{40}$/;
 const ZERO_SHA = "0".repeat(40);
 const MAX_REF_LENGTH = 255;
@@ -138,6 +148,29 @@ async function octopus(env, method, path, body) {
   return text ? JSON.parse(text) : {};
 }
 
+// A missing verification environment is a configuration fault, not a failed test.
+// Inspect names using the existing service credential only after Octopus rejects
+// deployment. Report sanitized candidates in private Worker logs and fail closed:
+// never silently route a verification release to a different environment.
+async function diagnoseEnvironmentMismatch(env, error) {
+  if (!String(error?.message || "").includes("Unable to locate deployment environment")) return;
+  let available = "unavailable";
+  try {
+    const environments = await octopus(env, "GET", `/api/${env.OCTOPUS_SPACE_ID}/environments/all`);
+    if (Array.isArray(environments)) {
+      available = environments
+        .filter((item) => typeof item?.Name === "string")
+        .slice(0, 30)
+        .map((item) => item.Name.replace(/[\r\n]/g, " ").slice(0, 80))
+        .join(", ") || "none";
+    }
+  } catch {
+    available = "permission denied or API unavailable";
+  }
+  const configured = String(env.OCTOPUS_ENVIRONMENT || "").replace(/[\r\n]/g, " ").slice(0, 80);
+  console.error(`OCTOPUS_ENVIRONMENT_MISMATCH configured=${configured}; available=${available}`);
+}
+
 export async function postStatus(env, sha, { state, description, targetUrl }) {
   const response = await fetch(`${GITHUB_API}/repos/${env.GITHUB_REPOSITORY}/statuses/${sha}`, {
     method: "POST",
@@ -221,6 +254,7 @@ export async function startVerification(env, { ref, sha }) {
     });
     return { taskId, releaseVersion: release.ReleaseVersion };
   } catch (error) {
+    await diagnoseEnvironmentMismatch(env, error);
     // Best effort: if GitHub itself is the failure, the original error is the one to surface.
     await reportStatus(env, sha, {
       state: "error",
@@ -232,7 +266,29 @@ export async function startVerification(env, { ref, sha }) {
 
 // One cron tick: report every recorded task whose state changed; forget finished ones.
 export async function reconcile(env) {
-  const listing = await env.TASKS.list({ prefix: TASK_PREFIX, limit: MAX_TASKS_PER_TICK });
+  // The project may have more tasks than MAX_TASKS_PER_TICK. Keep an opaque
+  // cursor across cron ticks so the first long-running page cannot starve
+  // every later commit indefinitely. Advance before processing: a failed
+  // task stays in KV and is retried when the cursor wraps around.
+  const d1 = env.STATE_BACKEND === "d1";
+  const taskLimit = d1
+    ? (env.BRANCH_QUEUE_ENABLED === "true" ? MAX_D1_TASKS_WITH_QUEUE : MAX_D1_TASKS_PER_TICK)
+    : MAX_TASKS_PER_TICK;
+  const previousCursor = await env.TASKS.get(RECONCILE_CURSOR_KEY);
+  const listing = await env.TASKS.list({
+    prefix: TASK_PREFIX, limit: taskLimit,
+    ...(previousCursor ? { cursor: previousCursor } : {}),
+  });
+  const nextCursor = listing.list_complete === false && typeof listing.cursor === "string"
+    ? listing.cursor : null;
+  if (nextCursor !== previousCursor) {
+    if (nextCursor) {
+      await env.TASKS.put(RECONCILE_CURSOR_KEY, nextCursor,
+        { expirationTtl: TASK_TTL_SECONDS });
+    } else if (previousCursor) {
+      await env.TASKS.delete(RECONCILE_CURSOR_KEY);
+    }
+  }
   const results = [];
   for (const { name } of listing.keys) {
     const taskId = name.slice(TASK_PREFIX.length);
@@ -250,6 +306,13 @@ export async function reconcile(env) {
           await env.TASKS.put(name, JSON.stringify({ ...record, reported: key }), { expirationTtl: TASK_TTL_SECONDS });
         }
       } else {
+        // The GitHub status may already have been posted when task deletion
+        // fails. Persist the terminal acknowledgement before deleting so the
+        // next cron tick only retries cleanup, not an identical status post.
+        if (key !== record.reported) {
+          await env.TASKS.put(name, JSON.stringify({ ...record, reported: key }),
+            { expirationTtl: TASK_TTL_SECONDS });
+        }
         await env.TASKS.delete(name);
       }
       results.push({ taskId, state: status.state });
@@ -280,7 +343,14 @@ async function handleWebhook(request, env, ctx) {
   const target = pushTarget(env, payload);
   if (target.skip) return new Response(`ignored: ${target.skip}\n`, { status: 202 });
 
-  // GitHub gives a webhook ten seconds; release creation can take longer, so finish after replying.
+  // Optional branch-level coalescing defers a burst to the cron. No tasks are
+  // canceled, and a staged SHA cannot be mistaken for verified success.
+  if (env.BRANCH_QUEUE_ENABLED === "true") {
+    ctx.waitUntil(stagePush(env, target).catch((error) =>
+      console.error(`stage ${target.sha}: ${error.message}`)));
+    return new Response(`staged ${target.sha}\n`, { status: 202 });
+  }
+  // Legacy path stays active until the scheduler is proven on the live Worker.
   ctx.waitUntil(
     startVerification(env, target).catch((error) => console.error(`start ${target.sha}: ${error.message}`)),
   );
@@ -307,7 +377,8 @@ async function handleStatus(env, sha) {
 }
 
 export default {
-  async fetch(request, env, ctx) {
+  async fetch(request, rawEnv, ctx) {
+    const env = stateStoreEnv(rawEnv);
     const { pathname } = new URL(request.url);
     const missing = missingConfig(env);
     const statusMatch = pathname.match(/^\/status\/([^/]+)$/);
@@ -327,8 +398,33 @@ export default {
     return new Response("not found\n", { status: 404 });
   },
 
-  async scheduled(_controller, env, ctx) {
+  async scheduled(_controller, rawEnv, ctx) {
+    const env = stateStoreEnv(rawEnv);
     if (missingConfig(env).length) return;
-    ctx.waitUntil(reconcile(env));
+    // Even in D1 mode, cap task polling to the reviewed six-minute cadence;
+    // never turn a large backlog into unbounded Octopus/API requests.
+    // Legacy scheduling is unchanged until the feature flag is promoted.
+    if (env.BRANCH_QUEUE_ENABLED === "true" && !shouldProcessBranchTick()) return;
+    ctx.waitUntil((async () => {
+      // Do not use a GitHub status token in the branch queue, even if an old
+      // secret binding still exists on the deployed Worker.
+      const tokenless = env.BRANCH_QUEUE_ENABLED === "true"
+        ? { ...env, GITHUB_STATUS_TOKEN: undefined } : env;
+      // KV expires keys automatically; D1 does not. One bounded query per
+      // tick prevents indefinite growth without exhausting the free quota.
+      if (env.STATE_BACKEND === "d1") await env.TASKS.pruneExpired(100);
+      await reconcile(tokenless);
+      if (env.BRANCH_QUEUE_ENABLED === "true") {
+        // At most one new release per tick, and never for a ref with a tracked
+        // task already in flight. KV convergence is best-effort, not a lock.
+        await flushBranchQueue(
+          tokenless,
+          (target) => startVerification(tokenless, target),
+          env.STATE_BACKEND === "d1"
+            ? { branchLimit: MAX_D1_QUEUE_ENTRIES, taskLimit: MAX_D1_QUEUE_ENTRIES }
+            : undefined,
+        );
+      }
+    })());
   },
 };

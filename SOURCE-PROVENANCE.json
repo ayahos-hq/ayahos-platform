@@ -2,16 +2,20 @@
   "schema_version": 1,
   "state": "provisional-not-deployed",
   "source_repository": "fuaadabdullah/AyahOS_Dual_Lineage",
-  "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
+  "source_commit": "97ad888059095ffb123810af57b35b3075306750",
   "target_repository": "ayahos-hq/ayahos-platform",
-  "source_file_count": 66,
+  "source_file_count": 119,
   "source_files": {
     ".octopus/deployment_process.ocl": {
-      "sha": "10f95921f4199a69c09e40fe313fa46bcbd579cd",
+      "sha": "be6ff04e002d1c89cb5d03da9ae6ff1c1e261921",
       "mode": "100644"
     },
     ".octopus/deployment_settings.ocl": {
-      "sha": "6a34788e19bdf729ebc5f2c2adf98fa4b5fec0fc",
+      "sha": "91b44577fd041a9bba7f7486a19ecba5b17a54fb",
+      "mode": "100644"
+    },
+    ".octopus/runbooks/encrypted-database-backup.ocl": {
+      "sha": "ade722744a0d59be86ea580f8d7075faee8e18d9",
       "mode": "100644"
     },
     ".octopus/schema_version.ocl": {
@@ -20,6 +24,42 @@
     },
     ".octopus/variables.ocl": {
       "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "mode": "100644"
+    },
+    "deploy/aliyun/esa-free-runtime/README.md": {
+      "sha": "4ccf70a70f178e7c4f8e05e193e2ef5af3e10f14",
+      "mode": "100644"
+    },
+    "deploy/aliyun/esa-free-runtime/esa.jsonc": {
+      "sha": "f90c0a4a468ce5eb3c476c59895b058af5faceea",
+      "mode": "100644"
+    },
+    "deploy/aliyun/esa-free-runtime/index.test.mjs": {
+      "sha": "35778218aa6915f3567014f0ddaf8b0431fa4a76",
+      "mode": "100644"
+    },
+    "deploy/aliyun/esa-free-runtime/package.json": {
+      "sha": "72a474425da88a3c30d71fde6b049337b968e8f1",
+      "mode": "100644"
+    },
+    "deploy/aliyun/esa-free-runtime/src/index.mjs": {
+      "sha": "32a7710d09f235a46e28606b60bb5be9433b9ce3",
+      "mode": "100644"
+    },
+    "deploy/cloudflare/node001-rag-gateway/README.md": {
+      "sha": "8ac668ac89af3b9815d45179f5271f66548a7982",
+      "mode": "100644"
+    },
+    "deploy/cloudflare/node001-rag-gateway/worker.mjs": {
+      "sha": "917ee77857451955cb2114767caa1bae51b59a9a",
+      "mode": "100644"
+    },
+    "deploy/cloudflare/node001-rag-gateway/worker.test.mjs": {
+      "sha": "a5f981323040d0677eebd702f53b78f6a04cf11f",
+      "mode": "100644"
+    },
+    "deploy/cloudflare/node001-rag-gateway/wrangler.jsonc": {
+      "sha": "0e253b5c6d12f714a840bc2e0331d6c98fcab1ea",
       "mode": "100644"
     },
     "deploy/cloudrun/README.md": {
@@ -54,6 +94,10 @@
       "sha": "1e21b14e3c8b20d378912ef2bee4ddf9cc7cbb99",
       "mode": "100644"
     },
+    "deploy/node-001/run-qwen3-rag-embedding.ps1": {
+      "sha": "f71893b0daa86a87e9ade76718d1b7c7720f45cb",
+      "mode": "100644"
+    },
     "deploy/node-001/start-undermind.ps1": {
       "sha": "20612ff2107f511d553b682e3e96c1ad1a0cfeb3",
       "mode": "100644"
@@ -63,23 +107,43 @@
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/README.md": {
-      "sha": "0fc056fd3e9d6622abbdf070236004f37984aa76",
+      "sha": "af16881d2172b7af3a963f1c3f11a20e47b3bfc5",
+      "mode": "100644"
+    },
+    "deploy/octopus-github-bridge/d1-schema.sql": {
+      "sha": "73c9c5280527fdc99010c89faa661d29e183afca",
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/package.json": {
       "sha": "094aa89420109f49d3020f113aeee4b9a50221d4",
       "mode": "100644"
     },
+    "deploy/octopus-github-bridge/src/branch_queue.js": {
+      "sha": "23fbc24b6a1984353a5bd1f93d50b2125af64e84",
+      "mode": "100644"
+    },
+    "deploy/octopus-github-bridge/src/d1_state.js": {
+      "sha": "6a17d52cd8a019a2d453f14434f82acadcf3b992",
+      "mode": "100644"
+    },
     "deploy/octopus-github-bridge/src/worker.js": {
-      "sha": "da3265bc0d3d45a69022d4d31ca5d68ff29f6a35",
+      "sha": "1527d4c74542b06977a36024ff01a3413599a1b1",
+      "mode": "100644"
+    },
+    "deploy/octopus-github-bridge/test/branch_queue.test.js": {
+      "sha": "72236b5544eb02e5599a959c45991c46a68d1c56",
+      "mode": "100644"
+    },
+    "deploy/octopus-github-bridge/test/d1_state.test.js": {
+      "sha": "ebdd7b29db8e45a322dcacd166778442c615c42e",
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/test/worker.test.js": {
-      "sha": "c83bc96ad976f043e7479f79213b1bf9ff8f2db6",
+      "sha": "83bfd676b862cc67ceea5698d1d693bca696e250",
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/wrangler.jsonc": {
-      "sha": "00de8cd43b3a74f307286350a34b476505aebbbf",
+      "sha": "e2e7e1433d23ef447408af26d1558ff638ae707c",
       "mode": "100644"
     },
     "deploy/oracle/goblin-learning-worker.service": {
@@ -91,11 +155,11 @@
       "mode": "100644"
     },
     "deploy/oracle/goblin-workflow-scheduler.service": {
-      "sha": "0ca31221936145e98d24ac6572da577a6cbb5c43",
+      "sha": "d3af9adc3b527c8ff5ee993b291cef1ad882670c",
       "mode": "100644"
     },
     "deploy/oracle/goblin-workflow-worker.service": {
-      "sha": "a4021e23ca0bd56b026f096a76e2c77c59f815ae",
+      "sha": "98e1ab4feb2eeece256244d7f81788e858831c7d",
       "mode": "100644"
     },
     "deploy/oracle/learning-worker.env.example": {
@@ -115,7 +179,7 @@
       "mode": "100644"
     },
     "deploy/sandbox/Dockerfile": {
-      "sha": "a04976cc4fb13f02692a2e219e56a3d7651898ea",
+      "sha": "82ba4192d73e5fd03b6f0fedd097dda2c17c4962",
       "mode": "100644"
     },
     "deploy/sandbox/ayahos-sandbox-worker.service": {
@@ -135,7 +199,7 @@
       "mode": "100644"
     },
     "deploy/service-inventory.json": {
-      "sha": "0bdd280fca4064d5cb8d92311dead1dc7eff267c",
+      "sha": "d7f74416df037264a55b58ca5f7a0fc92f04fb57",
       "mode": "100644"
     },
     "docs/infrastructure/cloudflare-agent-setup.md": {
@@ -174,8 +238,16 @@
       "sha": "c4558044b16878b1eb32a95ebd3eab3336db8877",
       "mode": "100644"
     },
+    "docs/infrastructure/linux-release-baseline.md": {
+      "sha": "a928c314131ca46f8dfd55e43da547ec1b22a8b1",
+      "mode": "100644"
+    },
+    "docs/infrastructure/linux-release-gates.md": {
+      "sha": "1a826faacf9d757fef012ec2e50204e718eb4daf",
+      "mode": "100644"
+    },
     "docs/infrastructure/octopus-ci-verification.md": {
-      "sha": "4c4904bf8925c65d6a2334c0b2aabed6657dbe40",
+      "sha": "d5812acde3c34bc9a706f98cbffe5ab4b9425f1a",
       "mode": "100644"
     },
     "docs/infrastructure/operational-collection.md": {
@@ -187,7 +259,7 @@
       "mode": "100644"
     },
     "docs/infrastructure/render-service-inventory.md": {
-      "sha": "e5c2303270d116290a81dc5816b4d86a3c2dbaca",
+      "sha": "a03e50666bc55ec72da310ca0870f9bf15aea954",
       "mode": "100644"
     },
     "docs/infrastructure/supabase-ayahos-project.md": {
@@ -196,6 +268,18 @@
     },
     "docs/infrastructure/workflow-delivery-evidence-2026-10-15.md": {
       "sha": "de52a90f3ddbb2199332c69ade3123353a919656",
+      "mode": "100644"
+    },
+    "scripts/ci/__pycache__/bootstrap_api_env.cpython-311.pyc": {
+      "sha": "c319c1fff0aa1a0aa924592793f31838a1255091",
+      "mode": "100644"
+    },
+    "scripts/ci/__pycache__/live_chat_gate.cpython-311.pyc": {
+      "sha": "f0d1a4b041f1b71084b4847fe0477e2abcc664d6",
+      "mode": "100644"
+    },
+    "scripts/ci/bootstrap_api_env.py": {
+      "sha": "fd9c35059b62035c091a2e560765a2339dab0662",
       "mode": "100644"
     },
     "scripts/ci/canary.sh": {
@@ -207,19 +291,31 @@
       "mode": "100644"
     },
     "scripts/ci/deployable-container-smoke.sh": {
-      "sha": "fc50e51472658c1db8ddace0ba140dd0022f0a03",
+      "sha": "d9cba663cc41974ff326f9483c269acc936607bd",
       "mode": "100644"
     },
     "scripts/ci/live-release.sh": {
       "sha": "06c9f27dcecedbfb3dd15ab2447ad265f4c00275",
       "mode": "100644"
     },
+    "scripts/ci/live_chat_gate.py": {
+      "sha": "56d98e0d92d99cb6729875fb7b5e61b1131c7710",
+      "mode": "100644"
+    },
     "scripts/ci/minilm-train.sh": {
       "sha": "1ea4147e23e9243f0e68e40f4e0c2b704228c63a",
       "mode": "100644"
     },
+    "scripts/ci/octopus_db_backup.sh": {
+      "sha": "c8e209f2d9612268aa3641ae69cd509869aaea1e",
+      "mode": "100644"
+    },
+    "scripts/ci/octopus_status_relay.mjs": {
+      "sha": "4b007ca12e2ab8c08135c65a9611ed923130103c",
+      "mode": "100644"
+    },
     "scripts/ci/octopus_verify.sh": {
-      "sha": "9ab6cd2719e661c69805f0b45c1b6ae75297c4b0",
+      "sha": "ce3be50d7a7711607bd48bffa064c08caecdb2a8",
       "mode": "100755"
     },
     "scripts/ci/post-deploy.sh": {
@@ -235,7 +331,7 @@
       "mode": "100644"
     },
     "scripts/ci/requirements-browser.txt": {
-      "sha": "93c05219c7eee017dad6f9a346137d470e6a8be3",
+      "sha": "e9493042f5600a9b85c6b52234a323782e6d61c5",
       "mode": "100644"
     },
     "scripts/ci/resource_diagnostics.sh": {
@@ -246,28 +342,144 @@
       "sha": "65042c8290f533ee077087a8fd4e5aa161b391f8",
       "mode": "100644"
     },
+    "scripts/ci/tests/__pycache__/test_db_schema_bootstrap.cpython-311-pytest-9.1.1.pyc": {
+      "sha": "4266e39f90d88805ae7e46eb1db74349708f0ecb",
+      "mode": "100644"
+    },
+    "scripts/ci/tests/__pycache__/test_deployable_container_entrypoint.cpython-311-pytest-9.1.1.pyc": {
+      "sha": "743c080afea8fa7085e87be3b427630c72078cb1",
+      "mode": "100644"
+    },
+    "scripts/ci/tests/__pycache__/test_live_chat_gate.cpython-311-pytest-9.1.1.pyc": {
+      "sha": "b089a206503b838de0b1177eb3babe65405bd029",
+      "mode": "100644"
+    },
+    "scripts/ci/tests/__pycache__/test_octopus_db_backup_migration.cpython-311-pytest-9.1.1.pyc": {
+      "sha": "9b074d9b7e5922e70392a7de8947eafc63a68b27",
+      "mode": "100644"
+    },
+    "scripts/ci/tests/__pycache__/test_public_site_target.cpython-311-pytest-9.1.1.pyc": {
+      "sha": "7693eb8ac790bf959dd6bf67187ee8df1b8b0c5f",
+      "mode": "100644"
+    },
+    "scripts/ci/tests/__pycache__/test_rag_env_bootstrap.cpython-311-pytest-9.1.1.pyc": {
+      "sha": "ceeec62908047685bd09e6212ab3b43fb8a3ffc5",
+      "mode": "100644"
+    },
+    "scripts/ci/tests/__pycache__/test_render_db_safety.cpython-311-pytest-9.1.1.pyc": {
+      "sha": "70528f5b3bc006132cc807452734900d7a70d259",
+      "mode": "100644"
+    },
+    "scripts/ci/tests/test_db_schema_bootstrap.py": {
+      "sha": "4e8cb7631545966abfaffd17e23aa9c008049c2a",
+      "mode": "100644"
+    },
+    "scripts/ci/tests/test_deployable_container_entrypoint.py": {
+      "sha": "f0325c9b6582f50856709b4f7675f81f1b11f9fb",
+      "mode": "100644"
+    },
+    "scripts/ci/tests/test_live_chat_gate.py": {
+      "sha": "f63f22c590b058f2bb30444280235fd8ab072bfb",
+      "mode": "100644"
+    },
+    "scripts/ci/tests/test_octopus_db_backup_migration.py": {
+      "sha": "01d259bad22116ec632dd2b1423ac2cd3473cd26",
+      "mode": "100644"
+    },
+    "scripts/ci/tests/test_octopus_status_relay.mjs": {
+      "sha": "a73dd8d06d5ce30f9c4f278d0b97ba3452d7b44a",
+      "mode": "100644"
+    },
     "scripts/ci/tests/test_public_site_target.py": {
       "sha": "7ff0ed2d896bc5f330902e5c7f74261be8558d67",
       "mode": "100644"
     },
+    "scripts/ci/tests/test_rag_env_bootstrap.py": {
+      "sha": "4e7d31a75deccb2a676fd1f17cfeda1299f429ca",
+      "mode": "100644"
+    },
+    "scripts/ci/tests/test_render_db_safety.py": {
+      "sha": "17b7593e2799943dec5e41e16d3d55b5c82717fd",
+      "mode": "100644"
+    },
     "scripts/ci/verify.sh": {
-      "sha": "af7adddbd0f28bb7a7225238581d4d63ee829f64",
+      "sha": "3e1eef504a8a90754c860f2e667993cd244418e2",
+      "mode": "100644"
+    },
+    "scripts/db/__init__.py": {
+      "sha": "5d876185187fe9dd42b0b6a03533561fee4e0c3f",
+      "mode": "100644"
+    },
+    "scripts/db/__pycache__/__init__.cpython-311.pyc": {
+      "sha": "406121f584d27b844be56b2adee38a0c7372849b",
+      "mode": "100644"
+    },
+    "scripts/db/__pycache__/backup_freshness.cpython-311.pyc": {
+      "sha": "86790747a4788e03a4896b1cbe139d10aaf8c85c",
+      "mode": "100644"
+    },
+    "scripts/db/__pycache__/postgres_env.cpython-311.pyc": {
+      "sha": "9935d07969b3f76a8508f50b2390ba62a43f6670",
+      "mode": "100644"
+    },
+    "scripts/db/__pycache__/rehearse_recovery.cpython-311.pyc": {
+      "sha": "71768298d99b8b7dd03abfa59bb6a621f5f4db9c",
+      "mode": "100644"
+    },
+    "scripts/db/__pycache__/restore_verify.cpython-311.pyc": {
+      "sha": "4b793747f19f9b6659a9e3b15fcb52508a7c370f",
+      "mode": "100644"
+    },
+    "scripts/db/__pycache__/runtime_targets.cpython-311.pyc": {
+      "sha": "fb2a2066c36eb2cebf4bcc939323352e3aed9916",
+      "mode": "100644"
+    },
+    "scripts/db/__pycache__/test_rehearse_recovery.cpython-311-pytest-9.1.1.pyc": {
+      "sha": "cc4c540ad91c0e1da066d0eca6f5a140f9c3a339",
+      "mode": "100644"
+    },
+    "scripts/db/backup_freshness.py": {
+      "sha": "de53aab41bb47032cfd89aef24d43eae120e5ddf",
+      "mode": "100644"
+    },
+    "scripts/db/backup_postgres.py": {
+      "sha": "432c7635210ad59a4600c00394afbaf292aa5834",
       "mode": "100644"
     },
     "scripts/db/postgres_env.py": {
-      "sha": "bf029531dbacfbb772590aa872c9ec8cef921950",
+      "sha": "07943989ee5a90f780ee478096d6acc38dcfb1ba",
+      "mode": "100644"
+    },
+    "scripts/db/provision_workflow_db_role.sql": {
+      "sha": "7aae8729e7555846c7c46cc6b6a3ae6cf4408a87",
+      "mode": "100644"
+    },
+    "scripts/db/rag_env_bootstrap.sh": {
+      "sha": "90b70cc78132e6ad798a7548e851300ef5cfbbcf",
       "mode": "100644"
     },
     "scripts/db/rehearse_recovery.py": {
-      "sha": "c144b18576213a257ee034eea9b90c2b88da1339",
+      "sha": "03038074ab08f003a6924ca23cd59cb577523acc",
       "mode": "100644"
     },
     "scripts/db/restore_verify.py": {
-      "sha": "b60af17f38a9297f0683769d2c000ea38b494c13",
+      "sha": "17fd28f276ca903050a4e842cae1c5716590c77c",
+      "mode": "100644"
+    },
+    "scripts/db/runtime_targets.py": {
+      "sha": "594605b27330fbc4186b034dae97cb0f73cbfe89",
+      "mode": "100644"
+    },
+    "scripts/db/schema_startup.sh": {
+      "sha": "8bc794db04cae629a82c04c08839d8683fdd5c9d",
       "mode": "100644"
     },
     "scripts/db/test_rehearse_recovery.py": {
       "sha": "ba7fca942f7f9e9cf1ad3106eef772ca11a5b6aa",
+      "mode": "100644"
+    },
+    "scripts/db/verify_workflow_db_role_isolated.sql": {
+      "sha": "2a2a1d65c18c6b62e530ecbeba141d6e52e93f82",
       "mode": "100644"
     }
   },
@@ -276,7 +488,8 @@
     "Includes current monorepo Octopus definitions for reference, not a functional multi-repository pipeline",
     "Octopus project, webhook bridge, Cloudflare, Vercel, Render and Oracle integrations remain attached to original source until explicit cutover",
     "No actual secrets or provider credentials intentionally transferred",
-    "Documentation claiming a live bridge is historical, not verified by this extraction"
+    "Documentation claiming a live bridge is historical, not verified by this extraction",
+    "2026-11-13: monorepo merge. Re-pinned from the a7ef41f extraction to the three-way merge of AyahOS_Dual_Lineage main 97ad888; files are no longer byte-identical to one monorepo commit where ayahos-hq had already changed them."
   ],
   "verification": {
     "source_tree_sha": "verified",

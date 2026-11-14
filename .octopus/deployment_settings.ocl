@@ -1,5 +1,5 @@
-cancel_queued_tasks = true
-cancel_running_tasks = true
+cancel_queued_tasks = false
+cancel_running_tasks = false
 
 connectivity_policy {
     allow_deployments_to_no_targets = true

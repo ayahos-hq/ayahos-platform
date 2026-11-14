@@ -31,9 +31,15 @@ class MemoryKV {
   async delete(key) {
     this.store.delete(key);
   }
-  async list({ prefix, limit }) {
-    const keys = [...this.store.keys()].filter((key) => key.startsWith(prefix)).slice(0, limit);
-    return { keys: keys.map((name) => ({ name })) };
+  async list({ prefix, limit, cursor }) {
+    // Model the opaque, paginated Workers KV cursor. Numeric encoding here
+    // is a test-only stand-in for the API's cursor token.
+    const all = [...this.store.keys()].filter((key) => key.startsWith(prefix)).sort();
+    const offset = cursor ? Number(cursor) : 0;
+    const keys = all.slice(offset, offset + limit);
+    const end = offset + keys.length;
+    return { keys: keys.map((name) => ({ name })),
+      list_complete: end >= all.length, cursor: end >= all.length ? undefined : String(end) };
   }
 }
 
@@ -46,7 +52,7 @@ function makeEnv(overrides = {}) {
     OCTOPUS_API_KEY: "API-KEY",
     OCTOPUS_SPACE_ID: "Spaces-1",
     OCTOPUS_PROJECT: "AyahOS",
-    OCTOPUS_ENVIRONMENT: "Verification",
+    OCTOPUS_ENVIRONMENT: "Development",
     TASKS: new MemoryKV(),
     ...overrides,
   };
@@ -158,7 +164,7 @@ describe("startVerification", () => {
       { gitRef: "refs/heads/feature", gitCommit: SHA, projectName: "AyahOS" },
     );
     assert.equal(release.body.spaceIdOrName, "Spaces-1");
-    assert.deepEqual(deploy.body.environmentNames, ["Verification"]);
+    assert.deepEqual(deploy.body.environmentNames, ["Development"]);
     assert.equal(deploy.body.releaseVersion, "0.1.9");
     assert.equal(deploy.body.useGuidedFailure, false);
     assert.equal(status.origin, "https://api.github.com");
@@ -180,6 +186,36 @@ describe("startVerification", () => {
     const status = calls.at(-1);
     assert.equal(status.pathname, STATUS_PATH);
     assert.equal(status.body.state, "error");
+    assert.deepEqual(taskKeys(env), []);
+    assert.deepEqual(JSON.parse(await env.TASKS.get(`result:${SHA}`)), { state: "error" });
+  });
+
+  it("diagnoses missing deployment environment without choosing another or leaking credentials", async () => {
+    const env = makeEnv({ OCTOPUS_ENVIRONMENT: "Verification" });
+    const calls = mockFetch({
+      ...OCTOPUS_ROUTES,
+      "POST /api/Spaces-1/deployments/create/untenanted/v1": {
+        status: 400,
+        json: { ErrorMessage: "There was a problem", Errors: ["Unable to locate deployment environment(s) named 'Verification'"] },
+      },
+      "GET /api/Spaces-1/environments/all": {
+        json: [{ Id: "Environments-1", Name: "CI" }, { Id: "Environments-2", Name: "Production" }],
+      },
+    });
+    const originalError = console.error;
+    const logged = [];
+    console.error = (...parts) => logged.push(parts.join(" "));
+    try {
+      await assert.rejects(startVerification(env, { ref: "refs/heads/feature", sha: SHA }), /returned 400/);
+    } finally {
+      console.error = originalError;
+    }
+    assert.ok(calls.some((call) => call.method === "GET" && call.pathname === "/api/Spaces-1/environments/all"));
+    assert.deepEqual(calls.filter((call) => call.pathname.includes("/deployments/create")).length, 1);
+    assert.match(logged.join(" "), /OCTOPUS_ENVIRONMENT_MISMATCH/);
+    assert.match(logged.join(" "), /CI/);
+    assert.match(logged.join(" "), /Production/);
+    assert.doesNotMatch(logged.join(" "), /API-KEY|gh-token|webhook-secret/);
     assert.deepEqual(taskKeys(env), []);
     assert.deepEqual(JSON.parse(await env.TASKS.get(`result:${SHA}`)), { state: "error" });
   });
@@ -215,6 +251,34 @@ describe("reconcile", () => {
   beforeEach(async () => {
     env = makeEnv();
     await env.TASKS.put("task:ServerTasks-77", JSON.stringify({ sha: SHA, ref: "refs/heads/feature", state: "pending" }));
+  });
+
+  it("paginates beyond twenty long-running tasks instead of starving later commits", async () => {
+    // The real Octopus queue exceeded 40 jobs. Without a persisted cursor,
+    // the first twenty queued jobs monopolize every cron tick.
+    const tokenless = makeEnv({ GITHUB_STATUS_TOKEN: undefined });
+    const routes = {};
+    const lastSha = (24).toString(16).padStart(40, "0");
+    for (let i = 0; i < 25; i++) {
+      const id = `ServerTasks-${String(i).padStart(3, "0")}`;
+      const uniqueSha = i.toString(16).padStart(40, "0");
+      await tokenless.TASKS.put(`task:${id}`,
+        JSON.stringify({ sha: uniqueSha, ref: "refs/heads/feature", state: "pending" }));
+      routes[`GET /api/Spaces-1/tasks/${id}`] = {
+        json: { State: i === 24 ? "Success" : "Queued" },
+      };
+    }
+    const calls = mockFetch(routes);
+    await reconcile(tokenless);
+    assert.equal(JSON.parse(await tokenless.TASKS.get(`result:${"0".repeat(40)}`)).state, "pending");
+    // The final task has its own SHA and must be reported from Octopus,
+    // without treating earlier still-queued commits as successful.
+    await reconcile(tokenless);
+    assert.equal(JSON.parse(await tokenless.TASKS.get(`result:${lastSha}`)).state, "success");
+    assert.equal(JSON.parse(await tokenless.TASKS.get(`result:${"0".repeat(40)}`)).state, "pending");
+    assert.ok(calls.some(c => c.pathname === "/api/Spaces-1/tasks/ServerTasks-024"));
+    assert.ok(!tokenless.TASKS.store.has("task:ServerTasks-024"));
+    assert.ok(tokenless.TASKS.store.has("task:ServerTasks-000"));
   });
 
   it("reports progress once and keeps the task while it runs", async () => {
@@ -320,6 +384,41 @@ describe("fetch handler", () => {
     assert.equal(response.status, 202);
     await Promise.all(context.pending);
     assert.equal(calls.length, 3);
+  });
+
+  it("stages signed branch pushes and starts only a debounced revision on cron", async () => {
+    const env = makeEnv({ BRANCH_QUEUE_ENABLED: "true" }); // An existing token must be ignored.
+    const calls = mockFetch(OCTOPUS_ROUTES);
+    const body = JSON.stringify(pushPayload());
+    const context = ctx();
+    const response = await worker.fetch(
+      new Request("https://bridge.example/github", {
+        method: "POST", body,
+        headers: { "X-GitHub-Event": "push", "X-Hub-Signature-256": sign(body) },
+      }),
+      env, context,
+    );
+    assert.equal(response.status, 202);
+    await Promise.all(context.pending);
+    assert.deepEqual(calls, []); // No Octopus release from the webhook itself.
+    const desiredKey = `desired:${encodeURIComponent(pushPayload().ref)}`;
+    const desired = JSON.parse(await env.TASKS.get(desiredKey));
+    assert.equal(desired.sha, SHA);
+    assert.equal(await env.TASKS.get(`result:${SHA}`), null); // Not verified yet.
+    await env.TASKS.put(desiredKey, JSON.stringify({ ...desired, seenAt: Date.now() - 600000 }));
+    const scheduled = ctx();
+    // Simulate a scheduled six-minute slot without waiting or relying on wall time.
+    const realNow = Date.now;
+    Date.now = () => Math.floor(realNow() / 360000) * 360000;
+    try {
+      await worker.scheduled({}, env, scheduled);
+      await Promise.all(scheduled.pending);
+    } finally {
+      Date.now = realNow;
+    }
+    assert.deepEqual(calls.map(c => c.origin), ["https://ayahos.octopus.app", "https://ayahos.octopus.app"]);
+    assert.deepEqual(taskKeys(env), ["task:ServerTasks-77"]);
+    assert.deepEqual(JSON.parse(await env.TASKS.get(`result:${SHA}`)), { state: "pending" });
   });
 
   it("reports missing configuration on /healthz without leaking values", async () => {
