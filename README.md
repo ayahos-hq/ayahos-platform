@@ -1,5 +1,7 @@
 # AyahOS Platform — provisional source extraction
 
+**Naming:** [AyahOS product identity and legacy-name migration contract](BRANDING.md) defines AyahOS as the platform and Ayah as its assistant. Historical Goblin identifiers are compatibility-only and must not be blindly renamed.
+
 **Status: public by owner decision, provisional source extraction, not deployed and not production authority.** This repository is a staging home for CI/CD orchestration, Octopus project definitions, deployment templates, release checks and infrastructure records. Do not connect Octopus, GitHub webhooks, Cloudflare or any production service to this repo until the migration gates are complete. Treat all repository contents as public; secrets belong exclusively in managed secret stores.
 
 ## Pinned import
