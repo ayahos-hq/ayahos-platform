@@ -1,0 +1,10 @@
+# Local Wrangler state (never commit; may pin a deprecated Cloudflare account)
+.wrangler/
+**/.wrangler/
+deploy/model-reconciler/.wrangler/
+deploy/hq-verification-bridge/.wrangler/
+deploy/octopus-github-bridge/.wrangler/
+
+# Python bytecode
+**/__pycache__/
+*.py[cod]

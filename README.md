@@ -1,10 +1,10 @@
 # AyahOS Platform — provisional source extraction
 
-**Status: public by owner decision, provisional source extraction, not deployed and not production authority.** This repository is a staging home for CI/CD orchestration, Octopus project definitions, deployment templates, release checks and infrastructure records. Do not connect Octopus, GitHub webhooks, Cloudflare or any production service to this repo until the migration gates are complete. Treat all repository contents as public; secrets belong exclusively in managed secret stores.
+**Status: canonical HQ source (`ayahos-hq/ayahos-platform`), public by owner decision.** Home for CI/CD orchestration, Octopus project definitions, deployment templates, release checks and infrastructure records. Do not connect Octopus, GitHub webhooks, Cloudflare or any production service until the remaining cutover gates pass. Treat all repository contents as public; secrets belong exclusively in managed secret stores.
 
 ## Pinned import
 
-- Original: `fuaadabdullah/AyahOS_Dual_Lineage` at `a7ef41fe1ec6a680bc734a5d54890fb13972d3a3`.
+- Historical import: `fuaadabdullah/AyahOS_Dual_Lineage` at `a7ef41fe1ec6a680bc734a5d54890fb13972d3a3`.
 - **61 source blobs** copied exactly with original executable modes under `.octopus/`, `deploy/`, `scripts/ci/`, `docs/infrastructure/`; LICENSE and NOTICE carried over.
 - Source file identities and Git modes are recorded in `SOURCE-PROVENANCE.json`.
 - This snapshot **retains legacy monorepo-relative script paths and service references**; it is not a deployable multi-repo pipeline.

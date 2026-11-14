@@ -1,0 +1,12 @@
+{
+  "name": "ayahos-model-reconciler",
+  "account_id": "265071fc5a2ac8bbe85e2bd724361080",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-01",
+  "vars": {
+    "CORE_API_URL": "https://api.ayahos.app"
+  },
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  }
+}

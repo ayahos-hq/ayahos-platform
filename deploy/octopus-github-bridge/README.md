@@ -11,35 +11,42 @@ GitHub push ──signed webhook──▶ /github ──▶ Octopus: create rele
 cron, every minute ──▶ Octopus GET /tasks/{id} ──▶ commit status success / failure / error
 ```
 
-The status context is `octopus/verify` (posted only when a token is configured). Only pushes to
+The status context is `octopus/verify` (posted directly by the Worker when its optional status
+token is configured, or by the canonical CI relay after it polls `/status/<sha>`). Only pushes to
 branches of `GITHUB_REPOSITORY` are verified; forks, tags and branch deletions are ignored. Secrets stay in the Worker and are never
 passed into the Octopus process, so code on a branch under test cannot read them. A deployment
 started by hand in the Octopus UI is not reported; push again or redeliver the webhook instead.
 
-## Current state (2026-10-22)
+## Current state (verified 2026-10-27)
 
-The Worker is **deployed** at `https://ayahos-octopus-github-bridge.fuaadabdullah.workers.dev`
-and the GitHub webhook (step 7) is **live**. KV, the Octopus values, `OCTOPUS_API_KEY`, and
-`GITHUB_WEBHOOK_SECRET` are all configured on the deployed Worker — production values live in
-the Worker configuration, not in the committed `wrangler.jsonc` (which carries the verified
-non-secret Octopus values plus placeholders for the KV id and environment name).
+The Worker is deployed at `https://ayahos-octopus-github-bridge.fuaadabdullah.workers.dev` and
+`GET /healthz` answers `ok`. A `push` webhook for `ayahos-hq/ayahos-platform` points at it, but the
+deployed Worker is **not configured for this repository**: its answer to the delivery for commit
+`6a1b7a3` was `ignored: push is not for the configured repository`, and `GET /status/<sha>` returns
+`404 unknown commit` for every recent commit of this repository, including `main`. Until the
+Worker's `GITHUB_REPOSITORY` (and the matching Octopus project, environment and KV namespace) are
+reconfigured by the owner, the relay workflow below would poll for 25 minutes and then publish
+`octopus/verify` = `error` ("timed out"), which is why it is manual-only for now (see below). The
+committed `wrangler.jsonc` still names the monorepo.
+`main` currently requires the status context `octopus/hq-operator-verified`, not `octopus/verify`.
 
-**The optional-token code is now deployed** (status: *implemented*; *verified-live*
-2026-10-22): the code-only redeploy landed and `GET /healthz` answers `ok` (Worker version
-`af099a2e`), with all production config surviving untouched. `GET /status/<sha>` answers as
-documented below.
+**`GITHUB_STATUS_TOKEN` is optional**. The Worker answers `ok` without it; when configured, it
+posts the `octopus/verify` status directly. Without that token, the canonical
+`.github/workflows/octopus-status-relay.yml` workflow publishes the same status using GitHub's
+ephemeral `GITHUB_TOKEN` after polling `GET /status/<sha>`. **The workflow is manual-only
+(`workflow_dispatch`) for now.** It does not run on pull requests. Someone with write access
+dispatches it, optionally passing the 40-character `sha` to publish for (default: the head of the
+dispatched ref), and the relay script is checked out from that ref, so no unreviewed pull-request
+code runs with `statuses: write`. GitHub only offers a dispatch button for a workflow file that is
+on the default branch, so it cannot be run until this change is merged. After the owner has
+reconfigured the Worker for this repository, restore a `pull_request` trigger (and keep the checkout
+on the base commit). Its local behavior is covered by
+`node --test deploy/octopus-github-bridge/test/*.test.js`; no live run of the relay has succeeded
+yet, so a live run remains separate evidence.
 
-**`GITHUB_STATUS_TOKEN` is not set yet** (provisioning in flight, parked on the owner's
-GitHub Mobile approval). Until it is set with `wrangler secret put GITHUB_STATUS_TOKEN`, no
-`octopus/verify` commit status is posted: verification outcomes are only readable at
-`GET /status/<sha>`. Once the token lands, prove the loop with a test push and confirm the
-`octopus/verify` status actually appears on the commit. A GitHub Actions job that turns
-`/status` into a check is *planned*, not present; `AGENTS.md` forbids new workflows without
-an architecture decision.
-
-Step 8 (requiring the status on `main`) is **not available on this repository's GitHub plan**
-(branch protection and rulesets return 403 for private repos on the free plan), so until the
-plan changes the status is advisory: merges are gated by convention, not by GitHub.
+Step 8 (requiring a status on `main`) is configured for `octopus/hq-operator-verified` only.
+Making `octopus/verify` required is a separate owner decision and should wait until the relay can
+succeed for this repository.
 
 ## `GET /status/<sha>`
 

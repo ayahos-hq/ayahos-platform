@@ -1,0 +1,39 @@
+name: Octopus status relay
+
+# Manual only until AyahOS HQ Verification runs reliably on branch pushes.
+# Polls the HQ bridge and publishes octopus/hq-operator-verified (not the monorepo octopus/verify).
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Full 40-character commit SHA to publish octopus/hq-operator-verified for (default is the dispatched ref's head)
+        required: false
+        type: string
+
+# Only people with write access can dispatch, and the relay script is checked out from the ref they
+# select, so the token's statuses: write scope is never exposed to an unreviewed pull request.
+permissions:
+  contents: read
+  statuses: write
+
+concurrency:
+  group: octopus-status-${{ inputs.sha || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Poll Octopus bridge and publish commit status
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ inputs.sha || github.sha }}
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+          OCTOPUS_STATUS_URL: https://ayahos-hq-verification-bridge.ayahos-hq.workers.dev
+          OCTOPUS_STATUS_CONTEXT: octopus/hq-operator-verified
+        run: node scripts/ci/octopus_status_relay.mjs
