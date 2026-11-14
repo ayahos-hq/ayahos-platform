@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "kind": "observed-heads-refresh",
+  "snapshot_utc": "2026-11-14T02:28:00Z",
+  "cutover_ready": false,
+  "note": "Reviewed-source SHA inventory only. It is not a path-level drift audit, runtime acceptance, artifact attestation, or production cutover authorization.",
+  "repositories": {
+    "ayahos-site": {
+      "repository": "ayahos-hq/ayahos-site",
+      "ref": "main",
+      "git_sha": "73b24e44cf006ac80cfc4e0abd618882f3b853b1",
+      "review": "merged Site PR #35"
+    },
+    "ayahos-core": {
+      "repository": "ayahos-hq/ayahos-core",
+      "ref": "main",
+      "git_sha": "6c6ba3337921745765d12c24609ca9df25caad63",
+      "review": "merged Core PR #93"
+    },
+    "ayahos-admin": {
+      "repository": "ayahos-hq/ayahos-admin",
+      "ref": "main",
+      "git_sha": "488a0c73d3a038796adb3dff9d45345a1c7ffc52",
+      "review": "merged Admin PR #27; authorization negative-access suite passed"
+    },
+    "ayahos-platform": {
+      "repository": "ayahos-hq/ayahos-platform",
+      "ref": "docs/hq-canonical",
+      "git_sha": "91041c35442a426f9080ae5adb35d01c91f7ceb3",
+      "review": "Platform PR #50 candidate; Octopus exact-SHA verification is required before merge"
+    },
+    "ayahos-workloads": {
+      "repository": "ayahos-hq/ayahos-workloads",
+      "ref": "main",
+      "git_sha": "12f13c196c77ed5fbba7bc6010175e12115b4e2b",
+      "review": "merged Workloads PR #25; Core schema pin is an ancestor of Core PR #93 target"
+    }
+  },
+  "historical_path_level_drift_audit": {
+    "path": "docs/release-candidates/hq-drift-20261024-linux-source-refresh.json",
+    "status": "historical-only",
+    "note": "Retained without modifying its historical SHA assertions."
+  }
+}

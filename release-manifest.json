@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "release_status": "candidate",
-  "release_id": "hq-candidate-20261108-observed-heads-drift-refresh-no-cutover",
+  "release_id": "hq-candidate-20261113-reviewed-pins-refresh-no-cutover",
   "source_authority": "fuaadabdullah/AyahOS_Dual_Lineage",
   "platform_manifest_commit_rule": "platform_git_sha_is_an_ancestor_of_manifest_commit",
   "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
@@ -14,25 +14,25 @@
     },
     "ayahos-core": {
       "repository": "ayahos-hq/ayahos-core",
-      "git_sha": "ed01c0514a00e854ee149a90e2979f9068d23ce8",
+      "git_sha": "6c6ba3337921745765d12c24609ca9df25caad63",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     },
     "ayahos-admin": {
       "repository": "ayahos-hq/ayahos-admin",
-      "git_sha": "5d9b269aa052127d4d911d4cef82a118121dc302",
+      "git_sha": "488a0c73d3a038796adb3dff9d45345a1c7ffc52",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     },
     "ayahos-platform": {
       "repository": "ayahos-hq/ayahos-platform",
-      "git_sha": "49b656a8fc3ff5995f39fe3d2aa190494982ec17",
+      "git_sha": "91041c35442a426f9080ae5adb35d01c91f7ceb3",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     },
     "ayahos-workloads": {
       "repository": "ayahos-hq/ayahos-workloads",
-      "git_sha": "a2ebf7ce02181ca5225886ead50e7258137d0457",
+      "git_sha": "12f13c196c77ed5fbba7bc6010175e12115b4e2b",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     }
@@ -52,11 +52,11 @@
   "reconciliation_evidence": {
     "status": "source-only-reviewed",
     "canonical_production_commit": "dbf9fbde52a11bbc069e19bdeca2658d8dcc1147",
-    "site_pr": "https://github.com/ayahos-hq/ayahos-site/pull/14",
-    "core_pr": "https://github.com/ayahos-hq/ayahos-core/pull/17",
-    "admin_pr": "https://github.com/ayahos-hq/ayahos-admin/pull/6",
-    "workloads_pr": "https://github.com/ayahos-hq/ayahos-workloads/pull/9",
-    "caveat": "Read-only source evidence, not production acceptance. A refreshed 2026-10-24 drift snapshot is attached; remaining divergences require per-component review. Independently built artifacts, authenticated chat, PostgreSQL recovery, Octopus cross-repo integration and rollback remain pending. No production cutover.",
+    "site_pr": "https://github.com/ayahos-hq/ayahos-site/pull/35",
+    "core_pr": "https://github.com/ayahos-hq/ayahos-core/pull/93",
+    "admin_pr": "https://github.com/ayahos-hq/ayahos-admin/pull/27",
+    "workloads_pr": "https://github.com/ayahos-hq/ayahos-workloads/pull/25",
+    "caveat": "Reviewed source pins are refreshed through 2026-11-13. Historical 2026-10-24 path-level drift remains attached and deliberately is not recast as current evidence. Independently built artifacts, authenticated chat, PostgreSQL recovery, Octopus cross-repository integration and rollback remain pending. No production cutover.",
     "admin_sse_pr": "https://github.com/ayahos-hq/ayahos-admin/pull/7",
     "core_aliyun_pr": "https://github.com/ayahos-hq/ayahos-core/pull/18",
     "local_dispatch_pr": "https://github.com/ayahos-hq/ayahos-core/pull/19",
@@ -71,15 +71,15 @@
     },
     "latest_observed_monorepo_main": "97ad888059095ffb123810af57b35b3075306750",
     "drift_audit_snapshot_utc": "2026-10-24T06:33:43Z",
-    "observed_heads_snapshot_utc": "2026-11-08T03:23:48Z",
-    "observed_heads_note": "2026-11-08 drift refresh: Core main advanced to ed01c051; workloads pin PR opened; site/admin/workloads local checkouts aligned to origin/main; platform remains docs/hq-canonical. Path-level 2026-10-24 audit retained as historical. No cutover.",
+    "observed_heads_snapshot_utc": "2026-11-14T02:28:00Z",
+    "observed_heads_note": "2026-11-13 reviewed-pin refresh: Site PR #35, Core PR #93, Admin PR #27, and Workloads PR #25 are merged; Platform PR #50 remains the exact-SHA candidate under its honest Octopus gate. The 2026-10-24 path-level audit remains historical. No cutover.",
     "platform_pr": "https://github.com/ayahos-hq/ayahos-platform/pull/50",
     "core_provenance_pr": "https://github.com/ayahos-hq/ayahos-core/pull/81",
     "workloads_rag_schema_pr": "https://github.com/ayahos-hq/ayahos-workloads/pull/23",
     "cloudflare_account": "AyahOS_HQ 265071fc5a2ac8bbe85e2bd724361080",
     "forge_tm_ayahos_workers": "deleted",
-    "observed_heads_path": "docs/release-candidates/hq-observed-heads-20261108.json",
+    "observed_heads_path": "docs/release-candidates/hq-observed-heads-20261113.json",
     "workloads_core_schema_pin_pr": "https://github.com/ayahos-hq/ayahos-workloads/pull/24",
-    "core_main": "ed01c0514a00e854ee149a90e2979f9068d23ce8"
+    "core_main": "6c6ba3337921745765d12c24609ca9df25caad63"
   }
 }
