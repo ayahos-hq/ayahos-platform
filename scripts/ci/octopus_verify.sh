@@ -33,7 +33,7 @@ fi
 [ -f /.dockerenv ] || fail "refusing installs outside isolated container"
 [ -d apps/api/src/dual_lineage ] && [ -f pnpm-lock.yaml ] ||
     fail "incomplete Git repository checkout"
-case "$LANE" in api|web|ml|rag|worker|control|release|live|datadog) ;; *) fail "unsupported lane: $LANE";; esac
+case "$LANE" in api|web|ml|rag|worker|control|release|live|live-chat|datadog) ;; *) fail "unsupported lane: $LANE";; esac
 ci_resource_snapshot "worker:startup:$LANE"
 
 if [ "$(id -u)" -eq 0 ]; then
@@ -117,6 +117,11 @@ case "$LANE" in
     web)
         command -v node >/dev/null || fail "Node.js unavailable"
         command -v npm >/dev/null || fail "npm unavailable"
+        # The scripts/ci suite exercises the database-backup script, which
+        # requires age and rclone on PATH; provision them like the live lane
+        # provisions jq instead of letting the test fail on a missing tool.
+        command -v age >/dev/null || install_packages age
+        command -v rclone >/dev/null || install_packages rclone
         node -e 'const [m,n]=process.versions.node.split(".").map(Number);if(m<20||(m===20&&n<9)) process.exit(2)'
         if ! command -v corepack >/dev/null; then
             npm install -g corepack@0.34.5
@@ -165,6 +170,13 @@ case "$LANE" in
         datadog_mode="${DD_DASHBOARD_MODE:-$(octopus_var DD_DASHBOARD_MODE)}"
         ruby scripts/datadog_dashboard.rb "${datadog_mode:-plan}"
         ;;
+    live-chat)
+        # Live post-deploy: bind the gate to the exact Octopus release Git commit.
+        # No credentials and no synthetic response fixture.
+        command -v python3.12 >/dev/null || install_packages python3.12
+        export EXPECTED_SHA="${EXPECTED_SHA:-${LIVE_EXPECTED_SHA:-}}"
+        python3.12 scripts/ci/live_chat_gate.py
+        ;;
     live)
         # Post-deploy only: verifies the live stack at EXPECTED_SHA. This is not
         # a merge gate and needs live smoke secrets as Octopus variables:
@@ -184,6 +196,7 @@ case "$LANE" in
         setup_ruby
         setup_pgvector
         python -m pip install -e './apps/api[dev,control]'
+        python -m pip check
         python -m dual_lineage.db migrate --database-url "$TEST_DATABASE_URL"
         python scripts/release_gate.py
         ;;

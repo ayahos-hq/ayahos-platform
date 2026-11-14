@@ -144,3 +144,23 @@ step "deployable-container-smoke" {
         worker_pool = "hosted-ubuntu"
     }
 }
+
+step "public-live-chat" {
+    name = "Production post-deploy public chat (JSON and SSE)"
+    action {
+        action_type = "Octopus.Script"
+        environments = ["production"]
+        is_required = true
+        properties = {
+            Octopus.Action.GitRepository.Source = "Project"
+            Octopus.Action.Script.ScriptFileName = "scripts/ci/octopus_verify.sh"
+            Octopus.Action.Script.ScriptParameters = "live-chat"
+            Octopus.Action.Script.ScriptSource = "GitRepository"
+        }
+        worker_pool = "hosted-ubuntu"
+        container {
+            feed = "docker-hub-public"
+            image = "octopusdeploy/worker-tools:6.6.5-ubuntu.24.04"
+        }
+    }
+}

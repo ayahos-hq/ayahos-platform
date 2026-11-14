@@ -1,0 +1,29 @@
+name = "Encrypted database backup"
+cancel_queued_tasks = false
+cancel_running_tasks = false
+default_guided_failure_mode = "Off"
+description = "Operator-only, recovery-gated encrypted public-schema backup to private R2."
+
+connectivity_policy {
+    allow_deployments_to_no_targets = true
+}
+
+run_retention_policy {
+    type = "Default"
+}
+
+process {
+    step "encrypted-postgres-to-private-r2" {
+        name = "Encrypted PostgreSQL 17 public-schema backup to private Cloudflare R2"
+        action {
+            action_type = "Octopus.Script"
+            is_required = true
+            properties = {
+                Octopus.Action.GitRepository.Source = "Project"
+                Octopus.Action.Script.ScriptFileName = "scripts/ci/octopus_db_backup.sh"
+                Octopus.Action.Script.ScriptSource = "GitRepository"
+            }
+            worker_pool = "ayahos-backup"
+        }
+    }
+}

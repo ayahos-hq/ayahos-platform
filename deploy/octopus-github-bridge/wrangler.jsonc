@@ -8,20 +8,32 @@
   "vars": {
     "GITHUB_REPOSITORY": "fuaadabdullah/AyahOS_Dual_Lineage",
     // Verified against the live Octopus instance 2026-10-22 (instance ayahos.octopus.app,
-    // space Default = Spaces-1, single project AyahOS). OCTOPUS_ENVIRONMENT stays empty here:
-    // the verification-environment name is set on the deployed Worker only — copy it from the
-    // Worker dashboard before any CLI deploy; do not guess it.
+    // space Default = Spaces-1, single project AyahOS). On 2026-10-23, the
+    // managed Octopus service credential returned Development as its sole available
+    // environment. All eight verification steps execute on Octopus hosted workers,
+    // not on production deployment targets. Revalidate permissions before cutover.
+    // Real KV and D1 binding IDs are verified account metadata, never secrets.
     "OCTOPUS_URL": "https://ayahos.octopus.app",
     "OCTOPUS_SPACE_ID": "Spaces-1",
     "OCTOPUS_PROJECT": "AyahOS",
-    "OCTOPUS_ENVIRONMENT": "",
-    "STATUS_CONTEXT": "octopus/verify"
+    "OCTOPUS_ENVIRONMENT": "Development",
+    "STATUS_CONTEXT": "octopus/verify",
+    // Read-only live audit 2026-10-23: STATE_BACKEND=d1, STATE_DB bound,
+    // task backlog empty; results and queue metadata are present in D1.
+    // Keep TASKS KV binding for rollback, never deploy a stale kv default.
+    "STATE_BACKEND": "d1",
+    "BRANCH_QUEUE_ENABLED": "false"
   },
   "kv_namespaces": [
-    // PRODUCTION KV ID LIVES ONLY IN THE DEPLOYED WORKER CONFIG (verified 2026-10-21/22).
-    // Replace this placeholder with that id from the Cloudflare dashboard before any CLI
-    // deploy — deploying with the placeholder would break the live bridge.
-    { "binding": "TASKS", "id": "REPLACE_WITH_KV_NAMESPACE_ID" }
+    // Existing production state remains bound for instant rollback and migration.
+    { "binding": "TASKS", "id": "4883e599d9f3439eb82d2e81a23f2557" }
   ],
-  "triggers": { "crons": ["* * * * *"] }
+  "d1_databases": [
+    // Dedicated CI task ledger; unrelated to the application PostgreSQL database.
+    { "binding": "STATE_DB", "database_name": "ayahos-octopus-bridge-state",
+      "database_id": "208f81a8-81b8-47d4-aa69-e150af060798" }
+  ],
+  // Keep legacy immediate webhook launches but cap scheduled KV polling to 240/day.
+  // A one-minute cron costs 1,440 KV list ops/day, above the KV Free allowance.
+  "triggers": { "crons": ["*/6 * * * *"] }
 }

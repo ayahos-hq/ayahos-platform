@@ -1,0 +1,14 @@
+{
+  "name": "ayahos-esa-free-runtime",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test index.test.mjs",
+    "syntax": "node --check src/index.mjs",
+    "dev": "esa-cli dev",
+    "deploy:staging": "esa-cli deploy --environment staging --no-preview"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

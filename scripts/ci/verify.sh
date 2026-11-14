@@ -90,6 +90,7 @@ case "${1:-}" in
   api|api-core)
     require_test_database "$1"
     python -m pip install -e './apps/api[dev,control]'
+    python -m pip check
     wait_for_db
     reset_disposable_database
     python -m dual_lineage.db migrate --database-url "$TEST_DATABASE_URL"
@@ -109,7 +110,7 @@ case "${1:-}" in
     # without contacting live endpoints or using any runtime secret.
     python3 -m unittest discover -s scripts/ci/tests -p 'test_*.py'
     corepack enable
-    corepack prepare pnpm@9.15.9 --activate
+    corepack prepare pnpm@12.15.0 --activate
     pnpm install --frozen-lockfile
     pnpm test:web
     pnpm test:site
@@ -150,6 +151,7 @@ case "${1:-}" in
       fi
     fi
     .venv/bin/python -m pip install -e './apps/api[dev,control]'
+    .venv/bin/python -m pip check
     export PYTHON_API_CONTRACT_PYTHON="$(pwd)/.venv/bin/python"
     (cd apps/rag-ruby && bundle config set path vendor/bundle && bundle install --jobs 4 --retry 3)
     (cd apps/ruby_worker && bundle config set path vendor/bundle && bundle install --jobs 4 --retry 3)

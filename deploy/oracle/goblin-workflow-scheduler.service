@@ -2,6 +2,9 @@
 Description=AyahOS Ruby durable workflow scheduler
 After=network-online.target
 Wants=network-online.target
+# Stop repeated credential/DB failures after four starts per hour.
+StartLimitIntervalSec=3600
+StartLimitBurst=4
 
 [Service]
 Type=simple
@@ -12,8 +15,10 @@ EnvironmentFile=/etc/goblin/workflow.env
 Environment=BUNDLE_GEMFILE=/opt/goblinos-dual-lineage/apps/ruby_worker/Gemfile
 Environment=PGSSLMODE=require
 ExecStart=/usr/local/bin/bundle exec ruby /opt/goblinos-dual-lineage/apps/ruby_worker/bin/goblin-workflow schedule --poll-seconds=30
-Restart=always
-RestartSec=5
+# A fatal queue authentication failure must not spin every five seconds.
+# After a capped retry window, a credential repair needs a deliberate restart.
+Restart=on-failure
+RestartSec=600
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict

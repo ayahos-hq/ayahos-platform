@@ -1,5 +1,77 @@
 # Octopus required CI gates
 
+## October 28, 2026 — Production live-chat acceptance (candidate)
+
+The version-controlled deployment process adds **one required Production-scoped**
+step after the eight existing source-verification steps. Development and Staging
+retain the original eight steps. The new step invokes
+`scripts/ci/octopus_verify.sh live-chat` on the existing hosted Ubuntu
+execution container; it runs `scripts/ci/live_chat_gate.py` with
+`EXPECTED_SHA` derived from the exact Octopus Git release revision.
+
+This is a **real inference** gate, not a browser fixture: it verifies
+`/api/build` reports the expected full main commit, then sends one bounded JSON
+chat request and one streaming SSE request through
+`https://ayahos.pages.dev/api/chat`. Acceptance requires HTTP 200, the
+correct response content type, nonempty completed model output, and a terminal
+SSE `done` event. A missing or different commit, provider failure, incomplete
+stream, missing environment evidence, or timeout returns a nonzero exit code.
+No API secrets are required; results are text-free
+`artifacts/live-chat-gate.json` evidence.
+
+**Execution and scope:** Octopus remains the authoritative process. This step
+runs only when an Octopus release is explicitly deployed to the **Production**
+environment; a successful Development verification task or a Cloudflare preview
+does not execute it. The Octopus bridge currently targets Development, so it
+must **not** be described as an automatically running production gate. Fly and
+Cloudflare must already have deployed the same commit before the Production step
+runs. This gate blocks Production acceptance but **does not automatically roll
+back Fly or Cloudflare**. A failed gate must be followed by a separately
+authorized deployment rollback to the previous verified artifacts.
+
+**Observed prior to merge (2026-10-28 21:17 UTC):** A local invocation against
+production commit `b7986c9818efe24036535f4fc7eed4d98f4cda3e` returned
+`PASS`: build SHA (119 ms), JSON via provider `node-001` (2,590 ms), SSE
+(1,504 ms, two nonempty delta events). Total 4,214 ms. This proves the
+standalone probe, not the new Octopus Production step. Octopus still requires
+a new exact-commit release/task after merge for the deployment-process change
+to be verified on its hosted worker.
+
+
+
+## October 28, 2026 - CI container Ruby compatibility correction
+
+Octopus task `ServerTasks-4401` for PR #450 (commit `d18c8d28`) passed all seven source-verification stages, then **failed the deployable image build**: the `python:3.15-slim-bookworm` base supplied Ruby 3.1.2, while the Ruby RAG/Control Gemfiles require Minitest 6 and Ruby 3.2+. The scoped fix switches the **CI deployable container only**, not Fly's production image, to a digest-pinned `python:3.15-slim-trixie` base with Ruby 3.3. This does not change the existing Octopus acceptance authority or production credentials.
+
+On the isolated Ubuntu Linux Docker host, the corrected image built successfully. The existing `scripts/ci/deployable-container-smoke.sh` returned **exit 0**, exercising health, RAG ingestion and retrieval; startup `curl` retries returned transient connection reset/503 before readiness. The repository-wide `scripts/ci/tests` suite ran **40 tests, all passed** on Linux. A new regression test asserts the compatible, digest-pinned base. A fresh exact-SHA Octopus hosted-worker task remains required before merging.
+
+## Documentation checkpoint — 2026-10-25 — distinguish monorepo acceptance from HQ Development
+
+The **existing monorepo Octopus release authority** remains separate from the newer **HQ Verification Development-only** project. [Merged HQ Platform PR #34](https://github.com/ayahos-hq/ayahos-platform/pull/34) documents exact-SHA five-repo acquisition on Linux and a passing HQ Development release **0.0.18 / Deployments-351** with **three required source checks**. This is real, narrowly scoped source-assembly evidence; it does **not** mean the eight-step monorepo gate passed for the latest monorepo SHA, nor that HQ image artifacts, OCI manifests/digests, real pgvector/restore, staging auth or production canary passed. The isolated composite artifact builder is still under review in [HQ Platform PR #36](https://github.com/ayahos-hq/ayahos-platform/pull/36).
+
+Never attach an HQ green badge to the incumbent monorepo `octopus/verify` status or infer status posting from a successful webhook ping. Inspect exact platform and component commits, Octopus release/task logs, required steps, image digests and post-deploy probes independently before promotion. Some earlier dated sections here predate the HQ Development source verifier; retain them only as historical evidence.
+
+
+## October 23, 2026: GitHub Actions retirement for AyahOS operations
+
+**Octopus is the only CI and backup orchestration provider.** Merged source
+replaces the experimental GitHub Actions encrypted-backup dispatcher with
+`.octopus/runbooks/encrypted-database-backup.ocl` and
+`scripts/ci/octopus_db_backup.sh`. The distinct Octopus runbook uses a
+dedicated backup worker and sensitive values restricted to the runbook;
+eight standard CI verification steps remain unmodified and secrets-free.
+An operator must register/provision the dedicated Octopus backup worker,
+sensitive runbook variables and Config-as-Code runbook discovery in Octopus
+before this source can execute. **No live runbook task has been verified.**
+Refer to `docs/operations/octopus-database-backups.md`.
+
+The inactive GitHub Actions Octopus-status-relay experiment is removed as
+well; the Cloudflare Octopus GitHub bridge remains the status reconciliation
+authority. A GitHub status (or missing status) does not replace a successful
+Octopus task tied to the exact SHA. Do not reinstate an Actions workflow
+because status posting is intermittently unavailable.
+
+
 **Primary acceptance configuration:** `.octopus/deployment_process.ocl`
 uses Octopus Configuration as Code, and its eight steps are marked
 `is_required = true`. The processes run serially: a failed preceding step
@@ -116,3 +188,47 @@ Until a valid status writer exists and `octopus/verify` is enforceable, require 
 Octopus reference documentation:
 - https://octopus.com/docs/projects/version-control/ocl-file-format
 - https://octopus.com/docs/projects/steps/execution-containers-for-workers
+
+## Verification environment repair (2026-10-23 UTC)
+
+Cloudflare Worker logs confirmed release creation succeeded but Octopus rejected the
+`deployments/create/untenanted/v1` call with HTTP 400 because no accessible environment
+was named `Verification`. The authenticated service credential subsequently listed
+`Development` as its sole authorized environment. The bridge is to use `Development`
+for CI-only worker execution, keeping the eight mandatory steps unchanged. This
+is **not** permission to use staging/production deployment targets or claim a
+successful release; accept only exact-SHA Octopus task success after the change.
+
+**Bridge repair evidence:** Cloudflare Worker version `0ff7a5bb-1373-4968-aa94-bbd295299b68`
+was observed live at 100% with `OCTOPUS_ENVIRONMENT=Development` and all
+three managed-secret binding names plus the existing KV namespace preserved.
+These settings establish only the bridge configuration, **not** an accepted
+Octopus test task. No credential values were read or committed.
+
+## CI cancellation policy (2026-10-23)
+
+`cancel_queued_tasks = false` and `cancel_running_tasks = false` are
+**both** required for our shared CI-only project and Development environment.
+Octopus's queued-task supersession is scoped to project/environment/tenant,
+**not to Git ref**. With `cancel_queued_tasks = true`, a push on another
+feature branch silently cancels the older queued exact-commit verification
+before any of its eight required checks can start. We reproduced this:
+`ServerTasks-1195` (PR #343, `3b45c9f`) was queued, and after another
+branch push its outcome changed to `error: Octopus task was canceled`.
+Earlier settings also canceled running tasks. Both policy switches must
+be disabled to preserve per-commit test acceptance across branches.
+
+**Free-tier tradeoff:** a burst of pushes can now accumulate legitimate
+eight-step verification tasks. Monitor queued count, execution minutes,
+and task age; do not automatically fan out reruns or delete distinct
+pending SHAs. Implement branch-scoped deduplication with an explicit
+latest-revision handoff in the existing bridge before reinstating any
+cancellation policy. For now prefer small sequential batches, not
+multiple concurrent branch pushes. An overdue/pending/canceled task is
+never green and cannot authorize a behavioral merge.
+
+This is a CI scheduling configuration fix, not test success, extra
+resources, reduced coverage, provider routing, or a production deployment.
+The live Octopus project's settings may lag Git-backed OCL; verify actual
+`CancelQueuedTasks=false` and `CancelRunningTasks=false` in the live
+project before claiming the fix is active.

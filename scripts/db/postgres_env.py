@@ -1,5 +1,4 @@
-"""Keep child libpq clients away from ambient PostgreSQL overrides."""
-
+"""Isolate child libpq clients from ambient PostgreSQL connection overrides."""
 from __future__ import annotations
 
 import os
@@ -12,6 +11,7 @@ def isolated_postgres_environment(
     source = os.environ if ambient is None else ambient
     clean = {key: value for key, value in source.items() if not key.startswith("PG")}
     clean.update(connection)
+    # Only explicitly opted-in trusted CA roots are allowed through.
     if source.get("AYAHOS_PGSSLROOTCERT"):
         clean["PGSSLROOTCERT"] = source["AYAHOS_PGSSLROOTCERT"]
     return clean
