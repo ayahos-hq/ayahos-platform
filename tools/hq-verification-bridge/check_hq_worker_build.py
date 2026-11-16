@@ -17,7 +17,9 @@ manifest; this script fails if a secret-shaped variable appears in it.
 from __future__ import annotations
 
 import json
+import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -37,6 +39,7 @@ EXPECTED_VARS = {
 EXPECTED_KV = {"TASKS": "49ce086dc87f4de9a5110e5771907cb3"}
 EXPECTED_PREVIEW_KV = {"TASKS": "2b5af79207114dec9989bc1d952c3c9d"}
 SECRET_SHAPED = re.compile(r"(TOKEN|SECRET|API_KEY|PASSWORD)", re.IGNORECASE)
+PREVIEW_VARS = {**EXPECTED_VARS, "STATUS_CONTEXT": "octopus/hq-operator-verified/preview"}
 
 
 def strip_jsonc(text: str) -> str:
@@ -82,6 +85,19 @@ def main(argv: list[str]) -> int:
         return 2
 
     failures: list[str] = []
+    if "WORKERS_CI" in os.environ:
+        expected = os.environ.get("WORKERS_CI_COMMIT_SHA", "")
+        head = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, capture_output=True, text=True
+        )
+        if (
+            os.environ["WORKERS_CI"] != "1"
+            or not re.fullmatch(r"[0-9a-f]{40}", expected)
+            or head.returncode != 0
+            or head.stdout.strip() != expected
+        ):
+            print("FAIL: Worker checkout does not match the triggering Cloudflare commit")
+            return 1
 
     if not MANIFEST.is_file():
         print(f"FAIL: HQ bridge manifest missing: {MANIFEST.relative_to(REPO_ROOT)}")
@@ -98,10 +114,8 @@ def main(argv: list[str]) -> int:
         )
 
     main_rel = config.get("main", "")
-    if not main_rel or not (BRIDGE_DIR / main_rel).is_file():
-        failures.append(
-            f"main module missing: {BRIDGE_DIR.relative_to(REPO_ROOT)}/{main_rel}"
-        )
+    if main_rel != "src/worker.js" or not (BRIDGE_DIR / "src/worker.js").is_file():
+        failures.append("main module must be the HQ Worker at src/worker.js")
 
     if not config.get("compatibility_date"):
         failures.append("compatibility_date missing")
@@ -110,7 +124,7 @@ def main(argv: list[str]) -> int:
     for key, expected in EXPECTED_VARS.items():
         actual = vars_.get(key)
         if actual != expected:
-            failures.append(f"var {key} is {actual!r}, expected {expected!r}")
+            failures.append(f"var {key} has an unexpected value")
     for key in vars_:
         if SECRET_SHAPED.search(key):
             failures.append(f"secret-shaped variable {key} must not be committed in vars")
@@ -139,9 +153,8 @@ def main(argv: list[str]) -> int:
                 )
         if preview_kv.get("TASKS") == kv.get("TASKS"):
             failures.append("preview TASKS binding must not use the production KV namespace")
-        preview_context = previews.get("vars", {}).get("STATUS_CONTEXT")
-        if preview_context == EXPECTED_VARS["STATUS_CONTEXT"]:
-            failures.append("preview STATUS_CONTEXT must differ from the canonical context")
+        if previews.get("vars") != PREVIEW_VARS:
+            failures.append("preview vars must match the HQ preview configuration")
 
     if failures:
         for failure in failures:

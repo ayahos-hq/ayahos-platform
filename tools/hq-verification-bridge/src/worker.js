@@ -3,9 +3,8 @@
 // Octopus cannot create releases for pull-request branches on its own (Git triggers only follow
 // the default branch) and it reports nothing to GitHub. This worker closes both gaps:
 //
-//   1. A signed GitHub `push` webhook creates an Octopus release for that exact branch and commit
-//      and deploys it to the verification environment, which runs the seven required gates in
-//      .octopus/deployment_process.ocl. The commit gets a `pending` status linking the task.
+//   1. A signed GitHub `push` webhook creates an HQ release with exact deployment-step Git
+//      revisions and queues it in Development. The commit gets a `pending` status linking the task.
 //   2. A cron trigger polls each task it started and posts `success`, `failure` or `error`.
 //
 // The latest state per commit is also kept in KV and served read-only at GET /status/<sha>, so a
@@ -18,6 +17,9 @@
 // branch deletions are ignored.
 
 const GITHUB_API = "https://api.github.com";
+const HQ_PLATFORM = "ayahos-hq/ayahos-platform";
+const HQ_COMPONENT = /^ayahos-(?:admin|core|platform|site|workloads)$/;
+const HQ_PROJECT_SLUG = "ayahos-hq-verification";
 const TASK_PREFIX = "task:";
 const RESULT_PREFIX = "result:";
 const TASK_TTL_SECONDS = 7 * 24 * 60 * 60;
@@ -27,6 +29,7 @@ const SHA = /^[0-9a-f]{40}$/;
 const ZERO_SHA = "0".repeat(40);
 const MAX_REF_LENGTH = 255;
 const DESCRIPTION_LIMIT = 140;
+const READ_TIMEOUT_MS = 10_000;
 
 const REQUIRED_ENV = [
   "GITHUB_REPOSITORY",
@@ -124,6 +127,8 @@ export function statusForTask(task) {
 async function octopus(env, method, path, body) {
   const response = await fetch(`${octopusBase(env)}${path}`, {
     method,
+    redirect: "error",
+    ...(method === "GET" ? { signal: AbortSignal.timeout(READ_TIMEOUT_MS) } : {}),
     headers: {
       "X-Octopus-ApiKey": env.OCTOPUS_API_KEY,
       Accept: "application/json",
@@ -136,8 +141,105 @@ async function octopus(env, method, path, body) {
   if (!response.ok) {
     throw new Error(`Octopus ${method} ${path.split("?")[0]} returned HTTP ${response.status}`);
   }
-  const text = await response.text();
-  return text ? JSON.parse(text) : {};
+  try {
+    return await response.json();
+  } catch {
+    throw new Error("Octopus returned an invalid JSON response");
+  }
+}
+
+function resourceKey(action, name) {
+  const validName = (value) => typeof value === "string" && /^[^:\r\n*]+$/.test(value.trim());
+  if (!validName(action) || (name && !validName(name))) {
+    throw new Error("Octopus Git resource has an invalid action or resource name");
+  }
+  return name ? `${action}:${name}` : action;
+}
+
+function gitResources(template) {
+  if (!Array.isArray(template.GitResources)) {
+    throw new Error("Octopus release template did not list Git resources");
+  }
+  const resources = new Map();
+  for (const resource of template.GitResources) {
+    const key = resourceKey(resource.ActionName, resource.Name);
+    const uri = typeof resource.RepositoryUri === "string" ? resource.RepositoryUri.toLowerCase() : "";
+    const component = /^(?:https:\/\/github\.com\/|git@github\.com:|ssh:\/\/git@github\.com\/)ayahos-hq\/([a-z-]+)(?:\.git)?$/.exec(uri)?.[1];
+    if (!HQ_COMPONENT.test(component ?? "") || resources.has(key)) {
+      throw new Error("Octopus release template has an unknown or duplicate Git resource");
+    }
+    resources.set(key, component);
+  }
+  const components = new Set(resources.values());
+  if (!components.has("ayahos-platform") || !components.has("ayahos-core")) {
+    throw new Error("Octopus release template is missing Platform or Core Git resources");
+  }
+  return resources;
+}
+
+async function createVerifiedRelease(env, sha) {
+  const spacePath = `/api/${env.OCTOPUS_SPACE_ID}`;
+  if (env.GITHUB_REPOSITORY !== HQ_PLATFORM || !SHA.test(sha) || sha === ZERO_SHA
+      || env.OCTOPUS_ENVIRONMENT !== "Development") {
+    throw new Error("HQ release verification requires the Platform repository, full SHA and Development");
+  }
+  const project = await octopus(env, "GET", `${spacePath}/projects/${HQ_PROJECT_SLUG}`);
+  if (!project.Id || project.Name !== env.OCTOPUS_PROJECT || project.IsVersionControlled !== false) {
+    throw new Error("Octopus project does not match the database-backed HQ verification project");
+  }
+  const templatePath = `${spacePath}/projects/${encodeURIComponent(project.Id)}/deploymentprocesses/template`;
+  const resources = gitResources(await octopus(env, "GET", templatePath));
+
+  const response = await fetch(`https://raw.githubusercontent.com/${HQ_PLATFORM}/${sha}/release-manifest.json`, {
+    redirect: "error",
+    signal: AbortSignal.timeout(READ_TIMEOUT_MS),
+  });
+  if (!response.ok) throw new Error(`Candidate release manifest returned HTTP ${response.status}`);
+  const manifest = await response.json();
+  if (manifest.schema_version !== 1 || manifest.release_status !== "candidate") {
+    throw new Error("Invalid candidate release manifest");
+  }
+  const expected = new Map();
+  for (const [key, component] of resources) {
+    const pin = manifest.components?.[component];
+    if (pin?.repository !== `ayahos-hq/${component}` || !SHA.test(pin.git_sha ?? "") || pin.git_sha === ZERO_SHA) {
+      throw new Error("Candidate release manifest is missing a valid Git resource pin");
+    }
+    expected.set(key, component === "ayahos-platform" ? sha : pin.git_sha);
+  }
+
+  const created = await octopus(env, "POST", `${spacePath}/releases/create/v1`, {
+    spaceId: env.OCTOPUS_SPACE_ID,
+    spaceIdOrName: env.OCTOPUS_SPACE_ID,
+    projectName: project.Name,
+    gitResources: [...expected].map(([key, commit]) => `${key}:${commit}`),
+    ignoreIfAlreadyExists: false,
+    ignoreChannelRules: false,
+  });
+  if (!created.ReleaseId || !created.ReleaseVersion) {
+    throw new Error("Octopus did not return a release ID and version");
+  }
+  const release = await octopus(env, "GET", `${spacePath}/releases/${encodeURIComponent(created.ReleaseId)}`);
+  if (release.Id !== created.ReleaseId || release.ProjectId !== project.Id || release.Version !== created.ReleaseVersion
+      || !Array.isArray(release.SelectedGitResources) || release.SelectedGitResources.length !== expected.size) {
+    throw new Error("Octopus release did not report the expected Git resource selection");
+  }
+  const snapshotId = release.ProjectDeploymentProcessSnapshotId;
+  if (!snapshotId) throw new Error("Octopus release did not report a deployment process snapshot");
+  const snapshot = gitResources(await octopus(env, "GET", `${spacePath}/deploymentprocesses/${encodeURIComponent(snapshotId)}/template`));
+  const seen = new Set();
+  for (const selected of release.SelectedGitResources) {
+    const key = resourceKey(selected.ActionName, selected.GitResourceReferenceName);
+    if (seen.has(key) || !expected.has(key) || resources.get(key) !== snapshot.get(key)
+        || selected.GitReferenceResource?.GitCommit !== expected.get(key)) {
+      throw new Error("Octopus release selected a different Git repository or commit");
+    }
+    seen.add(key);
+  }
+  if (snapshot.size !== expected.size) {
+    throw new Error("Octopus release snapshot has unexpected Git resources");
+  }
+  return release;
 }
 
 export async function postStatus(env, sha, { state, description, targetUrl }) {
@@ -190,20 +292,12 @@ export async function startVerification(env, { ref, sha }) {
   let taskId;
   let releaseVersion;
   try {
-    const release = await octopus(env, "POST", `/api/${space}/releases/create/v1`, {
-      spaceId: space,
-      spaceIdOrName: space,
-      projectName: env.OCTOPUS_PROJECT,
-      gitRef: ref,
-      gitCommit: sha,
-      ignoreIfAlreadyExists: false,
-      ignoreChannelRules: false,
-    });
+    const release = await createVerifiedRelease(env, sha);
     const deployment = await octopus(env, "POST", `/api/${space}/deployments/create/untenanted/v1`, {
       spaceId: space,
       spaceIdOrName: space,
       projectName: env.OCTOPUS_PROJECT,
-      releaseVersion: release.ReleaseVersion,
+      releaseVersion: release.Version,
       environmentNames: [env.OCTOPUS_ENVIRONMENT],
       forcePackageDownload: false,
       forcePackageRedeployment: false,
@@ -212,11 +306,13 @@ export async function startVerification(env, { ref, sha }) {
       useGuidedFailure: false,
     });
     taskId = deployment.DeploymentServerTasks?.[0]?.ServerTaskId;
-    if (!taskId) throw new Error("Octopus deployment response had no server task");
-    releaseVersion = release.ReleaseVersion;
+    if (!taskId || deployment.DeploymentServerTasks.length !== 1) {
+      throw new Error("Octopus deployment response did not identify exactly one server task");
+    }
+    releaseVersion = release.Version;
     await env.TASKS.put(
       `${TASK_PREFIX}${taskId}`,
-      JSON.stringify({ sha, ref, releaseVersion: release.ReleaseVersion, state: "pending" }),
+      JSON.stringify({ sha, ref, releaseVersion, gitSelectionVerified: true }),
       { expirationTtl: TASK_TTL_SECONDS },
     );
   } catch (error) {
@@ -250,7 +346,9 @@ export async function reconcile(env) {
       const record = JSON.parse((await env.TASKS.get(name)) ?? "null");
       if (!record) continue;
       const task = await octopus(env, "GET", `/api/${env.OCTOPUS_SPACE_ID}/tasks/${encodeURIComponent(taskId)}`);
-      const status = statusForTask(task);
+      const status = task.State === "Success" && record.gitSelectionVerified !== true
+        ? { state: "error", description: "Octopus task has no verified Git resource selection; rerun verification" }
+        : statusForTask(task);
       const key = `${status.state}:${status.description}`;
       if (key !== record.reported) {
         await reportStatus(env, record.sha, { ...status, targetUrl: taskUrl(env, taskId) });

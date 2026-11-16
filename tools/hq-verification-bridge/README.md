@@ -27,3 +27,19 @@ Boundaries:
   `OCTOPUS_API_KEY`) exist only in the deployed Worker's settings. They
   are never committed; `check_hq_worker_build.py` fails the build if a
   secret-shaped variable appears in the manifest's `vars`.
+
+## Selecting and checking Octopus revisions
+
+The HQ bridge uses the database-backed `AyahOS HQ Verification` project in
+`Development`. It discovers the project's Git-backed actions from the
+Octopus release template. Platform actions use the signed push SHA. Each
+sibling action uses the pin from `release-manifest.json` at that exact
+Platform commit.
+
+Before it queues Development, the bridge reads back the release and its
+process snapshot and checks the repository and commit for every selected
+Git resource. A missing or different selection produces an error status.
+Tasks queued by an older bridge need a fresh run to earn a success status.
+The status covers the gates actually configured in the HQ Development
+project. Complete release acceptance needs the separate cross-repository,
+artifact, and live gates described in [the candidate verification guide](../../docs/infrastructure/octopus-ci-verification.md).

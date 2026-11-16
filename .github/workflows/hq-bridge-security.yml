@@ -22,6 +22,8 @@ jobs:
         with:
           node-version: "22"
       - name: Confirm preview-only HQ manifest
-        run: python3 tools/hq-verification-bridge/check_hq_worker_build.py --preview-only
+        run: |
+          WORKERS_CI=1 WORKERS_CI_COMMIT_SHA="$GITHUB_SHA" \
+            python3 tools/hq-verification-bridge/check_hq_worker_build.py --preview-only
       - name: Verify HQ source security invariants
         run: node --test tools/hq-verification-bridge/test/*.test.mjs

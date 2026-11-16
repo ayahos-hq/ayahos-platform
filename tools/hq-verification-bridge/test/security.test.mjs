@@ -3,8 +3,79 @@ import { afterEach, test } from "node:test";
 import worker, { reconcile, startVerification, statusForTask } from "../src/worker.js";
 
 const SHA = "a".repeat(40);
+const CORE_SHA = "b".repeat(40);
+const OLD_PLATFORM_SHA = "c".repeat(40);
+const API = "https://ayahos.octopus.app/api/Spaces-1";
+const PROJECT_ID = "Projects-42";
+const SNAPSHOT_ID = "deploymentprocess-Projects-42-s-1";
+const RELEASE_ID = "Releases-42";
+const RELEASE_VERSION = "1.0.42";
+const TEMPLATE_PATH = `${API}/projects/${PROJECT_ID}/deploymentprocesses/template`;
+const SNAPSHOT_PATH = `${API}/deploymentprocesses/${SNAPSHOT_ID}/template`;
+const RELEASE_PATH = `${API}/releases/${RELEASE_ID}`;
+const MANIFEST_PATH = `https://raw.githubusercontent.com/ayahos-hq/ayahos-platform/${SHA}/release-manifest.json`;
 const originalFetch = globalThis.fetch;
 afterEach(() => { globalThis.fetch = originalFetch; });
+
+function template() {
+  return {
+    GitResources: [
+      { ActionName: "Platform verification", RepositoryUri: "https://github.com/ayahos-hq/ayahos-platform.git" },
+      { ActionName: "Cross-repo source verification", Name: "platform", RepositoryUri: "https://github.com/ayahos-hq/ayahos-platform" },
+      { ActionName: "Cross-repo source verification", Name: "core", RepositoryUri: "git@github.com:ayahos-hq/ayahos-core.git" },
+    ],
+  };
+}
+
+function releaseFixture() {
+  return {
+    Id: RELEASE_ID, ProjectId: PROJECT_ID, Version: RELEASE_VERSION,
+    ProjectDeploymentProcessSnapshotId: SNAPSHOT_ID,
+    SelectedGitResources: [
+      { ActionName: "Cross-repo source verification", GitResourceReferenceName: "core", GitReferenceResource: { GitCommit: CORE_SHA } },
+      { ActionName: "Platform verification", GitReferenceResource: { GitCommit: SHA } },
+      { ActionName: "Cross-repo source verification", GitResourceReferenceName: "platform", GitReferenceResource: { GitCommit: SHA } },
+    ],
+  };
+}
+
+function releaseApi(url, options) {
+  switch (url) {
+    case `${API}/projects/ayahos-hq-verification`:
+      assert.equal(options.method, "GET");
+      return Response.json({ Id: PROJECT_ID, Name: "AyahOS HQ Verification", IsVersionControlled: false });
+    case TEMPLATE_PATH:
+    case SNAPSHOT_PATH:
+      assert.equal(options.method, "GET");
+      return Response.json(template());
+    case MANIFEST_PATH:
+      assert.equal(options.headers, undefined);
+      return Response.json({
+        schema_version: 1, release_status: "candidate",
+        components: {
+          "ayahos-core": { repository: "ayahos-hq/ayahos-core", git_sha: CORE_SHA },
+          "ayahos-platform": { repository: "ayahos-hq/ayahos-platform", git_sha: OLD_PLATFORM_SHA },
+        },
+      });
+    case `${API}/releases/create/v1`:
+      assert.equal(options.method, "POST");
+      assert.deepEqual(JSON.parse(options.body), {
+        spaceId: "Spaces-1", spaceIdOrName: "Spaces-1", projectName: "AyahOS HQ Verification",
+        gitResources: [
+          `Platform verification:${SHA}`,
+          `Cross-repo source verification:platform:${SHA}`,
+          `Cross-repo source verification:core:${CORE_SHA}`,
+        ],
+        ignoreIfAlreadyExists: false, ignoreChannelRules: false,
+      });
+      return Response.json({ ReleaseId: RELEASE_ID, ReleaseVersion: RELEASE_VERSION });
+    case RELEASE_PATH:
+      assert.equal(options.method, "GET");
+      return Response.json(releaseFixture());
+    default:
+      throw new Error(`Unexpected test request: ${url}`);
+  }
+}
 
 function bridgeEnv() {
   const store = new Map();
@@ -54,7 +125,7 @@ test("a rejected Octopus release does not forward API response contents to GitHu
       posts.push(JSON.parse(options.body));
       return new Response("{}", { status: 201 });
     }
-    throw new Error("Unexpected external request");
+    return releaseApi(url, options);
   };
   await assert.rejects(
     startVerification(env, { ref: "refs/heads/fixture", sha: SHA }),
@@ -72,17 +143,18 @@ test("GitHub status rejection must not falsely mark an already-created Octopus t
   const posts = [];
   globalThis.fetch = async (url, options = {}) => {
     const path = new URL(url).pathname;
-    if (path.endsWith("/releases/create/v1")) {
-      return Response.json({ ReleaseId: "Releases-42", ReleaseVersion: "1.0.42" });
-    }
     if (path.endsWith("/deployments/create/untenanted/v1")) {
+      const request = JSON.parse(options.body);
+      assert.equal(request.projectName, "AyahOS HQ Verification");
+      assert.equal(request.releaseVersion, RELEASE_VERSION);
+      assert.deepEqual(request.environmentNames, ["Development"]);
       return Response.json({ DeploymentServerTasks: [{ ServerTaskId: "ServerTasks-42" }] });
     }
     if (String(url).startsWith("https://api.github.com/")) {
       posts.push(JSON.parse(options.body));
       return new Response("unauthorized", { status: 403 });
     }
-    throw new Error("Unexpected external request");
+    return releaseApi(url, options);
   };
   await assert.rejects(
     startVerification(env, { ref: "refs/heads/fixture", sha: SHA }),
@@ -100,9 +172,6 @@ test("reconciler publishes success only after Octopus task success when GitHub s
   let githubAvailable = false;
   globalThis.fetch = async (url, options = {}) => {
     const path = new URL(url).pathname;
-    if (path.endsWith("/releases/create/v1")) {
-      return Response.json({ ReleaseId: "Releases-43", ReleaseVersion: "1.0.43" });
-    }
     if (path.endsWith("/deployments/create/untenanted/v1")) {
       return Response.json({ DeploymentServerTasks: [{ ServerTaskId: "ServerTasks-43" }] });
     }
@@ -113,7 +182,7 @@ test("reconciler publishes success only after Octopus task success when GitHub s
       statusPosts.push(JSON.parse(options.body));
       return new Response("{}", { status: githubAvailable ? 201 : 403 });
     }
-    throw new Error("Unexpected external request");
+    return releaseApi(url, options);
   };
   await assert.rejects(startVerification(env, { ref: "refs/heads/fixture", sha: SHA }), /HTTP 403/);
   assert.equal(JSON.parse(store.get(`result:${SHA}`)).state, "pending");
@@ -136,3 +205,60 @@ test("public status route returns only state, never recorded diagnostic fields",
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { sha: SHA, state: "failure" });
 });
+
+test("a successful task queued without verified Git selections cannot certify a commit", async () => {
+  const { env, store } = bridgeEnv();
+  store.set("task:ServerTasks-legacy", JSON.stringify({ sha: SHA }));
+  const posts = [];
+  globalThis.fetch = async (url, options = {}) => {
+    if (url === `${API}/tasks/ServerTasks-legacy`) return Response.json({ State: "Success" });
+    assert.equal(url, `https://api.github.com/repos/ayahos-hq/ayahos-platform/statuses/${SHA}`);
+    posts.push(JSON.parse(options.body));
+    return Response.json({});
+  };
+  assert.deepEqual(await reconcile(env), [{ taskId: "ServerTasks-legacy", state: "error" }]);
+  assert.equal(posts[0].state, "error");
+  assert.deepEqual(JSON.parse(store.get(`result:${SHA}`)), { state: "error" });
+  assert.equal(store.has("task:ServerTasks-legacy"), false);
+});
+
+const releaseMismatchCases = [
+  ["a missing Core resource", TEMPLATE_PATH, () => ({ GitResources: template().GitResources.slice(0, 2) }), /missing Platform or Core/],
+  ["an invalid Core pin", MANIFEST_PATH, () => ({ schema_version: 1, release_status: "candidate", components: {} }), /valid Git resource pin/],
+  ["a partial release selection", RELEASE_PATH, () => {
+    const release = releaseFixture();
+    release.SelectedGitResources.pop();
+    return release;
+  }, /expected Git resource selection/],
+  ["a different selected commit", RELEASE_PATH, () => {
+    const release = releaseFixture();
+    release.SelectedGitResources[0].GitReferenceResource.GitCommit = OLD_PLATFORM_SHA;
+    return release;
+  }, /different Git repository or commit/],
+  ["duplicate selected resources", RELEASE_PATH, () => {
+    const release = releaseFixture();
+    release.SelectedGitResources[1] = release.SelectedGitResources[2];
+    return release;
+  }, /different Git repository or commit/],
+  ["a changed resource repository in the snapshot", SNAPSHOT_PATH, () => {
+    const snapshot = template();
+    snapshot.GitResources[1].RepositoryUri = "https://github.com/ayahos-hq/ayahos-core";
+    return snapshot;
+  }, /different Git repository or commit/],
+];
+
+for (const [name, route, responseBody, reason] of releaseMismatchCases) {
+  test(`refuses to deploy when Octopus or the candidate has ${name}`, async () => {
+    const { env, store } = bridgeEnv();
+    const requests = [];
+    globalThis.fetch = async (url, options = {}) => {
+      requests.push(String(url));
+      if (url === route) return Response.json(responseBody());
+      if (String(url).startsWith("https://api.github.com/")) return Response.json({});
+      return releaseApi(url, options);
+    };
+    await assert.rejects(startVerification(env, { ref: "refs/heads/fixture", sha: SHA }), reason);
+    assert.equal(requests.some((url) => url.includes("/deployments/")), false);
+    assert.deepEqual(JSON.parse(store.get(`result:${SHA}`)), { state: "error" });
+  });
+}
