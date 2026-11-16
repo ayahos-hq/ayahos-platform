@@ -7,16 +7,8 @@ on:
       - ".github/workflows/platform-isolation.yml"
       - ".octopus/**"
       - "deploy/**"
-      - "scripts/ci/**"
-      - "scripts/verify-platform.py"
-      - "scripts/verify-release-manifest.py"
-      - "scripts/audit-repo-drift.py"
-      - "scripts/test_audit_repo_drift.py"
-      - "scripts/test_verify_release_manifest.py"
-      - "scripts/assemble-hq-workspace.py"
-      - "scripts/test_assemble_hq_workspace.py"
-      - "scripts/prepare-hq-rag-overlay.py"
-      - "scripts/test_prepare_hq_rag_overlay.py"
+      - "scripts/**"
+      - "tests/**"
       - "release-manifest.json"
       - "MIGRATION-GATES.md"
       - "README.md"
@@ -44,16 +36,13 @@ jobs:
         run: python3 scripts/verify-platform.py
       - name: Verify five-repository candidate manifest
         run: python3 scripts/verify-release-manifest.py
-      - name: Test fail-closed immutable HQ source assembly (offline)
-        run: python3 -m unittest discover -s scripts -p "test_assemble_hq_workspace.py" -v
-      - name: Test isolated cross-repository Ruby RAG schema overlay (offline)
-        run: python3 -m unittest discover -s scripts -p "test_prepare_hq_rag_overlay.py" -v
-      - name: Regression-test exact-SHA five-repo workspace (offline)
-        run: python3 -m unittest discover -s scripts -p "test_verify_release_manifest.py" -v
-      - name: Unit-test three-way repository drift classifier (offline)
-        run: python3 -m unittest discover -s scripts -p "test_audit_repo_drift.py" -v
+      - name: Exercise the Octopus offline test entry point
+        run: python3 scripts/run-hq-offline-tests.py
       - name: Check shell syntax without running release scripts
-        run: find scripts/ci -type f -name '*.sh' -exec bash -n '{}' \;
+        run: |
+          find scripts/ci scripts/octopus -type f -name '*.sh' -exec bash -c '
+            for script do bash -n "$script" || exit; done
+          ' bash '{}' +
       - name: Setup Node 22 for dependency-free bridge tests
         uses: actions/setup-node@v4
         with:

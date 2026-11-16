@@ -7,6 +7,7 @@ argument. This is not an artifact attestation and never overrides tests.
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -29,6 +30,8 @@ def run_suites() -> int:
                  "-s", str(source), "-p", "test_*.py", "-v"],
                 cwd=ROOT, check=False, timeout=180,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                # Recovery scripts use sibling imports when invoked from the CLI.
+                env={**os.environ, "PYTHONPATH": str(ROOT / "scripts" / "db")},
             )
             if completed.stdout:
                 print(completed.stdout, end='' if completed.stdout.endswith('\n') else '\n')

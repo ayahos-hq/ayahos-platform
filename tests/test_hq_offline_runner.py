@@ -39,6 +39,10 @@ class OfflineRunnerTests(unittest.TestCase):
         self.assertEqual(execute.call_count, 2)
         self.assertEqual(execute.call_args.kwargs["stdout"], subprocess.PIPE)
         self.assertEqual(execute.call_args.kwargs["stderr"], subprocess.STDOUT)
+        self.assertEqual(
+            execute.call_args.kwargs["env"]["PYTHONPATH"],
+            str(runner.ROOT / "scripts" / "db"),
+        )
 
 
 if __name__ == "__main__":
