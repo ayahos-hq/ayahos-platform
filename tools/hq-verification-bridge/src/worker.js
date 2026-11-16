@@ -20,11 +20,23 @@ const GITHUB_API = "https://api.github.com";
 const HQ_PLATFORM = "ayahos-hq/ayahos-platform";
 const HQ_COMPONENT = /^ayahos-(?:admin|core|platform|site|workloads)$/;
 const HQ_PROJECT_SLUG = "ayahos-hq-verification";
+const HQ_REQUIRED_STATUS = "octopus/hq-operator-verified";
+const HQ_COMPONENT_COUNT = 5;
+const HQ_REQUIRED_LANES = [
+  "API and PostgreSQL",
+  "Web and site",
+  "ML dependencies and MiniLM tests",
+  "Ruby RAG and pgvector",
+  "Ruby workflow and Python API contract",
+  "Ruby control gateway",
+  "Release hardening with zero skipped tests",
+  "Build and smoke the deployable container",
+];
 const TASK_PREFIX = "task:";
 const RESULT_PREFIX = "result:";
 const TASK_TTL_SECONDS = 7 * 24 * 60 * 60;
-// Two subrequests per task (Octopus read + GitHub write) stay under the Workers free-plan cap.
-const MAX_TASKS_PER_TICK = 20;
+// At most three subrequests per task (two Octopus reads and one GitHub write).
+const MAX_TASKS_PER_TICK = 15;
 const SHA = /^[0-9a-f]{40}$/;
 const ZERO_SHA = "0".repeat(40);
 const MAX_REF_LENGTH = 255;
@@ -39,6 +51,7 @@ const REQUIRED_ENV = [
   "OCTOPUS_SPACE_ID",
   "OCTOPUS_PROJECT",
   "OCTOPUS_ENVIRONMENT",
+  "STATUS_CONTEXT",
 ];
 
 export function missingConfig(env) {
@@ -48,7 +61,7 @@ export function missingConfig(env) {
 }
 
 function statusContext(env) {
-  return env.STATUS_CONTEXT || "octopus/verify";
+  return env.STATUS_CONTEXT;
 }
 
 function octopusBase(env) {
@@ -177,6 +190,58 @@ function gitResources(template) {
   return resources;
 }
 
+function acceptanceSteps(process, resources) {
+  if (new Set(resources.values()).size !== HQ_COMPONENT_COUNT || !Array.isArray(process.Steps)) {
+    return null;
+  }
+  const required = new Set(HQ_REQUIRED_LANES);
+  const sourceActions = new Set([...resources.keys()].map((key) => key.split(":")[0]));
+  for (const step of process.Steps) {
+    for (const action of step.Actions ?? []) {
+      if (sourceActions.delete(action.Name)) required.add(step.Name);
+    }
+  }
+  if (sourceActions.size) return null;
+  for (const name of required) {
+    const matches = process.Steps.filter((step) => step.Name === name);
+    const step = matches[0];
+    if (matches.length !== 1 || step.IsDisabled || step.Condition !== "Success"
+        || !step.Actions?.length
+        || step.Actions.some((action) => action.IsRequired !== true || action.IsDisabled)) {
+      return null;
+    }
+  }
+  return [...required];
+}
+
+async function verifiedTaskStatus(env, taskId, record, task) {
+  const status = statusForTask(task);
+  if (status.state !== "success") return status;
+  if (record.gitSelectionVerified !== true) {
+    return { state: "error", description: "Octopus task has no verified Git resource selection; rerun verification" };
+  }
+  if (statusContext(env) !== HQ_REQUIRED_STATUS) return status;
+  if (!Array.isArray(record.requiredSteps) || !HQ_REQUIRED_LANES.every((name) => record.requiredSteps.includes(name))) {
+    return { state: "failure", description: "HQ gate requires eight verification lanes and all five HQ repositories" };
+  }
+  const details = await octopus(env, "GET", `/api/${env.OCTOPUS_SPACE_ID}/tasks/${encodeURIComponent(taskId)}/details`);
+  const results = new Map();
+  for (const log of details.ActivityLogs ?? []) {
+    for (const child of log.Children ?? []) {
+      const name = /^Step \d+: (.+)$/.exec(child.Name)?.[1];
+      if (!name) continue;
+      results.set(name, [...(results.get(name) ?? []), child.Status]);
+    }
+  }
+  if (record.requiredSteps.some((name) => {
+    const outcomes = results.get(name);
+    return outcomes?.length !== 1 || outcomes[0] !== "Success";
+  })) {
+    return { state: "failure", description: "Octopus task is missing an unambiguous success for a required HQ step" };
+  }
+  return status;
+}
+
 async function createVerifiedRelease(env, sha) {
   const spacePath = `/api/${env.OCTOPUS_SPACE_ID}`;
   if (env.GITHUB_REPOSITORY !== HQ_PLATFORM || !SHA.test(sha) || sha === ZERO_SHA
@@ -239,7 +304,12 @@ async function createVerifiedRelease(env, sha) {
   if (snapshot.size !== expected.size) {
     throw new Error("Octopus release snapshot has unexpected Git resources");
   }
-  return release;
+  let requiredSteps = null;
+  if (statusContext(env) === HQ_REQUIRED_STATUS && new Set(snapshot.values()).size === HQ_COMPONENT_COUNT) {
+    const process = await octopus(env, "GET", `${spacePath}/deploymentprocesses/${encodeURIComponent(snapshotId)}`);
+    requiredSteps = acceptanceSteps(process, snapshot);
+  }
+  return { release, requiredSteps };
 }
 
 export async function postStatus(env, sha, { state, description, targetUrl }) {
@@ -292,7 +362,7 @@ export async function startVerification(env, { ref, sha }) {
   let taskId;
   let releaseVersion;
   try {
-    const release = await createVerifiedRelease(env, sha);
+    const { release, requiredSteps } = await createVerifiedRelease(env, sha);
     const deployment = await octopus(env, "POST", `/api/${space}/deployments/create/untenanted/v1`, {
       spaceId: space,
       spaceIdOrName: space,
@@ -312,7 +382,7 @@ export async function startVerification(env, { ref, sha }) {
     releaseVersion = release.Version;
     await env.TASKS.put(
       `${TASK_PREFIX}${taskId}`,
-      JSON.stringify({ sha, ref, releaseVersion, gitSelectionVerified: true }),
+      JSON.stringify({ sha, ref, releaseVersion, gitSelectionVerified: true, requiredSteps }),
       { expirationTtl: TASK_TTL_SECONDS },
     );
   } catch (error) {
@@ -346,9 +416,7 @@ export async function reconcile(env) {
       const record = JSON.parse((await env.TASKS.get(name)) ?? "null");
       if (!record) continue;
       const task = await octopus(env, "GET", `/api/${env.OCTOPUS_SPACE_ID}/tasks/${encodeURIComponent(taskId)}`);
-      const status = task.State === "Success" && record.gitSelectionVerified !== true
-        ? { state: "error", description: "Octopus task has no verified Git resource selection; rerun verification" }
-        : statusForTask(task);
+      const status = await verifiedTaskStatus(env, taskId, record, task);
       const key = `${status.state}:${status.description}`;
       if (key !== record.reported) {
         await reportStatus(env, record.sha, { ...status, targetUrl: taskUrl(env, taskId) });

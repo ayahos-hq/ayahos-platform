@@ -40,6 +40,10 @@ Before it queues Development, the bridge reads back the release and its
 process snapshot and checks the repository and commit for every selected
 Git resource. A missing or different selection produces an error status.
 Tasks queued by an older bridge need a fresh run to earn a success status.
-The status covers the gates actually configured in the HQ Development
-project. Complete release acceptance needs the separate cross-repository,
-artifact, and live gates described in [the candidate verification guide](../../docs/infrastructure/octopus-ci-verification.md).
+For the canonical merge status, the release must select all five HQ
+repositories, and the process snapshot must include all eight required
+verification lanes as enabled, required steps. The completed task must report
+one successful result for each required lane and for each step that consumes a
+selected repository. Source-only verification can succeed in Octopus without
+satisfying the merge gate. The separate live and rollout gates are documented
+in [the candidate verification guide](../../docs/infrastructure/octopus-ci-verification.md).

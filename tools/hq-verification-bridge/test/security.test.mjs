@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { afterEach, test } from "node:test";
 import worker, { reconcile, startVerification, statusForTask } from "../src/worker.js";
 
@@ -12,22 +13,30 @@ const RELEASE_ID = "Releases-42";
 const RELEASE_VERSION = "1.0.42";
 const TEMPLATE_PATH = `${API}/projects/${PROJECT_ID}/deploymentprocesses/template`;
 const SNAPSHOT_PATH = `${API}/deploymentprocesses/${SNAPSHOT_ID}/template`;
+const PROCESS_PATH = `${API}/deploymentprocesses/${SNAPSHOT_ID}`;
 const RELEASE_PATH = `${API}/releases/${RELEASE_ID}`;
 const MANIFEST_PATH = `https://raw.githubusercontent.com/ayahos-hq/ayahos-platform/${SHA}/release-manifest.json`;
+const LANES = [...readFileSync(new URL("../../../.octopus/deployment_process.ocl", import.meta.url), "utf8")
+  .matchAll(/^    name = "([^"]+)"\r?$/gm)].map((match) => match[1]).slice(0, 8);
+const SIBLINGS = ["admin", "site", "workloads"];
 const originalFetch = globalThis.fetch;
 afterEach(() => { globalThis.fetch = originalFetch; });
 
-function template() {
+function template(full = false) {
   return {
     GitResources: [
       { ActionName: "Platform verification", RepositoryUri: "https://github.com/ayahos-hq/ayahos-platform.git" },
       { ActionName: "Cross-repo source verification", Name: "platform", RepositoryUri: "https://github.com/ayahos-hq/ayahos-platform" },
       { ActionName: "Cross-repo source verification", Name: "core", RepositoryUri: "git@github.com:ayahos-hq/ayahos-core.git" },
+      ...(full ? SIBLINGS.map((name) => ({
+        ActionName: "Cross-repo source verification", Name: name,
+        RepositoryUri: `https://github.com/ayahos-hq/ayahos-${name}`,
+      })) : []),
     ],
   };
 }
 
-function releaseFixture() {
+function releaseFixture(full = false) {
   return {
     Id: RELEASE_ID, ProjectId: PROJECT_ID, Version: RELEASE_VERSION,
     ProjectDeploymentProcessSnapshotId: SNAPSHOT_ID,
@@ -35,11 +44,15 @@ function releaseFixture() {
       { ActionName: "Cross-repo source verification", GitResourceReferenceName: "core", GitReferenceResource: { GitCommit: CORE_SHA } },
       { ActionName: "Platform verification", GitReferenceResource: { GitCommit: SHA } },
       { ActionName: "Cross-repo source verification", GitResourceReferenceName: "platform", GitReferenceResource: { GitCommit: SHA } },
+      ...(full ? SIBLINGS.map((name) => ({
+        ActionName: "Cross-repo source verification", GitResourceReferenceName: name,
+        GitReferenceResource: { GitCommit: CORE_SHA },
+      })) : []),
     ],
   };
 }
 
-function releaseApi(url, options) {
+function releaseApi(url, options, full = false) {
   switch (url) {
     case `${API}/projects/ayahos-hq-verification`:
       assert.equal(options.method, "GET");
@@ -47,7 +60,7 @@ function releaseApi(url, options) {
     case TEMPLATE_PATH:
     case SNAPSHOT_PATH:
       assert.equal(options.method, "GET");
-      return Response.json(template());
+      return Response.json(template(full));
     case MANIFEST_PATH:
       assert.equal(options.headers, undefined);
       return Response.json({
@@ -55,6 +68,9 @@ function releaseApi(url, options) {
         components: {
           "ayahos-core": { repository: "ayahos-hq/ayahos-core", git_sha: CORE_SHA },
           "ayahos-platform": { repository: "ayahos-hq/ayahos-platform", git_sha: OLD_PLATFORM_SHA },
+          ...Object.fromEntries(SIBLINGS.map((name) => [
+            `ayahos-${name}`, { repository: `ayahos-hq/ayahos-${name}`, git_sha: CORE_SHA },
+          ])),
         },
       });
     case `${API}/releases/create/v1`:
@@ -65,13 +81,14 @@ function releaseApi(url, options) {
           `Platform verification:${SHA}`,
           `Cross-repo source verification:platform:${SHA}`,
           `Cross-repo source verification:core:${CORE_SHA}`,
+          ...(full ? SIBLINGS.map((name) => `Cross-repo source verification:${name}:${CORE_SHA}`) : []),
         ],
         ignoreIfAlreadyExists: false, ignoreChannelRules: false,
       });
       return Response.json({ ReleaseId: RELEASE_ID, ReleaseVersion: RELEASE_VERSION });
     case RELEASE_PATH:
       assert.equal(options.method, "GET");
-      return Response.json(releaseFixture());
+      return Response.json(releaseFixture(full));
     default:
       throw new Error(`Unexpected test request: ${url}`);
   }
@@ -221,6 +238,49 @@ test("a successful task queued without verified Git selections cannot certify a 
   assert.deepEqual(JSON.parse(store.get(`result:${SHA}`)), { state: "error" });
   assert.equal(store.has("task:ServerTasks-legacy"), false);
 });
+
+for (const { name, full, disabled, skipped, state } of [
+  { name: "source-only task", full: false, state: "failure" },
+  { name: "disabled required lane", full: true, disabled: true, state: "failure" },
+  { name: "skipped required lane", full: true, skipped: true, state: "failure" },
+  { name: "five repositories and eight successful lanes", full: true, state: "success" },
+]) {
+  test(`canonical acceptance evaluates: ${name}`, async () => {
+    assert.equal(LANES.length, 8);
+    const { env, store } = bridgeEnv();
+    env.STATUS_CONTEXT = "octopus/hq-operator-verified";
+    const taskPath = `${API}/tasks/ServerTasks-42`;
+    const stepNames = [...LANES, "Platform verification", "Cross-repo source verification"];
+    const posts = [];
+    globalThis.fetch = async (url, options = {}) => {
+      if (url === PROCESS_PATH && full) {
+        return Response.json({ Steps: stepNames.map((name, index) => ({
+          Name: name, Condition: "Success",
+          Actions: [{ Name: name, IsRequired: true, IsDisabled: Boolean(disabled && index === 0) }],
+        })) });
+      }
+      if (url === `${API}/deployments/create/untenanted/v1`) {
+        return Response.json({ DeploymentServerTasks: [{ ServerTaskId: "ServerTasks-42" }] });
+      }
+      if (url === taskPath) return Response.json({ State: "Success" });
+      if (url === `${taskPath}/details` && full) {
+        return Response.json({ ActivityLogs: [{ Children: stepNames.map((name, index) => ({
+          Name: `Step ${index + 1}: ${name}`, Status: skipped && index === 0 ? "Skipped" : "Success",
+        })) }] });
+      }
+      if (String(url).startsWith("https://api.github.com/")) {
+        posts.push(JSON.parse(options.body));
+        return Response.json({});
+      }
+      return releaseApi(url, options, full);
+    };
+    await startVerification(env, { ref: "refs/heads/fixture", sha: SHA });
+    assert.deepEqual(await reconcile(env), [{ taskId: "ServerTasks-42", state }]);
+    assert.deepEqual(posts.map((post) => post.state), ["pending", state]);
+    assert.equal(posts[1].context, env.STATUS_CONTEXT);
+    assert.deepEqual(JSON.parse(store.get(`result:${SHA}`)), { state });
+  });
+}
 
 const releaseMismatchCases = [
   ["a missing Core resource", TEMPLATE_PATH, () => ({ GitResources: template().GitResources.slice(0, 2) }), /missing Platform or Core/],
