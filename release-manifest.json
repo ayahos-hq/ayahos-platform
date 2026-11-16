@@ -8,7 +8,7 @@
   "components": {
     "ayahos-site": {
       "repository": "ayahos-hq/ayahos-site",
-      "git_sha": "5707aeb062172105db8291b14fd57e0dfea51930",
+      "git_sha": "ee6a0d523d28e9d958a92147d6068b135aeef112",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     },
@@ -20,7 +20,7 @@
     },
     "ayahos-admin": {
       "repository": "ayahos-hq/ayahos-admin",
-      "git_sha": "7a997bd029e50fa08514b94849f8293744d46b8e",
+      "git_sha": "34d45414716a8f4c354882161b14d7a809f2c0d6",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     },
@@ -56,7 +56,7 @@
     "core_pr": "https://github.com/ayahos-hq/ayahos-core/pull/17",
     "admin_pr": "https://github.com/ayahos-hq/ayahos-admin/pull/6",
     "workloads_pr": "https://github.com/ayahos-hq/ayahos-workloads/pull/9",
-    "caveat": "Pins refreshed 2026-11-16 to the five HQ mains observed that day (site 5707aeb, core 42ab730, admin 7a997bd, workloads e096427, platform 094328e as its own ancestor pin). Owner confirmed 2026-11-13 that the HQ repos are canonical and the monorepo is legacy/reference only. Historical 2026-10-24 path-level drift remains attached and is not recast as current evidence. Artifact digests remain null and every acceptance field remains pending: independently built artifacts, authenticated chat, PostgreSQL recovery, Octopus cross-repository integration and rollback remain pending. No production cutover.",
+    "caveat": "Pins refreshed 2026-11-16 to the five HQ mains observed that day (site ee6a0d5, core 42ab730, admin 34d4541, workloads e096427, platform 094328e as its own ancestor pin). Owner confirmed 2026-11-13 that the HQ repos are canonical and the monorepo is legacy/reference only. Historical 2026-10-24 path-level drift remains attached and is not recast as current evidence. Artifact digests remain null and every acceptance field remains pending: independently built artifacts, authenticated chat, PostgreSQL recovery, Octopus cross-repository integration and rollback remain pending. No production cutover.",
     "admin_sse_pr": "https://github.com/ayahos-hq/ayahos-admin/pull/7",
     "core_aliyun_pr": "https://github.com/ayahos-hq/ayahos-core/pull/18",
     "local_dispatch_pr": "https://github.com/ayahos-hq/ayahos-core/pull/19",
@@ -74,7 +74,9 @@
     "manifest_refresh_20261116": {
       "site_pr": "https://github.com/ayahos-hq/ayahos-site/pull/40",
       "admin_pr": "https://github.com/ayahos-hq/ayahos-admin/pull/28",
-      "note": "Admin #28 (AyahOS Console branding) merged 2026-11-16 as 7a997bd; site #39/#40 (package rename + branding) merged 2026-11-16."
+      "note": "Admin #28 (AyahOS Console branding) merged 2026-11-16 as 7a997bd, site #39/#40 (package rename + branding) merged 2026-11-16, site #41 (ayahos-theme dual-read) merged as ee6a0d5, admin #30 (web package renamed @ayahos-hq/web) merged as 34d4541.",
+      "admin_pr_30": "https://github.com/ayahos-hq/ayahos-admin/pull/30",
+      "site_pr_41": "https://github.com/ayahos-hq/ayahos-site/pull/41"
     }
   }
 }
