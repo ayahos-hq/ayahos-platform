@@ -1,38 +1,38 @@
 {
   "schema_version": 1,
   "release_status": "candidate",
-  "release_id": "hq-candidate-20261024-safety-refresh-no-cutover",
+  "release_id": "hq-candidate-20261116-reviewed-pins-refresh-no-cutover",
   "source_authority": "fuaadabdullah/AyahOS_Dual_Lineage",
   "platform_manifest_commit_rule": "platform_git_sha_is_an_ancestor_of_manifest_commit",
   "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
   "components": {
     "ayahos-site": {
       "repository": "ayahos-hq/ayahos-site",
-      "git_sha": "a1f9461881aa4068d39a91ce4adbdf1dd73069cc",
+      "git_sha": "5707aeb062172105db8291b14fd57e0dfea51930",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     },
     "ayahos-core": {
       "repository": "ayahos-hq/ayahos-core",
-      "git_sha": "ce43a6c99b2f80bc6f0b4903687373e2d007daff",
+      "git_sha": "42ab730d28e5c3eb32a32a74eab16eafaf731715",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     },
     "ayahos-admin": {
       "repository": "ayahos-hq/ayahos-admin",
-      "git_sha": "223a3b6ce6783405a4822a3cddbbbe66cc3164c2",
+      "git_sha": "7a997bd029e50fa08514b94849f8293744d46b8e",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     },
     "ayahos-platform": {
       "repository": "ayahos-hq/ayahos-platform",
-      "git_sha": "5623aea15094b316c355c90dc9a3e0dea04711f2",
+      "git_sha": "094328e66a90c7d4f629db8c31e1b1d0c7bca246",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     },
     "ayahos-workloads": {
       "repository": "ayahos-hq/ayahos-workloads",
-      "git_sha": "e4de3aab568fc817816a4bd9e58eaeb0296f7a53",
+      "git_sha": "e0964272c7956e1ef7cf0b650a80a482bfe09ca5",
       "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
       "artifact_sha256": null
     }
@@ -56,7 +56,7 @@
     "core_pr": "https://github.com/ayahos-hq/ayahos-core/pull/17",
     "admin_pr": "https://github.com/ayahos-hq/ayahos-admin/pull/6",
     "workloads_pr": "https://github.com/ayahos-hq/ayahos-workloads/pull/9",
-    "caveat": "Read-only source evidence, not production acceptance. A refreshed 2026-10-24 drift snapshot is attached; remaining divergences require per-component review. Independently built artifacts, authenticated chat, PostgreSQL recovery, Octopus cross-repo integration and rollback remain pending. No production cutover.",
+    "caveat": "Pins refreshed 2026-11-16 to the five HQ mains observed that day (site 5707aeb, core 42ab730, admin 7a997bd, workloads e096427, platform 094328e as its own ancestor pin). Owner confirmed 2026-11-13 that the HQ repos are canonical and the monorepo is legacy/reference only. Historical 2026-10-24 path-level drift remains attached and is not recast as current evidence. Artifact digests remain null and every acceptance field remains pending: independently built artifacts, authenticated chat, PostgreSQL recovery, Octopus cross-repository integration and rollback remain pending. No production cutover.",
     "admin_sse_pr": "https://github.com/ayahos-hq/ayahos-admin/pull/7",
     "core_aliyun_pr": "https://github.com/ayahos-hq/ayahos-core/pull/18",
     "local_dispatch_pr": "https://github.com/ayahos-hq/ayahos-core/pull/19",
@@ -70,6 +70,11 @@
       "changed_paths": 135
     },
     "latest_observed_monorepo_main": "ae5a472c1de22899f818141d209732b6d891ac6c",
-    "drift_audit_snapshot_utc": "2026-10-24T06:33:43Z"
+    "drift_audit_snapshot_utc": "2026-10-24T06:33:43Z",
+    "manifest_refresh_20261116": {
+      "site_pr": "https://github.com/ayahos-hq/ayahos-site/pull/40",
+      "admin_pr": "https://github.com/ayahos-hq/ayahos-admin/pull/28",
+      "note": "Admin #28 (AyahOS Console branding) merged 2026-11-16 as 7a997bd; site #39/#40 (package rename + branding) merged 2026-11-16."
+    }
   }
 }
