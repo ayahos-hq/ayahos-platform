@@ -36,6 +36,8 @@ def prepare(manifest: Path, workspace: Path, output: Path) -> Path:
     if not output.parent.is_dir():
         raise ValueError("overlay destination parent is not a directory")
     source = workspace / "ayahos-workloads" / "apps" / "rag-ruby"
+    smoke_helper = workspace / "ayahos-platform" / "scripts" / "live_rag_smoke.rb"
+    needs_smoke_helper = (source / "test" / "live_rag_smoke_test.rb").is_file()
     core = workspace / "ayahos-core" / "apps" / "api"
     migrations = core / "src" / "dual_lineage" / "db" / "migrations"
     if not (source / "test" / "migrated_schema_test.rb").is_file():
@@ -50,10 +52,19 @@ def prepare(manifest: Path, workspace: Path, output: Path) -> Path:
     for part in (source, migrations, core):
         if not part.resolve(strict=True).is_relative_to(base):
             raise ValueError("HQ source escapes verified workspace")
+    if needs_smoke_helper and (
+        smoke_helper.is_symlink()
+        or not smoke_helper.is_file()
+        or not smoke_helper.resolve(strict=True).is_relative_to(base)
+    ):
+        raise ValueError("verified Platform live RAG smoke helper missing or unsafe")
     stage = Path(tempfile.mkdtemp(prefix=f".{output.name}-", dir=output.parent))
     try:
         (stage / "apps").mkdir()
         shutil.copytree(source, stage / "apps" / "rag-ruby", symlinks=False)
+        if needs_smoke_helper:
+            (stage / "scripts").mkdir()
+            shutil.copy2(smoke_helper, stage / "scripts" / smoke_helper.name)
         # RAG's migrated_schema_test.rb uses ../../api/src/... from the Ruby
         # test directory. The overlay recreates that layout without copying,
         # modifying or maintaining another copy of SQL migration authority.

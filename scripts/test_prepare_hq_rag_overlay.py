@@ -27,6 +27,12 @@ class RagOverlayTests(unittest.TestCase):
         (self.rag / "test").mkdir(parents=True)
         (self.rag / "test" / "migrated_schema_test.rb").write_text("RUBY-TEST-SOURCE\n")
         (self.rag / "Gemfile").write_text('source "https://rubygems.org"\n')
+        (self.rag / "test" / "live_rag_smoke_test.rb").write_text(
+            'require_relative "../../../scripts/live_rag_smoke"\n'
+        )
+        self.smoke_helper = self.work / "ayahos-platform" / "scripts" / "live_rag_smoke.rb"
+        self.smoke_helper.parent.mkdir(parents=True)
+        self.smoke_helper.write_text("PLATFORM-SMOKE-HELPER\n")
         self.manifest = self.root / "release-manifest.json"
         self.manifest.write_text('{"schema_version": 1}')
         self.out = self.root / "overlay"
@@ -47,6 +53,16 @@ class RagOverlayTests(unittest.TestCase):
         self.assertEqual((test_dir / "migrated_schema_test.rb").read_text(), "RUBY-TEST-SOURCE\n")
         self.assertEqual((self.rag / "test" / "migrated_schema_test.rb").read_text(),
                          "RUBY-TEST-SOURCE\n")
+        self.assertEqual(
+            (test_dir / "../../../scripts/live_rag_smoke.rb").read_text(),
+            "PLATFORM-SMOKE-HELPER\n",
+        )
+
+    def test_missing_required_platform_smoke_helper_fails_closed(self):
+        self.smoke_helper.unlink()
+        with self.assertRaisesRegex(ValueError, "Platform live RAG smoke helper"):
+            self.prepare()
+        self.assertFalse(self.out.exists())
 
     def test_missing_schema_source_fails_closed_before_output(self):
         (self.sql / "001_tables.sql").unlink()
