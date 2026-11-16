@@ -43,6 +43,7 @@ if command -v get_octopusvariable >/dev/null || [[ -z "${HQ_VERIFIED_WORKSPACE:-
 fi
 [[ "$(git -C "$workspace/ayahos-platform" rev-parse HEAD)" == "$platform_sha" ]] ||
     fail "workspace Platform SHA differs from the selected commit"
+python3 "$root/scripts/verify-release-manifest.py" --manifest "$manifest" --workspace-root "$workspace"
 
 platform="$workspace/ayahos-platform"
 context="$scratch/context"

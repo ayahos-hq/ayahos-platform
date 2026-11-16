@@ -87,6 +87,21 @@ authenticated chat or rollback checks have passed. Do not put private source rep
 in this public repository. This is preparation for an independent HQ Octopus project,
 **not** permission to repoint the existing production bridge or deploy.
 
+## HQ composite container verification
+
+On a Linux worker with Docker and read access to the candidate repositories, set
+`HQ_PLATFORM_SHA` to the exact Platform commit and `HQ_PYTHON_BASE_IMAGE` to a
+digest-pinned Python 3.12 slim-trixie image. Then run
+`bash scripts/octopus/verify-hq-composite.sh`. The runner assembles the pinned
+sources, builds the Core and Ruby Workloads image, and probes the API, RAG, and
+control endpoints together inside a container with networking disabled.
+
+To wire the Octopus **Build and smoke the deployable container** lane, run the
+same script on the HQ Verification Development Docker worker. Supply the
+verified Platform selection as the prompted `HQ.PlatformSha` variable and set
+`HQ.PythonBaseImage` to the approved immutable base. Registry digest
+verification, real pgvector, and the other release lanes have separate gates.
+
 ## Cross-repo PostgreSQL 16 + Ruby RAG contract (not yet attested)
 
 The original monorepo's `apps/rag-ruby/test/migrated_schema_test.rb`
