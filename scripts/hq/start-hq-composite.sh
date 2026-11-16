@@ -82,6 +82,7 @@ case "$role" in
 esac
 
 # Any child exit tears down the composite. A partial stack is not healthy.
-wait -n "${pids[@]}"
-status="$?"
-cleanup "$status"
+status=0
+wait -n "${pids[@]}" || status="$?"
+(( status != 0 )) || fail "a required runtime process exited"
+exit "$status"

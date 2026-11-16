@@ -33,8 +33,10 @@ RUN apt-get update \
        libpq-dev \
        libsqlite3-dev \
        pkg-config \
-       ruby-full \
-    && rm -rf /var/lib/apt/lists/*
+       ruby \
+       ruby-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && gem install bundler --version 2.6.9 --no-document
 
 WORKDIR /app
 
@@ -49,7 +51,8 @@ RUN python -m pip install --no-cache-dir -e './apps/api[control]'
 
 ENV BUNDLE_PATH=/usr/local/bundle \
     BUNDLE_JOBS=1 \
-    BUNDLE_RETRY=2
+    BUNDLE_RETRY=2 \
+    BUNDLE_FROZEN=true
 
 RUN cd /app/apps/rag-ruby && bundle install --no-cache \
     && cd /app/apps/control-ruby && bundle install --no-cache \
