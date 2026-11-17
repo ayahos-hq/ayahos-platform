@@ -9,6 +9,13 @@ redacted environment contract is `deploy/oracle/oracle-node.env.example`. The ag
 must register through the normal `/compute/nodes/heartbeat` protocol before the
 control plane can select it.
 
+The node is cognitive-only, but can advertise more than one cognitive model when the
+backend actually serves them. Use `DUAL_LINEAGE_NODE_COGNITIVE_MODELS` as a comma-separated
+allowlist of `public-id=backend-id` pairs. Each advertised ID is independently routable;
+the right side selects the model name the local backend expects. Keep the legacy
+`DUAL_LINEAGE_NODE_COGNITIVE_MODEL` setting for a single-model deployment. Do not list
+models that have not been loaded and verified on the Oracle backend.
+
 ## Activation requirements
 
 1. Install the lightweight API runtime dependencies in `/opt/goblin/venv`.
@@ -20,8 +27,8 @@ control plane can select it.
 5. Add that hostname to `DUAL_LINEAGE_NODE_ENDPOINT_ALLOWLIST` on the control plane.
 6. Verify `/health` reports `backend: reachable` and `registration.ok: true`. On the
    control plane, `GET /compute/nodes` (operator secret) should list `oracle-heavy` as
-   `online` with only the `cognitive` role and the configured model id. Then confirm one
-   cognitive inference succeeds.
+   `online` with only the `cognitive` role and exactly the configured model IDs. Then
+   confirm one cognitive inference succeeds for every advertised model.
 
 The node reports `degraded` while its backend is down, and the control plane stops
 selecting it until the backend answers again. The control plane pins `oracle-heavy` to
