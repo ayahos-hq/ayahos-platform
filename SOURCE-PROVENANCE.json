@@ -273,11 +273,11 @@
   },
   "reviewed_extensions": {
     "deploy/oracle/oracle-node.env.example": {
-      "sha": "a570b97d7a15636d85761d415560124d3307b001",
+      "sha": "cc6af0bf73e175d05e528e4b405be668e4684f1c",
       "mode": "100644"
     },
     "docs/infrastructure/oracle-node-agent.md": {
-      "sha": "a23a1a9273e83433bf2c81a1372f356268d78cce",
+      "sha": "517e3c923d1e0c955da9adeea7ef5c2816955954",
       "mode": "100644"
     }
   },

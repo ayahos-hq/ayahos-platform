@@ -20,12 +20,15 @@ models that have not been loaded and verified on the Oracle backend.
 
 1. Install the lightweight API runtime dependencies in `/opt/goblin/venv`.
 2. Deploy this repository at `/opt/goblinos-dual-lineage`.
-3. Configure `/etc/goblin/oracle-node.env` with separately managed registration and
-   inference secrets.
+3. Configure `/etc/goblin/oracle-node.env` with `DUAL_LINEAGE_CONTROL_PLANE_URL` set to
+   the active control-plane URL (`https://ayahos-control-api.fly.dev`) and separately
+   managed registration and inference secrets. Do not use the retired Render endpoint.
 4. Configure a separate HTTPS hostname such as
    `oracle-129.213.50.249.nip.io` to proxy to `127.0.0.1:8112`.
 5. Add that hostname to `DUAL_LINEAGE_NODE_ENDPOINT_ALLOWLIST` on the control plane.
-6. Verify `/health` reports `backend: reachable` and `registration.ok: true`. On the
+6. Verify `/health` reports `backend: reachable` and `registration.ok: true`. The
+   backend URL must match the interface on which `/v1/models` is actually reachable;
+   `127.0.0.1` is correct only when the model server listens on loopback. On the
    control plane, `GET /compute/nodes` (operator secret) should list `oracle-heavy` as
    `online` with only the `cognitive` role and exactly the configured model IDs. Then
    confirm one cognitive inference succeeds for every advertised model.
