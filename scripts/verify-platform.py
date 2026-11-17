@@ -23,13 +23,17 @@ def run() -> None:
     expected = m["source_files"]
     if len(expected) != 66 or m["source_file_count"] != 66:
         raise ValueError("unexpected source footprint")
+    extensions = m.get("reviewed_extensions", {})
+    if not isinstance(extensions, dict) or not set(extensions).issubset(expected):
+        raise ValueError("reviewed extensions must override existing pinned sources only")
     listing = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT)
     tracked = {p for p in listing.decode().split("\0") if p}
     actual = {p for p in tracked if p.startswith(ALLOWED)}
     if actual != set(expected):
         raise ValueError(f"source file set differs: missing={sorted(set(expected)-actual)} "
                          f"unexpected={sorted(actual-set(expected))}")
-    for path, record in expected.items():
+    for path, original_record in expected.items():
+        record = extensions.get(path, original_record)
         pure = PurePosixPath(path)
         if pure.is_absolute() or ".." in pure.parts or not path.startswith(ALLOWED) or BLOCKED.search(path):
             raise ValueError("disallowed path in provenance: " + path)
