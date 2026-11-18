@@ -1,0 +1,16 @@
+[Unit]
+Description=AyahOS llama.cpp backend on Alibaba GPU
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/ayahos-models
+ExecStart=/opt/ayahos/bin/llama-server --host 127.0.0.1 --port 8081 --model /opt/ayahos-models/Qwen2.5-0.5B-Instruct-Q8_0.gguf --alias goblin-core --alias qwen2.5-0.5b-instruct --n-gpu-layers 0 --ctx-size 2048 --parallel 1 --metrics
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

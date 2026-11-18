@@ -41,6 +41,30 @@ step that only a repository owner can complete.
 
 ## Environment and secrets
 
+### Operator verification: avoid confusing secret stores
+
+On 2026-11-16, an operator incorrectly reported that the site key had not been installed
+after checking Windows Credential Manager and GitHub Actions secrets. A subsequent check
+of Cloudflare Pages project `ayahos` in account `GoblinOS/ForgeTM` showed
+`GOBLIN_SITE_API_KEY` present as an encrypted **Production** secret. The earlier checks
+only established that the local helper's credential and the GitHub deploy-token secret
+were absent; they did not establish whether the Pages runtime secret existed.
+
+Before reporting a secret missing, check its actual destination and environment by name:
+
+- GitHub Actions repository secrets hold the deployment token; list names in the intended
+  repository. A missing local credential does not prove a GitHub secret is missing.
+- Cloudflare Pages runtime secrets are configured per project and environment. Check the
+  intended project's Production or Preview settings separately; an encrypted entry proves
+  presence only, not its value, correctness, or successful use by a deployment.
+- Windows Credential Manager is a local source for the optional operator helper, not an
+  inventory of secrets already configured at providers.
+
+Record the account, project, environment, secret name, observation date, and evidence
+level without recording values. Verify key compatibility and authenticated chat separately.
+The 2026-10-21 observation in the historical log below describes that date, not current
+configuration. Do not copy a production key into a public preview.
+
 Set each secret as **Encrypted** in the **Production** environment only. Never commit values. Preview
 deployments run the code of whatever branch was pushed, so they must not hold the production site key
 (see "Preview" below).

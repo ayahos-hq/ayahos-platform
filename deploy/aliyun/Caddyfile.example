@@ -1,0 +1,4 @@
+# Replace the hostname with the public node DNS before enabling Caddy.
+aliyun-heavy.example.invalid {
+	reverse_proxy 127.0.0.1:8112
+}

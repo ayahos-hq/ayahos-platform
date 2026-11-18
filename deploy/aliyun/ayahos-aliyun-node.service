@@ -1,0 +1,25 @@
+[Unit]
+Description=AyahOS Alibaba cognitive compute node
+After=network-online.target ayahos-llama-aliyun.service
+Wants=network-online.target
+Wants=ayahos-llama-aliyun.service
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/ayahos-core
+EnvironmentFile=/etc/ayahos/aliyun-heavy.env
+Environment=PYTHONPATH=/opt/ayahos-core/apps/api/src
+ExecStart=/opt/ayahos/venv/bin/uvicorn dual_lineage.compute.node_agent:app --host 127.0.0.1 --port 8112
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+StateDirectory=ayahos
+ReadWritePaths=/var/lib/ayahos
+
+[Install]
+WantedBy=multi-user.target
