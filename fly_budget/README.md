@@ -8,7 +8,7 @@ The package provides budget estimation, strict config policy, authenticated live
 ## Admission controls
 
 - Billing statement must be operator-verified from the authenticated Fly billing dashboard, for the current calendar month, no more than six hours old.
-- Includes billed + pending + other projected charges, full 31-day upper-bound compute, and **$0.75** of additional overhead reserve.
+- Includes accrued and pending charges, forecast additional organization resources, the target Machine running continuously from the earlier of the billing observation and now through the end of the UTC billing month, and **$0.75** additional reserve. The forecast rounds up to whole days.
 - Up to three existing Fly apps may be present. The target must have exactly one Machine. Every additional app must have its Machines stopped, with no mounted volumes, and must be included in an operator-attested nonzero projected-cost allowance. The guard checks the complete Machine inventory for every app and fails closed if any inventory is missing.
 - Allowed region: Ashburn (iad) or Secaucus (ewr). Only 1 shared CPU and 256/512 MB memory, one HTTP service, no volumes, no extra workers or databases, no paid advanced features.
 - Required: auto-stop enabled, auto-start=true, min-machines-running 0 or 1, HTTPS, and Compact Cognition shadow only. The cost estimate assumes the target Machine runs continuously, including when min-machines-running is 1.
@@ -37,9 +37,9 @@ Fill a PRIVATE JSON file using real authenticated Fly organization billing, not 
 - source: authenticated_fly_billing_dashboard
 - observed_at: recent ISO 8601 UTC timestamp, within six hours
 - month: YYYY-MM calendar billing month
-- spent_cents: verified billed-to-date
-- pending_cents: reserved/unbilled known usage
-- other_resources_projected_cents: all OTHER expected organization-level costs not in the single proposed Machine
+- spent_cents: verified charges already billed in the current billing month (do not duplicate pending usage)
+- pending_cents: all unbilled current-month usage through the observation time, including delayed and estimated usage
+- other_resources_projected_cents: conservative future cost through month-end for all OTHER organization resources, including stopped Machine root filesystems and other services
 - existing_billing_apps_count: 1 to 3 from the authenticated app inventory
 - attested_by_operator: true only after checking live Fly dashboard
 

@@ -65,9 +65,23 @@ class BudgetTests(unittest.TestCase):
             assess(read(), parse_snapshot(old), expected_org="ayahos-test", now=NOW)
 
     def test_pending_usage_and_headroom_reserve(self):
-        case = SNAP | {"spent_cents": 115, "pending_cents": 20}
+        case = SNAP | {"spent_cents": 360, "pending_cents": 20}
         with self.assertRaises(GateError):
             assess(read(), parse_snapshot(case), expected_org="ayahos-test", now=NOW)
+
+    def test_only_future_runtime_is_added_to_accrued_usage(self):
+        case = SNAP | {"spent_cents": 225, "existing_billing_apps_count": 3,
+                       "other_resources_projected_cents": 1,
+                       "observed_at": "2026-11-18T12:00:00Z", "month": "2026-11"}
+        now = dt.datetime(2026, 11, 18, 13, tzinfo=dt.timezone.utc)
+        gate = assess(read(), parse_snapshot(case), expected_org="ayahos-test", now=now)
+        self.assertEqual(gate.projected_monthly_cents, 461)
+
+    def test_forecast_rounds_up_across_midnight(self):
+        case = SNAP | {"observed_at": "2026-10-25T23:59:00Z"}
+        now = dt.datetime(2026, 10, 26, 0, 1, tzinfo=dt.timezone.utc)
+        gate = assess(read(), parse_snapshot(case), expected_org="ayahos-test", now=now)
+        self.assertEqual(gate.projected_monthly_cents, 162)
 
     def test_256mb_lower_estimate(self):
         config = GOOD_TOML.replace('memory = "512mb"', 'memory = "256mb"')

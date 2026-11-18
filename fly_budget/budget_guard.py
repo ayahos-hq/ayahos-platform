@@ -7,6 +7,7 @@ Never obtain Fly credentials here; only accept operator-verified snapshots.
 from __future__ import annotations
 
 import argparse
+import calendar
 import datetime as dt
 import json
 import re
@@ -185,9 +186,12 @@ def assess(
     _require(snapshot.existing_billing_apps_count <= 1
              or snapshot.other_resources_projected_cents > 0,
              "additional apps require a nonzero projected-cost allowance")
-    # 31-day upper bound assumes started 24/7. Stopped rootfs, networking
-    # and other metered use are approximated by an explicit $0.75 reserve.
-    worst_machine = (PER_30_DAY_CENTS[profile.memory] * 31 + 29) // 30
+    # Accrued usage is already in the snapshot. Forecast the target from the
+    # earlier of observation and now, rounding up to whole remaining days.
+    start = min(observed, utc_now)
+    days_in_month = calendar.monthrange(start.year, start.month)[1]
+    remaining_days = days_in_month - start.day + 1
+    worst_machine = (PER_30_DAY_CENTS[profile.memory] * remaining_days + 29) // 30
     projected = (snapshot.spent_cents + snapshot.pending_cents
                  + snapshot.other_resources_projected_cents + worst_machine
                  + NON_COMPUTE_RESERVE_CENTS)
