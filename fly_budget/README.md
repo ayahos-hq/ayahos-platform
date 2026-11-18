@@ -11,7 +11,7 @@ The package provides budget estimation, strict config policy, authenticated live
 - Includes billed + pending + other projected charges, full 31-day upper-bound compute, and **$0.75** of additional overhead reserve.
 - Up to three existing Fly apps may be present. The target must have exactly one Machine. Every additional app must have its Machines stopped, with no mounted volumes, and must be included in an operator-attested nonzero projected-cost allowance. The guard checks the complete Machine inventory for every app and fails closed if any inventory is missing.
 - Allowed region: Ashburn (iad) or Secaucus (ewr). Only 1 shared CPU and 256/512 MB memory, one HTTP service, no volumes, no extra workers or databases, no paid advanced features.
-- Required: auto-stop=stop, auto-start=true, min-machines-running=0, HTTPS, and Compact Cognition shadow only.
+- Required: auto-stop enabled, auto-start=true, min-machines-running 0 or 1, HTTPS, and Compact Cognition shadow only. The cost estimate assumes the target Machine runs continuously, including when min-machines-running is 1.
 - Guarded Fly deployment explicitly passes --ha=false to avoid automatically provisioning an HA spare. It rechecks live inventory after deployment and fails if duplicate resources appear.
 - Missing Fly CLI, authorization, verified billing, valid service inventory, or budget headroom results in DENY, never a guessed allowance.
 

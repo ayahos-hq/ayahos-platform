@@ -83,7 +83,7 @@ class BudgetTests(unittest.TestCase):
     def test_unknown_or_paid_machine_features_refused(self):
         wrong = [
             GOOD_TOML.replace('auto_stop_machines = "stop"', 'auto_stop_machines = "off"'),
-            GOOD_TOML.replace('min_machines_running = 0', 'min_machines_running = 1'),
+            GOOD_TOML.replace('min_machines_running = 0', 'min_machines_running = 2'),
             GOOD_TOML.replace('auto_start_machines = true', 'auto_start_machines = false'),
             GOOD_TOML.replace('force_https = true', 'force_https = false'),
             GOOD_TOML.replace('cpu_kind = "shared"', 'cpu_kind = "performance"'),
@@ -101,6 +101,20 @@ class BudgetTests(unittest.TestCase):
     def test_production_unsupported_until_real_runbook(self):
         with self.assertRaises(GateError):
             parse_fly(GOOD_TOML.replace('"shadow"', '"enforce"'))
+
+    def test_existing_control_hub_service_configuration_is_accepted(self):
+        live_shape = GOOD_TOML.replace('internal_port = 8080', 'internal_port = 8000')
+        live_shape = live_shape.replace('auto_stop_machines = "stop"', 'auto_stop_machines = true')
+        live_shape = live_shape.replace('min_machines_running = 0', 'min_machines_running = 1')
+        live_shape = live_shape.replace('[[vm]]', '''[[http_service.checks]]
+interval = "30s"
+timeout = "5s"
+grace_period = "30s"
+method = "GET"
+path = "/health"
+[[vm]]''')
+        live_shape += '\n[deploy]\nstrategy = "immediate"\n'
+        self.assertEqual(parse_fly(live_shape).min_machines_running, 1)
 
     def test_user_supplied_numbers_must_not_be_boolean_or_negative(self):
         for value in (True, -1, 1.5, "0"):

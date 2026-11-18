@@ -22,7 +22,7 @@ NON_COMPUTE_RESERVE_CENTS = 75
 MAX_SNAPSHOT_AGE = dt.timedelta(hours=6)
 PER_30_DAY_CENTS = {"256mb": 219, "512mb": 369}
 _ALLOWED_REGIONS = frozenset(("iad", "ewr"))
-_ALLOWED_TOP = frozenset(("app", "primary_region", "env", "http_service", "vm", "build"))
+_ALLOWED_TOP = frozenset(("app", "primary_region", "env", "http_service", "vm", "build", "deploy"))
 _APP_PATTERN = re.compile(r"^[a-z][a-z0-9-]{3,62}$")
 _ORG_PATTERN = re.compile(r"^[a-z][a-z0-9-]{1,62}$")
 
@@ -87,16 +87,26 @@ def parse_fly(config_text: str) -> FlyProfile:
              "only isolated shadow deployment is authorized")
     web = content.get("http_service")
     _require(isinstance(web, dict), "one HTTP service required")
-    _require(set(web) == {"internal_port", "force_https", "auto_stop_machines",
-                           "auto_start_machines", "min_machines_running"},
+    required_web = {"internal_port", "force_https", "auto_stop_machines",
+                    "auto_start_machines", "min_machines_running"}
+    _require(required_web <= set(web) <= required_web | {"checks"},
              "HTTP config includes unsafe or unmeasured resources")
+    if "checks" in web:
+        _require(web["checks"] == [{
+            "interval": "30s", "timeout": "5s", "grace_period": "30s",
+            "method": "GET", "path": "/health",
+        }], "unsupported health check configuration")
+    if "deploy" in content:
+        _require(content["deploy"] == {"strategy": "immediate"},
+                 "unsupported deployment strategy")
     _require(type(web["internal_port"]) is int and 1024 <= web["internal_port"] <= 65535,
              "invalid internal port")
-    _require(web["force_https"] is True and web["auto_stop_machines"] == "stop"
+    _require(web["force_https"] is True and
+             (web["auto_stop_machines"] == "stop" or web["auto_stop_machines"] is True)
              and web["auto_start_machines"] is True
              and type(web["min_machines_running"]) is int
-             and web["min_machines_running"] == 0,
-             "auto-stop with min-machines zero is mandatory")
+             and web["min_machines_running"] in (0, 1),
+             "auto-stop and at most one minimum Machine required")
     vms = content.get("vm")
     _require(isinstance(vms, list) and len(vms) == 1 and isinstance(vms[0], dict),
              "exactly one VM profile required")
@@ -110,8 +120,10 @@ def parse_fly(config_text: str) -> FlyProfile:
     _require(isinstance(build, dict) and set(build) <= {"dockerfile"},
              "only pre-reviewed Dockerfile build permitted")
     if "dockerfile" in build:
-        _require(build["dockerfile"] == "Dockerfile", "custom Dockerfile path disallowed")
-    return FlyProfile(app=app, region=region, memory=vm["memory"])
+        _require(build["dockerfile"] in ("Dockerfile", "Dockerfile.fly"),
+                 "custom Dockerfile path disallowed")
+    return FlyProfile(app=app, region=region, memory=vm["memory"],
+                      min_machines_running=web["min_machines_running"])
 
 
 def _int_field(data: dict, name: str, max_value: int = 100_000) -> int:
