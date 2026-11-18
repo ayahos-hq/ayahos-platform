@@ -117,7 +117,7 @@ class BudgetTests(unittest.TestCase):
 
         apps = [{"Name": "ayahos-core-shadow", "Organization": "ayahos-test"}]
         machines = [{"id": "abcd", "state": "started", "config": {"guest": {"cpu_kind": "shared", "cpus": 1, "memory_mb": 512}, "mounts": []}}]
-        self.assertEqual(verify_inventory(apps, machines, "ayahos-test",
+        self.assertEqual(verify_inventory(apps, {"ayahos-core-shadow": machines}, "ayahos-test",
                                           "ayahos-core-shadow"), 1)
         bad = SNAP | {"existing_billing_apps_count": 1}
         self.assertTrue(assess(read(), parse_snapshot(bad),
@@ -144,14 +144,40 @@ class BudgetTests(unittest.TestCase):
             with self.assertRaises(GateError):
                 verify_inventory(apps, machines, "ayahos-test", "ayahos-core-shadow")
 
-    def test_cost_snapshot_one_existing_target_not_two(self):
+    def test_cost_snapshot_allows_two_or_three_with_accounted_cost(self):
         permitted = SNAP | {"existing_billing_apps_count": 1}
         self.assertTrue(assess(read(), parse_snapshot(permitted),
                                expected_org="ayahos-test", now=NOW).allowed)
+        for count in (2, 3):
+            self.assertTrue(assess(read(), parse_snapshot(permitted |
+                {"existing_billing_apps_count": count, "other_resources_projected_cents": 1}),
+                expected_org="ayahos-test", now=NOW).allowed)
         with self.assertRaises(GateError):
             assess(read(), parse_snapshot(permitted |
-                   {"existing_billing_apps_count": 2}),
+                   {"existing_billing_apps_count": 4}),
                    expected_org="ayahos-test", now=NOW)
+
+    def test_multi_app_inventory_requires_all_machines_and_stopped_peers(self):
+        from budget_guard import verify_inventory
+
+        apps = [{"Name": name, "Organization": "ayahos-test"}
+                for name in ("ayahos-core-shadow", "ayahos-admin", "ayahos-rag")]
+        def machine(name, state, memory):
+            return {"id": name, "state": state, "config": {
+                "guest": {"cpu_kind": "shared", "cpus": 1, "memory_mb": memory},
+                "mounts": []}}
+        machines = {
+            "ayahos-core-shadow": [machine("core", "started", 512)],
+            "ayahos-admin": [machine("admin", "stopped", 1024)],
+            "ayahos-rag": [machine("rag1", "stopped", 512), machine("rag2", "stopped", 512)],
+        }
+        self.assertEqual(verify_inventory(apps, machines, "ayahos-test", "ayahos-core-shadow"), 3)
+        with self.assertRaises(GateError):
+            verify_inventory(apps, {k: v for k, v in machines.items() if k != "ayahos-rag"},
+                             "ayahos-test", "ayahos-core-shadow")
+        machines["ayahos-admin"][0]["state"] = "started"
+        with self.assertRaises(GateError):
+            verify_inventory(apps, machines, "ayahos-test", "ayahos-core-shadow")
 
 
 if __name__ == "__main__":

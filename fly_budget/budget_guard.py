@@ -168,8 +168,11 @@ def assess(
     _require(dt.timedelta(minutes=-5) <= utc_now - observed <= MAX_SNAPSHOT_AGE,
              "billing snapshot is stale or in the future")
     _require(snapshot.month == utc_now.strftime("%Y-%m"), "billing month mismatch")
-    _require(snapshot.existing_billing_apps_count <= 1,
-             "more than one billable Fly app requires independent reconciliation")
+    _require(snapshot.existing_billing_apps_count <= 3,
+             "more than three Fly apps requires independent reconciliation")
+    _require(snapshot.existing_billing_apps_count <= 1
+             or snapshot.other_resources_projected_cents > 0,
+             "additional apps require a nonzero projected-cost allowance")
     # 31-day upper bound assumes started 24/7. Stopped rootfs, networking
     # and other metered use are approximated by an explicit $0.75 reserve.
     worst_machine = (PER_30_DAY_CENTS[profile.memory] * 31 + 29) // 30
@@ -197,7 +200,7 @@ def verify_inventory(
     This function cannot authenticate by itself. The caller must obtain both
     lists through the active authenticated flyctl session at deploy time.
     """
-    _require(isinstance(apps, list) and isinstance(machines, list),
+    _require(isinstance(apps, list) and isinstance(machines, dict),
              "live Fly org and Machine lists are both required")
     _require(_ORG_PATTERN.fullmatch(expected_org) is not None
              and _APP_PATTERN.fullmatch(expected_app) is not None,
@@ -207,29 +210,37 @@ def verify_inventory(
         _require(isinstance(row, dict), "bad Fly app inventory")
         name = row.get("Name", row.get("name"))
         org = row.get("Organization", row.get("organization"))
+        if isinstance(org, dict):
+            org = org.get("Slug", org.get("slug"))
         _require(isinstance(name, str) and _APP_PATTERN.fullmatch(name) is not None
                  and org == expected_org, "unexpected Fly billing organization")
         _require(name not in names, "duplicate Fly app inventory")
         names.add(name)
-    _require(names <= {expected_app},
-             "additional Fly apps require independent budget reconciliation")
-    _require(len(machines) <= 1 and (not machines or names == {expected_app}),
-             "unaccounted Fly Machines or duplicate billable capacity")
-    for machine in machines:
-        _require(isinstance(machine, dict)
-                 and isinstance(machine.get("id", machine.get("ID")), str)
-                 and len(machine.get("id", machine.get("ID"))) > 0,
-                 "unverifiable Fly Machine identity")
-        # Verify actual runtime size, not merely the desired fly.toml.
-        config = machine.get("config")
-        guest = config.get("guest") if isinstance(config, dict) else None
-        _require(isinstance(guest, dict)
-                 and guest.get("cpu_kind") == "shared"
-                 and type(guest.get("cpus")) is int and guest["cpus"] == 1
-                 and type(guest.get("memory_mb")) is int
-                 and 0 < guest["memory_mb"] <= 512,
-                 "live Machine shape cannot be proven within budget")
-        _require(not config.get("mounts"), "paid volumes are not admitted")
+    _require(expected_app in names and len(names) <= 3,
+             "target app missing or more than three apps")
+    _require(set(machines) == names and all(isinstance(v, list) for v in machines.values()),
+             "complete per-app Machine inventory required")
+    _require(len(machines[expected_app]) == 1,
+             "exactly one target Machine required")
+    for name, records in machines.items():
+        for machine in records:
+            _require(isinstance(machine, dict)
+                     and isinstance(machine.get("id", machine.get("ID")), str)
+                     and len(machine.get("id", machine.get("ID"))) > 0,
+                     "unverifiable Fly Machine identity")
+            # Verify actual runtime size, not merely the desired fly.toml.
+            config = machine.get("config")
+            guest = config.get("guest") if isinstance(config, dict) else None
+            _require(isinstance(guest, dict)
+                     and guest.get("cpu_kind") == "shared"
+                     and type(guest.get("cpus")) is int and guest["cpus"] == 1
+                     and type(guest.get("memory_mb")) is int
+                     and 0 < guest["memory_mb"] <= (512 if name == expected_app else 1024),
+                     "live Machine shape cannot be proven within budget")
+            _require(not config.get("mounts"), "paid volumes are not admitted")
+            if name != expected_app:
+                _require(machine.get("state") == "stopped",
+                         "additional app Machines must be stopped")
     return len(names)
 
 

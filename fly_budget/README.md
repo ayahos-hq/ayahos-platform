@@ -9,7 +9,7 @@ The package provides budget estimation, strict config policy, authenticated live
 
 - Billing statement must be operator-verified from the authenticated Fly billing dashboard, for the current calendar month, no more than six hours old.
 - Includes billed + pending + other projected charges, full 31-day upper-bound compute, and **$0.75** of additional overhead reserve.
-- Only one existing Fly app may be in the organization. No more than one Machine per app, and no extra apps. Additional existing services require financial reconciliation before the package can be used.
+- Up to three existing Fly apps may be present. The target must have exactly one Machine. Every additional app must have its Machines stopped, with no mounted volumes, and must be included in an operator-attested nonzero projected-cost allowance. The guard checks the complete Machine inventory for every app and fails closed if any inventory is missing.
 - Allowed region: Ashburn (iad) or Secaucus (ewr). Only 1 shared CPU and 256/512 MB memory, one HTTP service, no volumes, no extra workers or databases, no paid advanced features.
 - Required: auto-stop=stop, auto-start=true, min-machines-running=0, HTTPS, and Compact Cognition shadow only.
 - Guarded Fly deployment explicitly passes --ha=false to avoid automatically provisioning an HA spare. It rechecks live inventory after deployment and fails if duplicate resources appear.
@@ -40,7 +40,7 @@ Fill a PRIVATE JSON file using real authenticated Fly organization billing, not 
 - spent_cents: verified billed-to-date
 - pending_cents: reserved/unbilled known usage
 - other_resources_projected_cents: all OTHER expected organization-level costs not in the single proposed Machine
-- existing_billing_apps_count: 0 or 1 from the authenticated app inventory
+- existing_billing_apps_count: 1 to 3 from the authenticated app inventory
 - attested_by_operator: true only after checking live Fly dashboard
 
 No account billing, organization slug, app name, token, or credential has been inferred from past chat messages. The private billing file and authentication must not be committed to Git.

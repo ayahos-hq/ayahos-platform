@@ -69,7 +69,7 @@ memory = "512mb"
         machines = [{"id":"a","config":{"guest":{"cpu_kind":"shared","cpus":1,"memory_mb":512}}}, {"id":"b","config":{"guest":{"cpu_kind":"shared","cpus":1,"memory_mb":512}}}]
         def cmd(argv):
             seen.append(argv)
-            return json.dumps(apps if "apps" in argv else machines)
+            return json.dumps(apps if "apps" in argv else [] if "volumes" in argv else machines)
         with self.assertRaises(GateError):
             guarded_deploy(config=self.config, snapshot=self.ledger,
                            organization="ayahos-test", now=self.now,
@@ -82,7 +82,7 @@ memory = "512mb"
         machines = [{"id":"a","config":{"guest":{"cpu_kind":"shared","cpus":1,"memory_mb":512}}}]
         def cmd(argv):
             seen.append(argv)
-            return json.dumps(apps if "apps" in argv else machines)
+            return json.dumps(apps if "apps" in argv else [] if "volumes" in argv else machines)
         result = guarded_deploy(config=self.config, snapshot=self.ledger,
                                 organization="ayahos-test", now=self.now,
                                 fly_command=cmd, execute=False)
@@ -99,6 +99,8 @@ memory = "512mb"
                 return json.dumps(apps)
             if "machine" in argv:
                 return json.dumps(machines)
+            if "volumes" in argv:
+                return json.dumps([])
             return "deployment accepted"
         result = guarded_deploy(config=self.config, snapshot=self.ledger,
                                 organization="ayahos-test", now=self.now,
@@ -113,6 +115,46 @@ memory = "512mb"
         self.assertIn("--config", deploy[0])
         self.assertIn("ayahos-core-shadow", deploy[0])
 
+    def test_three_apps_are_all_queried_and_extra_cost_required(self):
+        snapshot = json.loads(self.ledger.read_text())
+        snapshot.update(existing_billing_apps_count=3, other_resources_projected_cents=1)
+        self.ledger.write_text(json.dumps(snapshot))
+        names = ["ayahos-core-shadow", "ayahos-admin", "ayahos-rag"]
+        apps = [{"Name": name, "Organization": {"Slug": "ayahos-test"}} for name in names]
+        calls = []
+        def cmd(argv):
+            calls.append(argv)
+            if "apps" in argv:
+                return json.dumps(apps)
+            if "volumes" in argv:
+                return json.dumps([])
+            name = argv[argv.index("--app") + 1]
+            return json.dumps([{"id": name, "state": "started" if name == names[0] else "stopped",
+                "config": {"guest": {"cpu_kind": "shared", "cpus": 1, "memory_mb": 512}}}])
+        result = guarded_deploy(config=self.config, snapshot=self.ledger,
+                                organization="ayahos-test", now=self.now, fly_command=cmd)
+        self.assertTrue(result.allowed)
+        self.assertEqual({c[c.index("--app") + 1] for c in calls if "machine" in c}, set(names))
+
+        snapshot["other_resources_projected_cents"] = 0
+        self.ledger.write_text(json.dumps(snapshot))
+        with self.assertRaises(GateError):
+            guarded_deploy(config=self.config, snapshot=self.ledger,
+                           organization="ayahos-test", now=self.now, fly_command=cmd)
+
+    def test_unattached_volume_denies_deploy(self):
+        apps = [{"Name": "ayahos-core-shadow", "Organization": "ayahos-test"}]
+        def cmd(argv):
+            if "apps" in argv:
+                return json.dumps(apps)
+            if "volumes" in argv:
+                return json.dumps([{"id": "unattached-volume"}])
+            return json.dumps([{"id": "a", "config": {
+                "guest": {"cpu_kind": "shared", "cpus": 1, "memory_mb": 512}}}])
+        with self.assertRaises(GateError):
+            guarded_deploy(config=self.config, snapshot=self.ledger,
+                           organization="ayahos-test", now=self.now, fly_command=cmd)
+
 
     def test_execute_requires_pinned_image(self):
         apps = [{"Name":"ayahos-core-shadow","Organization":"ayahos-test"}]
@@ -120,7 +162,7 @@ memory = "512mb"
         calls = []
         def fly(args):
             calls.append(args)
-            return json.dumps(apps if "apps" in args else machines)
+            return json.dumps(apps if "apps" in args else [] if "volumes" in args else machines)
         with self.assertRaises(GateError):
             guarded_deploy(config=self.config,snapshot=self.ledger,
                            organization="ayahos-test",now=self.now,

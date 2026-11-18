@@ -66,27 +66,37 @@ def guarded_deploy(
     apps = _read_json_response(fly_command(apps_cmd), "apps list")
     if not isinstance(apps, list):
         raise GateError("unrecognized apps inventory")
-    target_found = any(
-        isinstance(a, dict)
-        and a.get("Name", a.get("name")) == profile.app
-        and a.get("Organization", a.get("organization")) == organization
-        for a in apps
-    )
-    if target_found:
-        machines = _read_json_response(
-            fly_command(["flyctl", "machine", "list", "--app", profile.app, "--json"]),
+    target_found = False
+    machines = {}
+    for app in apps:
+        if not isinstance(app, dict):
+            raise GateError("invalid Fly app inventory")
+        name = app.get("Name", app.get("name"))
+        org = app.get("Organization", app.get("organization"))
+        if isinstance(org, dict):
+            org = org.get("Slug", org.get("slug"))
+        if not isinstance(name, str) or not re.fullmatch(r"[a-z][a-z0-9-]{3,62}", name) or org != organization:
+            raise GateError("invalid Fly app inventory")
+        if name in machines:
+            raise GateError("duplicate Fly app inventory")
+        target_found = target_found or name == profile.app
+        machines[name] = _read_json_response(
+            fly_command(["flyctl", "machine", "list", "--app", name, "--json"]),
             "machine list",
         )
-    else:
-        machines = []
+        volumes = _read_json_response(
+            fly_command(["flyctl", "volumes", "list", "--app", name, "--json"]),
+            "volume list",
+        )
+        if not isinstance(volumes, list) or volumes:
+            raise GateError("volume inventory must be empty for every app")
     actual_apps = verify_inventory(apps, machines, organization, profile.app)
     if bill.existing_billing_apps_count != actual_apps:
         raise GateError("attested billing app count differs from authenticated inventory")
-    if isinstance(machines, list):
-        max_mb = 256 if profile.memory == "256mb" else 512
-        for machine in machines:
-            if machine["config"]["guest"]["memory_mb"] > max_mb:
-                raise GateError("live Machine exceeds proposed memory profile")
+    max_mb = 256 if profile.memory == "256mb" else 512
+    for machine in machines[profile.app]:
+        if machine["config"]["guest"]["memory_mb"] > max_mb:
+            raise GateError("live Machine exceeds proposed memory profile")
     if not execute:
         return decision
     if not target_found:
@@ -103,11 +113,20 @@ def guarded_deploy(
     ])
     # Post-deploy validation: duplicate Machines have occurred on Fly's API,
     # so a successful deploy exit is insufficient capacity evidence.
-    latest = _read_json_response(
-        fly_command(["flyctl", "machine", "list", "--app", profile.app, "--json"]),
-        "post-deploy machine list",
-    )
-    verify_inventory(apps, latest, organization, profile.app)
+    latest_apps = _read_json_response(fly_command(apps_cmd), "post-deploy apps list")
+    latest = {}
+    for name in machines:
+        latest[name] = _read_json_response(
+            fly_command(["flyctl", "machine", "list", "--app", name, "--json"]),
+            "post-deploy machine list",
+        )
+        volumes = _read_json_response(
+            fly_command(["flyctl", "volumes", "list", "--app", name, "--json"]),
+            "post-deploy volume list",
+        )
+        if not isinstance(volumes, list) or volumes:
+            raise GateError("post-deploy volume inventory is not empty")
+    verify_inventory(latest_apps, latest, organization, profile.app)
     return decision
 
 
