@@ -149,7 +149,10 @@ def main(argv: list[str] | None = None) -> int:
     except GateError as exc:
         print(json.dumps({
             "allowed": False, "reason": str(exc),
-            "actual_deployment_confirmed": False,
+            # A provider timeout or failed post-check can occur after Fly has
+            # applied the update. Never report a failed execute as no change.
+            "deployment_state": "unknown_verify_fly" if args.execute else "not_attempted",
+            "actual_deployment_confirmed": None if args.execute else False,
             "is_provider_hard_cap": False,
         }), file=sys.stderr)
         return 3

@@ -1,11 +1,14 @@
 """No Fly deploy without price admission, authenticated inventory and pin."""
 import json
+import contextlib
+import io
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from budget_guard import GateError
-from guarded_deploy import guarded_deploy
+from guarded_deploy import guarded_deploy, main
 
 
 class DeployTests(unittest.TestCase):
@@ -51,6 +54,17 @@ memory = "512mb"
                            organization="ayahos-test", now=self.now,
                            fly_command=fake_command, execute=True)
         self.assertFalse(any("deploy" in x for x in seen))
+
+    def test_execute_failure_requires_live_reconciliation(self):
+        output = io.StringIO()
+        with patch("guarded_deploy.guarded_deploy", side_effect=GateError("post-check failed")):
+            with contextlib.redirect_stderr(output):
+                code = main(["--fly-config", str(self.config), "--billing-snapshot",
+                             str(self.ledger), "--organization", "ayahos-test", "--execute"])
+        report = json.loads(output.getvalue())
+        self.assertEqual(code, 3)
+        self.assertEqual(report["deployment_state"], "unknown_verify_fly")
+        self.assertIsNone(report["actual_deployment_confirmed"])
 
     def test_stale_budget_prevents_any_fly_network_call(self):
         ledger = json.loads(self.ledger.read_text())

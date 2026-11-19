@@ -60,6 +60,8 @@ python3 fly_budget/guarded_deploy.py --fly-config /secure/staging/fly.toml --bil
 
 A successful preflight is NOT a deployment. Only after the release has passed the existing Octopus gate and an explicitly approved release source has been assembled may the operator add --execute and an existing immutable OCI image digest, supplied as --image-digest registry.fly.io/APP@sha256:64HEX. The wrapper then invokes Fly with --ha=false and --update-only (no implicit Machine creation), uses exactly that pinned image and rechecks Machine inventory. It will never create an app, build from unpinned working-tree source, or change secrets.
 
+An error during `--execute` reports `deployment_state: unknown_verify_fly`: a timeout or post-deploy inventory failure can occur after Fly applies the update. Inspect the actual release, machine image and health before retrying or rolling back. The unknown state is conservative even if the error happened during preflight.
+
 If the Fly CLI is missing or unauthenticated, the command denies the operation. Post-release authenticated HTTP, policy parity and rollback verification remain mandatory. Do not call this guard a provider-enforced billing limit, continuous monitoring, or a replacement for Octopus.
 
 ## Current verified environment blockers
