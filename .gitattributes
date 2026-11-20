@@ -1,0 +1,9 @@
+# Files that Linux executes or that provenance hashes must stay LF on every platform.
+# Without this, Git for Windows (core.autocrlf=true) checks scripts out as CRLF and bash
+# fails with "syntax error near unexpected token" on them.
+*.sh   text eol=lf
+*.ocl  text eol=lf
+*.py   text eol=lf
+*.yaml text eol=lf
+*.yml  text eol=lf
+*.json text eol=lf
