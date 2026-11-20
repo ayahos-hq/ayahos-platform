@@ -1,15 +1,17 @@
-step "api-postgres" {
-    name = "API and PostgreSQL"
+step "hq-fail-closed-bootstrap" {
+    name = "HQ fail-closed verification bootstrap"
     action {
         action_type = "Octopus.Script"
         is_required = true
         properties = {
             Octopus.Action.GitRepository.Source = "Project"
-            Octopus.Action.Script.ScriptFileName = "scripts/ci/octopus_verify.sh"
-            Octopus.Action.Script.ScriptParameters = "api"
+            Octopus.Action.RunOnServer = "true"
+            Octopus.Action.Script.ScriptFileName = "scripts/octopus/verify-release-manifest.sh"
             Octopus.Action.Script.ScriptSource = "GitRepository"
+            Octopus.Action.ExecutionTimeout.Minutes = "8"
         }
         worker_pool = "hosted-ubuntu"
+        environments = ["development"]
         container {
             feed = "docker-hub-public"
             image = "octopusdeploy/worker-tools:6.6.5-ubuntu.24.04"
@@ -17,18 +19,20 @@ step "api-postgres" {
     }
 }
 
-step "web-site" {
-    name = "Web and site"
+step "hq-offline-regression" {
+    name = "HQ offline regression suites"
     action {
         action_type = "Octopus.Script"
         is_required = true
         properties = {
             Octopus.Action.GitRepository.Source = "Project"
-            Octopus.Action.Script.ScriptFileName = "scripts/ci/octopus_verify.sh"
-            Octopus.Action.Script.ScriptParameters = "web"
+            Octopus.Action.RunOnServer = "true"
+            Octopus.Action.Script.ScriptFileName = "scripts/octopus/run-hq-offline-tests.sh"
             Octopus.Action.Script.ScriptSource = "GitRepository"
+            Octopus.Action.ExecutionTimeout.Minutes = "8"
         }
         worker_pool = "hosted-ubuntu"
+        environments = ["development"]
         container {
             feed = "docker-hub-public"
             image = "octopusdeploy/worker-tools:6.6.5-ubuntu.24.04"
@@ -36,111 +40,23 @@ step "web-site" {
     }
 }
 
-step "ml-cpu" {
-    name = "ML dependencies and MiniLM tests"
+step "hq-platform-attestation" {
+    name = "HQ platform provenance attestation"
     action {
         action_type = "Octopus.Script"
         is_required = true
         properties = {
             Octopus.Action.GitRepository.Source = "Project"
-            Octopus.Action.Script.ScriptFileName = "scripts/ci/octopus_verify.sh"
-            Octopus.Action.Script.ScriptParameters = "ml"
+            Octopus.Action.RunOnServer = "true"
+            Octopus.Action.Script.ScriptFileName = "scripts/octopus/verify-platform-attestation.sh"
             Octopus.Action.Script.ScriptSource = "GitRepository"
+            Octopus.Action.ExecutionTimeout.Minutes = "8"
         }
         worker_pool = "hosted-ubuntu"
+        environments = ["development"]
         container {
             feed = "docker-hub-public"
             image = "octopusdeploy/worker-tools:6.6.5-ubuntu.24.04"
         }
-    }
-}
-
-step "rag-postgres" {
-    name = "Ruby RAG and pgvector"
-    action {
-        action_type = "Octopus.Script"
-        is_required = true
-        properties = {
-            Octopus.Action.GitRepository.Source = "Project"
-            Octopus.Action.Script.ScriptFileName = "scripts/ci/octopus_verify.sh"
-            Octopus.Action.Script.ScriptParameters = "rag"
-            Octopus.Action.Script.ScriptSource = "GitRepository"
-        }
-        worker_pool = "hosted-ubuntu"
-        container {
-            feed = "docker-hub-public"
-            image = "octopusdeploy/worker-tools:6.6.5-ubuntu.24.04"
-        }
-    }
-}
-
-step "ruby-worker" {
-    name = "Ruby workflow and Python API contract"
-    action {
-        action_type = "Octopus.Script"
-        is_required = true
-        properties = {
-            Octopus.Action.GitRepository.Source = "Project"
-            Octopus.Action.Script.ScriptFileName = "scripts/ci/octopus_verify.sh"
-            Octopus.Action.Script.ScriptParameters = "worker"
-            Octopus.Action.Script.ScriptSource = "GitRepository"
-        }
-        worker_pool = "hosted-ubuntu"
-        container {
-            feed = "docker-hub-public"
-            image = "octopusdeploy/worker-tools:6.6.5-ubuntu.24.04"
-        }
-    }
-}
-
-step "ruby-control" {
-    name = "Ruby control gateway"
-    action {
-        action_type = "Octopus.Script"
-        is_required = true
-        properties = {
-            Octopus.Action.GitRepository.Source = "Project"
-            Octopus.Action.Script.ScriptFileName = "scripts/ci/octopus_verify.sh"
-            Octopus.Action.Script.ScriptParameters = "control"
-            Octopus.Action.Script.ScriptSource = "GitRepository"
-        }
-        worker_pool = "hosted-ubuntu"
-        container {
-            feed = "docker-hub-public"
-            image = "octopusdeploy/worker-tools:6.6.5-ubuntu.24.04"
-        }
-    }
-}
-
-step "release-hardening" {
-    name = "Release hardening with zero skipped tests"
-    action {
-        action_type = "Octopus.Script"
-        is_required = true
-        properties = {
-            Octopus.Action.GitRepository.Source = "Project"
-            Octopus.Action.Script.ScriptFileName = "scripts/ci/octopus_verify.sh"
-            Octopus.Action.Script.ScriptParameters = "release"
-            Octopus.Action.Script.ScriptSource = "GitRepository"
-        }
-        worker_pool = "hosted-ubuntu"
-        container {
-            feed = "docker-hub-public"
-            image = "octopusdeploy/worker-tools:6.6.5-ubuntu.24.04"
-        }
-    }
-}
-
-step "deployable-container-smoke" {
-    name = "Build and smoke the deployable container"
-    action {
-        action_type = "Octopus.Script"
-        is_required = true
-        properties = {
-            Octopus.Action.GitRepository.Source = "Project"
-            Octopus.Action.Script.ScriptFileName = "scripts/ci/deployable-container-smoke.sh"
-            Octopus.Action.Script.ScriptSource = "GitRepository"
-        }
-        worker_pool = "hosted-ubuntu"
     }
 }

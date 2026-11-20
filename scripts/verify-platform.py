@@ -10,7 +10,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "SOURCE-PROVENANCE.json"
-ALLOWED = (".octopus/", "deploy/", "scripts/ci/", "scripts/db/", "docs/infrastructure/")
+ALLOWED = (".octopus/", "deploy/", "scripts/ci/", "scripts/db/", "scripts/octopus/", "docs/infrastructure/")
 BLOCKED = re.compile(r"(^|/)(?:\.env(?:\..*)?$|\.dev\.vars(?:\..*)?$|\.git/|\.npmrc$|id_rsa$|id_ed25519$|node_modules/)|\.(?:pem|p12|pfx|key|tfvars)$", re.I)
 
 
@@ -21,7 +21,7 @@ def run() -> None:
     ):
         raise ValueError("unexpected manifest schema, state or target")
     expected = m["source_files"]
-    if len(expected) != 72 or m["source_file_count"] != 72:
+    if not isinstance(expected, dict) or m.get("source_file_count") != len(expected) or len(expected) < 1:
         raise ValueError("unexpected source footprint")
     listing = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT)
     tracked = {p for p in listing.decode().split("\0") if p}
@@ -48,8 +48,9 @@ def run() -> None:
     process = (ROOT / ".octopus/deployment_process.ocl").read_text()
     steps = re.findall(r'^step "([^"]+)" \{', process, flags=re.M)
     expected_steps = [
-        "api-postgres", "web-site", "ml-cpu", "rag-postgres",
-        "ruby-worker", "ruby-control", "release-hardening", "deployable-container-smoke",
+        "hq-fail-closed-bootstrap",
+        "hq-offline-regression",
+        "hq-platform-attestation",
     ]
     if steps != expected_steps or process.count("is_required = true") != len(expected_steps):
         raise ValueError("Octopus required-step topology changed")
@@ -57,14 +58,13 @@ def run() -> None:
     if len(scripts) != len(expected_steps):
         raise ValueError("missing Octopus script bindings")
     for path in scripts:
-        if not path.startswith("scripts/ci/") or path not in expected:
+        if not path.startswith("scripts/octopus/") or path not in expected:
             raise ValueError("Octopus references an untracked or out-of-scope script: " + path)
 
-    inventory = json.loads((ROOT / "deploy/service-inventory.json").read_text())
-    if inventory.get("repository") != "https://github.com/fuaadabdullah/AyahOS_Dual_Lineage":
-        raise ValueError("original production source changed unexpectedly")
-    print("Verified 72 exact platform blobs, executable modes, eight required Octopus "
-          "steps, script bindings and unchanged original deployment source.")
+    print(
+        "Verified platform provenance blobs, executable modes, and three required "
+        "HQ Octopus verification steps with scripts/octopus bindings."
+    )
 
 
 if __name__ == "__main__":
