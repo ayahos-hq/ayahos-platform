@@ -25,8 +25,13 @@ release evidence template; health-only probes never satisfy the functional relea
 
 ## Governed external bridges
 
-- `oracle-cloud-control-mcp`: tracks `main`; bearer auth mandatory; read-only by default; instance writes require operator enablement and explicit confirmation.
 - `siliconflow-chatgpt-mcp`: tracks `main`; bearer auth mandatory; credit spending disabled by default and governed by the Action Gateway.
+
+## Retired Oracle Render MCP bridge (2026-11-20)
+
+- The former `oracle-cloud-control-mcp` service (`srv-dasdqgm0tbcc73evq5hg`, `https://oracle-cloud-control-mcp.onrender.com`) is removed from the active deployment inventory. On 2026-11-20 it was confirmed suspended by Render (`x-render-routing: suspend`, HTTP 503). This is a **logical retirement**, not confirmed cloud deletion.
+- **Physical deletion still pending:** the Render integration does not expose a delete-service operation, and the browser reached Render's sign-in page. An authenticated operator must remove only this service in the Render dashboard and verify its absence. Do not modify the other suspended services as part of this focused cleanup.
+- Oracle continues independently: `https://oracle-129.213.50.249.nip.io/health` (`oracle-heavy`) and `https://129.213.50.249.nip.io/health` (`node-001`) returned HTTP 200, reachable backends, and successful registrations on 2026-11-20. **These are compute-node health endpoints, not drop-in replacements for the Render MCP API.** Do not imply MCP tool compatibility from health checks.
 
 ## Retired experiments
 
