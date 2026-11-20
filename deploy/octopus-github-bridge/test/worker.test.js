@@ -154,8 +154,20 @@ describe("startVerification", () => {
     assert.equal(release.origin, "https://ayahos.octopus.app");
     assert.equal(release.headers["X-Octopus-ApiKey"], "API-KEY");
     assert.deepEqual(
-      { gitRef: release.body.gitRef, gitCommit: release.body.gitCommit, projectName: release.body.projectName },
-      { gitRef: "refs/heads/feature", gitCommit: SHA, projectName: "AyahOS" },
+      {
+        gitRef: release.body.gitRef,
+        gitCommit: release.body.gitCommit,
+        projectName: release.body.projectName,
+        releaseVersion: release.body.releaseVersion,
+        ignoreIfAlreadyExists: release.body.ignoreIfAlreadyExists,
+      },
+      {
+        gitRef: "refs/heads/feature",
+        gitCommit: SHA,
+        projectName: "AyahOS",
+        releaseVersion: `hq-${SHA.slice(0, 12)}`,
+        ignoreIfAlreadyExists: true,
+      },
     );
     assert.equal(release.body.spaceIdOrName, "Spaces-1");
     assert.deepEqual(deploy.body.environmentNames, ["Verification"]);

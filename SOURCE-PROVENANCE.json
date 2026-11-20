@@ -51,7 +51,7 @@
       "mode": "100644"
     },
     "deploy/hq-verification-bridge/wrangler.jsonc": {
-      "sha": "44c35350123f3e25781a6367cdf8402a2b99d0cc",
+      "sha": "4048be0f6a40ebf95496f53b7299dbe32fec7113",
       "mode": "100644"
     },
     "deploy/node-001/llama-swap-undermind.yaml": {
@@ -83,7 +83,7 @@
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/src/worker.js": {
-      "sha": "da3265bc0d3d45a69022d4d31ca5d68ff29f6a35",
+      "sha": "2d0f534870236bdd89c28f94100297f1308ef25f",
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/test/status-relay.test.js": {
@@ -91,7 +91,7 @@
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/test/worker.test.js": {
-      "sha": "c83bc96ad976f043e7479f79213b1bf9ff8f2db6",
+      "sha": "2c27ad836825c333f69db2dd7a28b0ff7f472cf1",
       "mode": "100644"
     },
     "deploy/octopus-github-bridge/wrangler.jsonc": {
