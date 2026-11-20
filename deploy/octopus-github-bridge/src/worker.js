@@ -186,13 +186,16 @@ async function reportStatus(env, sha, status) {
 export async function startVerification(env, { ref, sha }) {
   const space = env.OCTOPUS_SPACE_ID;
   try {
+    // Pin the release number to the commit so redeliveries and parallel pushes do not collide
+    // on the project's default 0.0.x counter (create/v1 otherwise reuses 0.0.1 and 400s).
     const release = await octopus(env, "POST", `/api/${space}/releases/create/v1`, {
       spaceId: space,
       spaceIdOrName: space,
       projectName: env.OCTOPUS_PROJECT,
+      releaseVersion: `hq-${sha.slice(0, 12)}`,
       gitRef: ref,
       gitCommit: sha,
-      ignoreIfAlreadyExists: false,
+      ignoreIfAlreadyExists: true,
       ignoreChannelRules: false,
     });
     const deployment = await octopus(env, "POST", `/api/${space}/deployments/create/untenanted/v1`, {
