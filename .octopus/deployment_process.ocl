@@ -11,7 +11,7 @@ step "hq-fail-closed-bootstrap" {
             Octopus.Action.ExecutionTimeout.Minutes = "8"
         }
         worker_pool = "hosted-ubuntu"
-        environments = ["Development"]
+        environments = ["development"]
         container {
             feed = "docker-hub-public"
             image = "octopusdeploy/worker-tools:6.6.5-ubuntu.24.04"
@@ -32,7 +32,7 @@ step "hq-offline-regression" {
             Octopus.Action.ExecutionTimeout.Minutes = "8"
         }
         worker_pool = "hosted-ubuntu"
-        environments = ["Development"]
+        environments = ["development"]
         container {
             feed = "docker-hub-public"
             image = "octopusdeploy/worker-tools:6.6.5-ubuntu.24.04"
@@ -53,7 +53,7 @@ step "hq-platform-attestation" {
             Octopus.Action.ExecutionTimeout.Minutes = "8"
         }
         worker_pool = "hosted-ubuntu"
-        environments = ["Development"]
+        environments = ["development"]
         container {
             feed = "docker-hub-public"
             image = "octopusdeploy/worker-tools:6.6.5-ubuntu.24.04"
