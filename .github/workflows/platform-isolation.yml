@@ -3,6 +3,7 @@ name: Provisional platform source and bridge verification
 on:
   pull_request:
     branches: [main]
+    types: [opened, reopened, synchronize, ready_for_review, converted_to_draft]
     paths:
       - ".github/workflows/platform-isolation.yml"
       - ".octopus/**"
@@ -27,11 +28,13 @@ permissions:
   contents: read
 
 concurrency:
-  group: provisional-platform-verification
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   verify:
+    # Draft PRs do not allocate runners; ready-for-review does full validation.
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
