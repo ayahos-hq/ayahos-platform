@@ -64,11 +64,16 @@ def validate_config(config: dict, root: Path) -> None:
     vars_ = config.get("vars")
     if not isinstance(vars_, dict):
         raise ValueError("HQ Worker authority variables missing")
-    if (vars_.get("GITHUB_REPOSITORY") != EXPECTED_REPO or
-        vars_.get("OCTOPUS_PROJECT") != "AyahOS HQ Verification" or
-        vars_.get("OCTOPUS_ENVIRONMENT") != "Development" or
-        vars_.get("STATUS_CONTEXT") != "octopus/hq-operator-verified"):
-        raise ValueError("HQ Worker repository / Octopus authority changed")
+    expected_vars = {
+        "GITHUB_REPOSITORY": EXPECTED_REPO,
+        "OCTOPUS_URL": "https://ayahos.octopus.app",
+        "OCTOPUS_SPACE_ID": "Spaces-1",
+        "OCTOPUS_PROJECT": "AyahOS HQ Verification",
+        "OCTOPUS_ENVIRONMENT": "Development",
+        "STATUS_CONTEXT": "octopus/hq-operator-verified",
+    }
+    if vars_ != expected_vars:
+        raise ValueError("HQ Worker repository / Octopus authority or bindings changed")
     serialized = json.dumps(config).upper()
     if any(token in serialized for token in (
         "REPLACE_WITH", "GITHUB_WEBHOOK_SECRET", "GITHUB_STATUS_TOKEN",
