@@ -71,6 +71,20 @@
       ]
     },
     {
+      "name": "oracle-cloud-control-mcp",
+      "status": "active-bridge",
+      "render_blueprint": false,
+      "branch": "main",
+      "endpoint": "https://oracle-cloud-control-mcp.onrender.com",
+      "health_path": "/health",
+      "environment_contract": [
+        "OCI_CONFIG_B64",
+        "OCI_PRIVATE_KEY_B64",
+        "ORACLE_MCP_BEARER_TOKEN"
+      ],
+      "managed_by": "oracle-mcp-requirements.txt"
+    },
+    {
       "name": "siliconflow-chatgpt-mcp",
       "status": "active-bridge",
       "render_blueprint": false,
@@ -120,7 +134,6 @@
     "goblin-dual-lineage-overmind-live",
     "goblin-dual-lineage-overmind",
     "goblin-dual-lineage-overmind-cpu",
-    "goblin-dual-lineage-web",
-    "oracle-cloud-control-mcp"
+    "goblin-dual-lineage-web"
   ]
 }
