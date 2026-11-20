@@ -54,6 +54,13 @@ class WorkerBuildContractTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             guard.validate_config(bad, ROOT)
 
+    def test_unknown_bindings_are_rejected(self):
+        bad = copy.deepcopy(self.cfg)
+        bad["vars"]["EXTRA_OPERATOR_TOKEN"] = "unexpected-privilege"
+        bad["previews"]["vars"]["EXTRA_OPERATOR_TOKEN"] = "unexpected-privilege"
+        with self.assertRaises(ValueError):
+            guard.validate_config(bad, ROOT)
+
     def test_wrong_script_authority_is_rejected(self):
         bad = copy.deepcopy(self.cfg)
         bad["main"] = "../../secret.js"
