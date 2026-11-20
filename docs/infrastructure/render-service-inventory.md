@@ -29,8 +29,8 @@ release evidence template; health-only probes never satisfy the functional relea
 
 ## Retired Oracle Render MCP bridge (2026-11-20)
 
-- The former `oracle-cloud-control-mcp` service (`srv-dasdqgm0tbcc73evq5hg`, `https://oracle-cloud-control-mcp.onrender.com`) is removed from the active deployment inventory. On 2026-11-20 it was confirmed suspended by Render (`x-render-routing: suspend`, HTTP 503). This is a **logical retirement**, not confirmed cloud deletion.
-- **Physical deletion still pending:** the Render integration does not expose a delete-service operation, and the browser reached Render's sign-in page. An authenticated operator must remove only this service in the Render dashboard and verify its absence. Do not modify the other suspended services as part of this focused cleanup.
+- The former `oracle-cloud-control-mcp` service (`srv-dasdqgm0tbcc73evq5hg`, `https://oracle-cloud-control-mcp.onrender.com`) is removed from the active deployment inventory. On 2026-11-20 it was confirmed suspended by Render (`x-render-routing: suspend`, HTTP 503). This bridge has now been **physically deleted from Render**, in addition to its logical inventory retirement.
+- **Deletion verification (2026-11-20):** the authenticated Render CLI performed `render services delete srv-dasdqgm0tbcc73evq5hg --confirm --output json` after a service-ID-specific preview. Independent post-deletion reads returned Render API `404 Not Found` and CLI `No service with ID`; a fresh inventory listed 13 remaining services (14 before). No other service was deleted. No inference/MCP compatibility is implied by these checks.
 - Oracle continues independently: `https://oracle-129.213.50.249.nip.io/health` (`oracle-heavy`) and `https://129.213.50.249.nip.io/health` (`node-001`) returned HTTP 200, reachable backends, and successful registrations on 2026-11-20. **These are compute-node health endpoints, not drop-in replacements for the Render MCP API.** Do not imply MCP tool compatibility from health checks.
 
 ## Retired experiments
