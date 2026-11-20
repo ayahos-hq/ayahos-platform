@@ -6,6 +6,8 @@ on:
     types: [opened, reopened, synchronize, ready_for_review, converted_to_draft]
     paths:
       - ".github/workflows/platform-isolation.yml"
+      - ".gitattributes"
+      - "tests/**"
       - ".octopus/**"
       - "deploy/**"
       - "scripts/ci/**"
