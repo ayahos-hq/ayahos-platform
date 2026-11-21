@@ -10,6 +10,10 @@
 - This snapshot **retains legacy monorepo-relative script paths and service references**; it is not a deployable multi-repo pipeline.
 - Existing Cloudflare Pages and Vercel rollback remain unchanged; Overmind/Undermind/Spine authority stays in the source backend.
 
+## Live operations amendment — November 20, 2026
+
+The suspended legacy Render `oracle-cloud-control-mcp` service was physically deleted after owner authorization and verified absent from the Render API and CLI. [Read the deletion and preservation evidence](LIVE-RENDER-RETIREMENT-2026-11-20.md). The pinned deployment inventory under `deploy/` is a **historical extraction**, not an authoritative current Render account inventory; keep its recorded Git blobs immutable. The two independent Oracle node `/health` surfaces remained HTTP 200 after deletion, but do not replace the former MCP API.
+
 ## Safe independent checks
 
 From this repository:
