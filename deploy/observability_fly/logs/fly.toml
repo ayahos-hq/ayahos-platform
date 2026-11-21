@@ -1,0 +1,18 @@
+app = "ayahos-otel-logs"
+primary_region = "iad"
+kill_signal = "SIGTERM"
+kill_timeout = "30s"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512
+
+[[mounts]]
+  source = "otel_logs"
+  destination = "/loki"
+
+# No public services, Grafana query endpoints limited to Fly 6PN.
