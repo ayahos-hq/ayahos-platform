@@ -41,8 +41,12 @@ def validate_build_environment(env: dict[str, str], sha: str) -> str:
     return validate_sha(env.get("WORKERS_CI_COMMIT_SHA"), sha)
 
 
-def validate_config() -> None:
-    config = json.loads(CONFIG.read_text(encoding="utf-8"))
+PRODUCTION_TASKS_KV = "49ce086dc87f4de9a5110e5771907cb3"
+PREVIEW_TASKS_KV = "2b5af79207114dec9989bc1d952c3c9d"
+
+
+def validate_config_data(config: dict[str, object]) -> None:
+    """Root binding belongs to production; preview binding MUST be separate."""
     if config.get("name") != EXPECTED_NAME:
         raise ValueError("Worker identity mismatches HQ verification bridge")
     if config.get("main") != EXPECTED_SOURCE:
@@ -62,17 +66,29 @@ def validate_config() -> None:
     namespaces = config.get("kv_namespaces", [])
     if len(namespaces) != 1 or namespaces[0].get("binding") != "TASKS":
         raise ValueError("Dedicated preview tasks binding missing")
-    if namespaces[0].get("id") == "49ce086dc87f4de9a5110e5771907cb3":
-        raise ValueError("Production tasks KV must never be exposed to previews")
+    if namespaces[0].get("id") != PRODUCTION_TASKS_KV:
+        raise ValueError("Unreviewed production tasks KV namespace")
     if not NAMESPACE_RE.fullmatch(namespaces[0].get("id", "")):
-        raise ValueError("Invalid preview namespace")
+        raise ValueError("Invalid production namespace")
     previews = config.get("previews", {})
     if previews.get("vars") != config.get("vars"):
         raise ValueError("Preview variables must be declared and isolated explicitly")
-    if previews.get("kv_namespaces") != namespaces:
+    preview_namespaces = previews.get("kv_namespaces", [])
+    if (
+        not isinstance(preview_namespaces, list)
+        or len(preview_namespaces) != 1
+        or preview_namespaces[0].get("binding") != "TASKS"
+        or preview_namespaces[0].get("id") != PREVIEW_TASKS_KV
+        or preview_namespaces[0].get("id") == namespaces[0].get("id")
+    ):
         raise ValueError("Preview TASKS must be explicitly isolated from production")
     if "triggers" in previews:
         raise ValueError("Preview must not execute the production verification cron")
+
+
+def validate_config() -> None:
+    config = json.loads(CONFIG.read_text(encoding="utf-8"))
+    validate_config_data(config)
     if not (CONFIG.parent / EXPECTED_SOURCE).is_file():
         raise ValueError("Reviewed worker source is missing")
 

@@ -1,0 +1,5 @@
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+# No external scrape targets, federations, alertmanager destinations or pushes.
+scrape_configs: []
