@@ -1,0 +1,4 @@
+Deliberate failure case for ayahos-platform issue #47 step 5.
+This extra file under deploy/ breaks the SOURCE-PROVENANCE file-set check,
+so the HQ Octopus verification must fail and the bridge must post a
+failure status for this commit. Do not merge. Branch will be deleted.
