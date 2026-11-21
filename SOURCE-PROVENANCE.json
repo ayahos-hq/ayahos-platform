@@ -343,7 +343,7 @@
       "mode": "100644"
     },
     "scripts/ci/tests/test_hq_worker_build.py": {
-      "sha": "01e49ccbcaaca48b776a729675c5163e3bf43a66",
+      "sha": "4070c969fec0cedec136dc6f0ec6069a44b821e3",
       "mode": "100644"
     }
   }
