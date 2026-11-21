@@ -59,6 +59,8 @@ jobs:
         run: python3 -m unittest discover -s scripts -p "test_audit_repo_drift.py" -v
       - name: Check shell syntax without running release scripts
         run: find scripts/ci -type f -name '*.sh' -exec bash -n '{}' \;
+      - name: Guard HQ Worker preview against production KV exposure (offline)
+        run: python3 -m unittest discover -s scripts/ci/tests -p "test_hq_worker_build.py" -v
       - name: Verify private OSS observability staging contract (offline only)
         env:
           AYAHOS_OTEL_COLLECTOR_IMAGE: "example/otel@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
