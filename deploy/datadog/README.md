@@ -1,5 +1,28 @@
 # AyahOS Datadog setup
 
+> **DEPRECATED — compatibility and rollback only (2026-11-21).** Datadog's
+> outbound metrics `POST /api/v1/series` and event `POST /api/v1/events`
+> are legacy AyahOS-HQ exporter paths. **Do not provision new Datadog keys,
+> dashboards or endpoints for new HQ integrations.** The preferred new
+> transport is **OpenTelemetry OTLP/HTTP** `/v1/metrics` and `/v1/logs`,
+> sent only to a private, authenticated collector. Existing production
+> Datadog delivery remains active until separately authorized cutover and
+> observed same-event parity. This is not an immediate shutdown.
+>
+> In HQ Core use `AYAHOS_TELEMETRY_MODE=dual` to compare sinks and
+> `AYAHOS_TELEMETRY_MODE=otlp` **after** verified release gates to stop
+> outbound Datadog ingestion. `legacy` is the reviewed rollback;
+> `auto` preserves existing behavior by default; `off` disables both.
+> Never point Fly.io at the localhost-only staging Collector on the desktop.
+>
+> See [HQ Core deprecation runbook](https://github.com/ayahos-hq/ayahos-core/blob/main/docs/operations/otlp-dual-export.md),
+> [HQ Platform OSS staging](../observability_staging/README.md), and
+> [migration acceptance issue #68](https://github.com/ayahos-hq/ayahos-platform/issues/68).
+>
+> **Historical material below** describes the original Render/Datadog setup
+> and is retained strictly for audit and rollback provenance. Core is now
+> canonically hosted on Fly.io; references to a live Render API are stale.
+
 `ayahos-dashboard.json` covers production request counts, sampled latency, incidents,
 interrupts, provider errors/timeouts, bounded response feedback by rating, and advisory
 learning readiness. It uses the metric names already emitted by the Python API. Its
