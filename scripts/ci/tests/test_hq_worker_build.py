@@ -47,7 +47,7 @@ class TestPreviewNamespaceSeparation(unittest.TestCase):
 
     def test_unknown_preview_namespace_is_rejected(self) -> None:
         self.production["previews"]["kv_namespaces"][0]["id"] = "f" * 32
-        with self.assertRaisesRegex(ValueError, "preview"):
+        with self.assertRaisesRegex(ValueError, "(?i)preview"):
             gate.validate_config_data(self.production)
 
     def test_preview_cron_remains_prohibited(self) -> None:
