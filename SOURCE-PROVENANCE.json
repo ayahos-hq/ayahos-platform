@@ -4,7 +4,7 @@
   "source_repository": "fuaadabdullah/AyahOS_Dual_Lineage",
   "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
   "target_repository": "ayahos-hq/ayahos-platform",
-  "source_file_count": 75,
+  "source_file_count": 84,
   "source_files": {
     ".octopus/deployment_process.ocl": {
       "sha": "81d9dd099ad3b8d5ebed5a7d24c9be25638601e0",
@@ -305,6 +305,42 @@
     "scripts/octopus/verify-release-manifest.sh": {
       "sha": "24511a5e405dea243260f76b11a2949f3a3d47e7",
       "mode": "100755"
+    },
+    "deploy/observability_staging/tests/test_gate.py": {
+      "sha": "784aa08e8ca2a21567eb4a99eb46939f7902eac6",
+      "mode": "100644"
+    },
+    "deploy/observability_staging/gate.py": {
+      "sha": "5487d2e26a510ccfd2b1e86b32e79bbd4e9eb04f",
+      "mode": "100644"
+    },
+    "deploy/observability_staging/compose.yaml": {
+      "sha": "7e1a09c025d3aa0c5cf765f220ebc67116901912",
+      "mode": "100644"
+    },
+    "deploy/observability_staging/collector.yaml": {
+      "sha": "0ba53fef9e114335f08b160752da984d420e0f6e",
+      "mode": "100644"
+    },
+    "deploy/observability_staging/prometheus.yaml": {
+      "sha": "e748c7b15d4d3f71ade56c5b4649bae10c369c03",
+      "mode": "100644"
+    },
+    "deploy/observability_staging/loki.yaml": {
+      "sha": "6a5085db1aca93f6d43301fb3eed266c916a1258",
+      "mode": "100644"
+    },
+    "deploy/observability_staging/grafana/datasources.yaml": {
+      "sha": "bdc8f1a20fb9ae8536a69021bbbf168388ecc130",
+      "mode": "100644"
+    },
+    "deploy/observability_staging/smoke.py": {
+      "sha": "a246156c70ea8b4a4720ab5846c8d03a5cafb7c8",
+      "mode": "100644"
+    },
+    "deploy/observability_staging/README.md": {
+      "sha": "ec404aae3a7dfc8c6c7a8f94e0443b14e1388d12",
+      "mode": "100644"
     }
   }
 }
