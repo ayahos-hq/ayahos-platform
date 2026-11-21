@@ -1,0 +1,44 @@
+# Private Fly 6PN-only OTLP/HTTP JSON ingest. Never add public services.
+# Token is sourced from a Fly app secret; never put credentials in source.
+extensions:
+  bearertokenauth/ingest:
+    token: ${env:AYAHOS_OTLP_INGEST_TOKEN}
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: "[::]:4318"
+        auth:
+          authenticator: bearertokenauth/ingest
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 128
+    spike_limit_mib: 32
+  deltatocumulative: {}
+  batch:
+    timeout: 1s
+    send_batch_size: 128
+    send_batch_max_size: 256
+exporters:
+  prometheusremotewrite:
+    endpoint: http://ayahos-otel-metrics.internal:9090/api/v1/write
+    resource_to_telemetry_conversion:
+      enabled: true
+    remote_write_queue:
+      enabled: true
+      queue_size: 256
+      num_consumers: 1
+  otlphttp/loki:
+    endpoint: http://ayahos-otel-logs.internal:3100/otlp
+service:
+  extensions: [bearertokenauth/ingest]
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, deltatocumulative, batch]
+      exporters: [prometheusremotewrite]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlphttp/loki]
