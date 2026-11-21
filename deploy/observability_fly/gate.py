@@ -76,7 +76,8 @@ def validate() -> None:
             raise ValueError("Prometheus intake/retention contract changed")
     loki = (ROOT / "logs" / "loki.yaml").read_text(encoding="utf8")
     for value in ('http_listen_address: "::"', "auth_enabled: false",
-                  "retention_period: 48h", "retention_enabled: true", "ingestion_rate_mb: 2"):
+                  "retention_period: 48h", "retention_enabled: true", "ingestion_rate_mb: 2",
+                  'grpc_listen_address: "::"'):
         if value not in loki:
             raise ValueError("Loki private ingress/retention contract changed")
 
