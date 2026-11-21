@@ -4,7 +4,7 @@
   "source_repository": "fuaadabdullah/AyahOS_Dual_Lineage",
   "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
   "target_repository": "ayahos-hq/ayahos-platform",
-  "source_file_count": 84,
+  "source_file_count": 85,
   "source_files": {
     ".octopus/deployment_process.ocl": {
       "sha": "81d9dd099ad3b8d5ebed5a7d24c9be25638601e0",
@@ -219,7 +219,7 @@
       "mode": "100755"
     },
     "scripts/ci/check_hq_worker_build.py": {
-      "sha": "02327524d87cf924e4406bc9bd2310a06b0c5310",
+      "sha": "2de1f11a3274e7d91ad5a1c745c5b40c6db11702",
       "mode": "100644"
     },
     "scripts/ci/container-smoke.sh": {
@@ -340,6 +340,10 @@
     },
     "deploy/observability_staging/README.md": {
       "sha": "ec404aae3a7dfc8c6c7a8f94e0443b14e1388d12",
+      "mode": "100644"
+    },
+    "scripts/ci/tests/test_hq_worker_build.py": {
+      "sha": "01e49ccbcaaca48b776a729675c5163e3bf43a66",
       "mode": "100644"
     }
   }
