@@ -1,0 +1,15 @@
+app = "ayahos-otel-ingest"
+primary_region = "iad"
+kill_signal = "SIGTERM"
+kill_timeout = "15s"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256
+
+# Deliberately NO [http_service], [[services]], [mounts], or public IP.
+# Direct IPv6 .internal 6PN connectivity only; Bearer auth in collector.yaml.

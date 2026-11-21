@@ -1,0 +1,18 @@
+app = "ayahos-otel-metrics"
+primary_region = "iad"
+kill_signal = "SIGTERM"
+kill_timeout = "30s"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256
+
+[[mounts]]
+  source = "otel_metrics"
+  destination = "/prometheus"
+
+# No externally routable service or Flycast proxy.
