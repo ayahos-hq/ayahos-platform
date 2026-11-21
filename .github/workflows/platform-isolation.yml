@@ -8,6 +8,7 @@ on:
       - ".github/workflows/platform-isolation.yml"
       - ".gitattributes"
       - "tests/**"
+      - "ci/worker-build/**"
       - ".octopus/**"
       - "deploy/**"
       - "scripts/ci/**"
@@ -47,6 +48,8 @@ jobs:
           persist-credentials: false
       - name: Confirm immutable platform source and mandatory Octopus topology
         run: python3 scripts/verify-platform.py
+      - name: Verify preview-only Worker Builds guard regression tests
+        run: python3 -m unittest discover -s ci/worker-build -p "test_*.py" -v
       - name: Verify five-repository candidate manifest
         run: python3 scripts/verify-release-manifest.py
       - name: Test fail-closed immutable HQ source assembly (offline)
