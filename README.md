@@ -14,6 +14,10 @@
 
 The suspended legacy Render `oracle-cloud-control-mcp` service was physically deleted after owner authorization and verified absent from the Render API and CLI. [Read the deletion and preservation evidence](LIVE-RENDER-RETIREMENT-2026-11-20.md). The pinned deployment inventory under `deploy/` is a **historical extraction**, not an authoritative current Render account inventory; keep its recorded Git blobs immutable. The two independent Oracle node `/health` surfaces remained HTTP 200 after deletion, but do not replace the former MCP API.
 
+## Live operations amendment — November 21, 2026
+
+The deployed `ayahos-hq-verification-bridge` Worker cron was changed from every minute to every 2 minutes (`*/2 * * * *`) through the Cloudflare API and verified by read-back. Each reconcile tick makes one KV list call, so the per-minute cron burned 1,440 lists/day against the free 1,000/day cap and stalled `octopus/hq-operator-verified` outcome posts until the daily reset. The production cron exists only on the deployed Worker; the committed HQ config stays cron-free by design. [Read the full record, including the legacy-config deploy trap](docs/verification-bridge-cron.md).
+
 ## Safe independent checks
 
 From this repository:
