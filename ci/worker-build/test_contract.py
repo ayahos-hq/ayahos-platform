@@ -80,6 +80,18 @@ class WorkerBuildContractTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             guard.validate_build_environment(bad, self.sha)
 
+    def test_fail_closed_without_cloudflare_branch_even_with_exact_sha(self):
+        bad = dict(self.env)
+        bad.pop("WORKERS_CI_BRANCH")
+        with self.assertRaises(ValueError):
+            guard.validate_build_environment(bad, self.sha)
+
+    def test_fail_closed_without_cloudflare_sha_even_with_branch(self):
+        bad = dict(self.env)
+        bad.pop("WORKERS_CI_COMMIT_SHA")
+        with self.assertRaises(ValueError):
+            guard.validate_build_environment(bad, self.sha)
+
     def test_fail_closed_without_preview_only(self):
         bad = dict(self.env)
         bad.pop("AYAHOS_PREVIEW_ONLY")
