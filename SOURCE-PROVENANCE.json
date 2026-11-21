@@ -4,7 +4,7 @@
   "source_repository": "fuaadabdullah/AyahOS_Dual_Lineage",
   "source_commit": "a7ef41fe1ec6a680bc734a5d54890fb13972d3a3",
   "target_repository": "ayahos-hq/ayahos-platform",
-  "source_file_count": 85,
+  "source_file_count": 98,
   "source_files": {
     ".octopus/deployment_process.ocl": {
       "sha": "81d9dd099ad3b8d5ebed5a7d24c9be25638601e0",
@@ -344,6 +344,58 @@
     },
     "scripts/ci/tests/test_hq_worker_build.py": {
       "sha": "4070c969fec0cedec136dc6f0ec6069a44b821e3",
+      "mode": "100644"
+    },
+    ".github/workflows/platform-isolation.yml": {
+      "sha": "09afe7e33136209ae7486a837ef852379933d795",
+      "mode": "100644"
+    },
+    "deploy/observability_fly/collector/collector.yaml": {
+      "sha": "ee86d65e7f0b711e128dc4074e52788bf0e0f6e5",
+      "mode": "100644"
+    },
+    "deploy/observability_fly/collector/Dockerfile": {
+      "sha": "b8035572ec1fcaf1a405d190d9c520fc0c2b0c6e",
+      "mode": "100644"
+    },
+    "deploy/observability_fly/collector/fly.toml": {
+      "sha": "887c7edb17d1d27d99599c46a2c644438c2cc677",
+      "mode": "100644"
+    },
+    "deploy/observability_fly/metrics/prometheus.yaml": {
+      "sha": "b0e577c10dd0068f474cfdcf747149422f79ee17",
+      "mode": "100644"
+    },
+    "deploy/observability_fly/metrics/Dockerfile": {
+      "sha": "30961eadf3abff2f169a1601a3193361e5750071",
+      "mode": "100644"
+    },
+    "deploy/observability_fly/metrics/fly.toml": {
+      "sha": "f525e0248a62427e77dbfcd5582a3fff851c98fe",
+      "mode": "100644"
+    },
+    "deploy/observability_fly/logs/loki.yaml": {
+      "sha": "11e2dfc3b0d44bb8181ebeca9db3539f5aca540f",
+      "mode": "100644"
+    },
+    "deploy/observability_fly/logs/Dockerfile": {
+      "sha": "8153de98e0dcb88d80e8fcf5a0909f1f2bf2d2e0",
+      "mode": "100644"
+    },
+    "deploy/observability_fly/logs/fly.toml": {
+      "sha": "a4901782b544191d1369184ce9d048215d48f508",
+      "mode": "100644"
+    },
+    "deploy/observability_fly/gate.py": {
+      "sha": "85c5f8d5c85c0698a78098fd5704f832f0a12d76",
+      "mode": "100644"
+    },
+    "deploy/observability_fly/tests/test_gate.py": {
+      "sha": "a3349dd77f2f1ec2732947fb842d6a8fce2aa1eb",
+      "mode": "100644"
+    },
+    "deploy/observability_fly/README.md": {
+      "sha": "899bf804078488ac95ffe762d10a60e63e15f86d",
       "mode": "100644"
     }
   }
