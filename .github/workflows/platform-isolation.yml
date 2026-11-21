@@ -59,6 +59,18 @@ jobs:
         run: python3 -m unittest discover -s scripts -p "test_audit_repo_drift.py" -v
       - name: Check shell syntax without running release scripts
         run: find scripts/ci -type f -name '*.sh' -exec bash -n '{}' \;
+      - name: Verify private OSS observability staging contract (offline only)
+        env:
+          AYAHOS_OTEL_COLLECTOR_IMAGE: "example/otel@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          AYAHOS_PROMETHEUS_IMAGE: "example/prometheus@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          AYAHOS_LOKI_IMAGE: "example/loki@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          AYAHOS_GRAFANA_IMAGE: "example/grafana@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          AYAHOS_GRAFANA_ADMIN_PASSWORD_FILE: "/tmp/ayahos-staging-ci-placeholder"
+        run: |
+          umask 077
+          printf '%s' "CI synthetic only, not a credential" > "$AYAHOS_GRAFANA_ADMIN_PASSWORD_FILE"
+          python3 -m unittest discover -s deploy/observability_staging/tests -p 'test_*.py' -v
+          python3 deploy/observability_staging/gate.py
       - name: Setup Node 22 for dependency-free bridge tests
         uses: actions/setup-node@v4
         with:
