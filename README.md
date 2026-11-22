@@ -18,6 +18,10 @@ The suspended legacy Render `oracle-cloud-control-mcp` service was physically de
 
 The deployed `ayahos-hq-verification-bridge` Worker cron was changed from every minute to every 2 minutes (`*/2 * * * *`) through the Cloudflare API and verified by read-back. Each reconcile tick makes one KV list call, so the per-minute cron burned 1,440 lists/day against the free 1,000/day cap and stalled `octopus/hq-operator-verified` outcome posts until the daily reset. The production cron exists only on the deployed Worker; the committed HQ config stays cron-free by design. [Read the full record, including the legacy-config deploy trap](docs/verification-bridge-cron.md).
 
+## Live operations amendment — November 22, 2026
+
+Owner decision on issue #47: the `octopus/hq-operator-verified` commit status is **candidate-scoped**. It attests the five-repository HQ release candidate and the Octopus machinery, not the source integrity of the platform PR head it is posted on — a 2026-11-21 probe PR with deliberately broken provenance still received an Octopus success while GitHub `verify` correctly failed and blocked the merge. PR-head integrity is gated by the required GitHub `verify` check; the Octopus status is not a required context and must not be treated as a merge gate. [Read the full record and the revisit condition](docs/verification-bridge-scope.md).
+
 ## Safe independent checks
 
 From this repository:
