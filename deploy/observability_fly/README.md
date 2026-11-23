@@ -66,6 +66,15 @@ mode is `AYAHOS_TELEMETRY_MODE=legacy`.
    updates and 200 redacted logs with and without the bearer token; require
    401 without token and actual 200/200 indexing with token. Confirm no
    collector route can be reached from the public internet. No real user data.
+   The checked-in `smoke.py` performs the 401 and 200/200 checks. In separate
+   operator terminals, forward the collector to `127.0.0.1:14318`, Prometheus
+   to `127.0.0.1:19090`, and Loki to `127.0.0.1:13100` using `fly proxy`
+   against the corresponding private apps. Supply the existing collector bearer
+   token to the smoke process through a protected environment variable named
+   `AYAHOS_OTLP_INGEST_TOKEN`; do not put it in a command line, shell history,
+   issue, or log. Run `python3 smoke.py` only after the private forwards are
+   established. The script uses loopback addresses exclusively and prints no
+   token. Save its redacted result as staging evidence.
 8. Once the current reviewed Core image and auth feature are deployed under
    HQ Octopus release authority, dual-export into the secured Fly collector
    before an OTLP-only production canary. Confirm same **real** metadata event
@@ -87,3 +96,16 @@ do not claim cumulative metric exactness across unplanned restarts without
 independent reconciliation.
 
 **No public Grafana and no trace pipeline** are created by this setup.
+
+### Private staging smoke forwards
+
+Start each command in its own terminal on an authorized operator host. The
+Fly CLI binds to `127.0.0.1` by default; the explicit flag keeps that boundary
+clear. Then run `python3 smoke.py` from this directory with the protected token
+already present in the process environment. Stop the forwards after the check.
+
+```sh
+fly proxy 14318:4318 --bind-addr 127.0.0.1 --app ayahos-otel-ingest
+fly proxy 19090:9090 --bind-addr 127.0.0.1 --app ayahos-otel-metrics
+fly proxy 13100:3100 --bind-addr 127.0.0.1 --app ayahos-otel-logs
+```
