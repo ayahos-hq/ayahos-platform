@@ -1,8 +1,10 @@
 """Offline checks for the private staging smoke's authorization boundary."""
 from __future__ import annotations
 
+from http.server import BaseHTTPRequestHandler, HTTPServer
 import importlib.util
 from pathlib import Path
+from threading import Thread
 import unittest
 from unittest.mock import patch
 
@@ -14,6 +16,34 @@ spec.loader.exec_module(smoke)
 
 
 class FlySmokeTests(unittest.TestCase):
+    def test_authenticated_request_does_not_follow_redirect(self) -> None:
+        followed: list[str] = []
+
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self, format, *args) -> None:
+                pass
+
+            def do_POST(self) -> None:
+                self.send_response(302)
+                self.send_header("Location", "/unexpected")
+                self.end_headers()
+
+            def do_GET(self) -> None:
+                followed.append(self.path)
+                self.send_response(200)
+                self.end_headers()
+
+        with HTTPServer(("127.0.0.1", 0), Handler) as server:
+            thread = Thread(target=server.serve_forever, kwargs={"poll_interval": 0.01})
+            thread.start()
+            try:
+                url = f"http://127.0.0.1:{server.server_port}/v1/metrics"
+                self.assertEqual(smoke._request(url, {}, "x" * 32), 302)
+            finally:
+                server.shutdown()
+                thread.join()
+        self.assertEqual(followed, [])
+
     def test_missing_token_prevents_any_network_call(self) -> None:
         with patch.dict(smoke.os.environ, {}, clear=True), patch.object(smoke, "_request") as request:
             with self.assertRaisesRegex(ValueError, "protected collector token"):

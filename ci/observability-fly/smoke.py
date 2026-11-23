@@ -13,12 +13,20 @@ import sys
 import time
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 
 COLLECTOR = "http://127.0.0.1:14318"
 PROMETHEUS = "http://127.0.0.1:19090"
 LOKI = "http://127.0.0.1:13100"
 COUNT = 200
+
+
+class _NoRedirects(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+_LOOPBACK_OPENER = build_opener(ProxyHandler({}), _NoRedirects())
 
 
 def _request(url: str, payload: dict[str, object], token: str | None) -> int:
@@ -32,14 +40,14 @@ def _request(url: str, payload: dict[str, object], token: str | None) -> int:
         method="POST",
     )
     try:
-        with urlopen(request, timeout=5) as response:
+        with _LOOPBACK_OPENER.open(request, timeout=5) as response:
             return response.status
     except HTTPError as exc:
         return exc.code
 
 
 def _query(url: str) -> float:
-    with urlopen(url, timeout=4) as response:
+    with _LOOPBACK_OPENER.open(url, timeout=4) as response:
         document = json.loads(response.read(256_000))
     if document.get("status") != "success":
         raise ValueError("backend query failed")
